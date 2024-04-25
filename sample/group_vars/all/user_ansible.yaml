@@ -1,0 +1,13 @@
+---
+# creates a user under which ansible will run
+user_ansible: hufhendr
+# the playbook is running under this right now 
+ansible_user: hufhendr
+pub_key_file:
+  - key: "{{ lookup('env','HOME') + '/.ssh/id_ed25519.pub' }}"
+    state: absent
+
+  - key: "{{ lookup('env','HOME') + '/.ssh/id_rsa.pub' }}"
+    state: present
+
+docker_user: "{{ ansible_user }}"

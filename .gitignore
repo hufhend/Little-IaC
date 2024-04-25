@@ -1,3 +1,5 @@
 group_vars
 host_vars
 .vscode
+!sample/group_vars
+!sample/host_vars

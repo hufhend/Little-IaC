@@ -1,0 +1,17 @@
+---
+api_state: BACKUP
+api_vrid: 10
+api_vrrp: VI_1
+api_auth_pass: 123456
+api_ip: 192.168.88.100/24
+api_priority: 190
+
+ing_state: BACKUP
+ing_vrid: 20
+ing_vrrp: VI_2
+ing_auth_pass: 654321
+ingress_ip: 192.168.88.101/24
+ing_priority: 190
+
+keepalived: true
+role: computer

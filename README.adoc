@@ -7,11 +7,25 @@ Václav Dvorský <hufhendr@gmail.com>
 
 These scripts were originally created as Ansible exercises. Later, they focused on automating Linux setup before installing a Kubernetes cluster. 
 
-== Usage
+== Quick Start
 
-`+ansible-playbook -l node01 setup.yaml+`
+* First we clone the repository
++
+`+git clone https://github.com/hufhend/ansible.git+`
 
-To be completed
+* All playbooks and roles are relative is the root directory _ansible_, we enter it.
++
+`+cd ansible+`
+
+* Copy the sample variables, modify them as needed
++
+`+cp -rfp sample/* .+`
+
+* And simply run the first playbook 
++
+`+ansible-playbook -i inventory.yaml -l node06 setup.yaml+`
+
+_To be continued_
 
 // This is a paragraph with a *bold* word and an _italicized_ word.
 

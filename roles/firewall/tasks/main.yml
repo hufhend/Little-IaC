@@ -1,0 +1,68 @@
+---
+- name: Install, configure, and start firewall
+  block:
+
+    - name: Allow everything and enable UFW
+      community.general.ufw:
+        state: enabled
+        policy: allow
+      when: ansible_os_family | lower != "debian"
+
+    # Sometimes it is desirable to let the sender know when traffic is
+    # being denied, rather than simply ignoring it. In these cases, use
+    # reject instead of deny. In addition, log rejected connections:
+    - name: Reject on Identification Protocol
+      ufw:
+        rule: reject
+        port: auth
+        log: yes
+        comment: Reject on auth
+
+    # ufw supports connection rate limiting, which is useful for protecting
+    # against brute-force login attacks. ufw will deny connections if an IP
+    # address has attempted to initiate 6 or more connections in the last
+    # 30 seconds. See  http://www.debian-administration.org/articles/187
+    # for details. Typical usage is:
+    - name: Defence against brute-force login attacks
+      ufw:
+        rule: limit
+        port: ssh
+        proto: tcp
+        comment: Limit brute-force login
+
+    - name: Allow ssh from anywhere
+      ufw:
+        rule: allow
+        name: OpenSSH
+        comment: Allow ssh from anywhere
+      when: ansible_os_family | lower != "redhat"
+
+    - name: Allow Prometheus Node Exporter
+      ufw:
+        rule: allow
+        port: '9100'
+        proto: tcp
+        src: 192.168.0.0/16
+        comment: Allow Node Exporter
+
+    # - name: Allow Grafana on port 3000
+    #   ufw:
+    #     rule: allow
+    #     port: '3000'
+    #     proto: tcp
+    #     comment: Allow Grafana
+    #   when: inventory_hostname in groups['mngm']
+
+    - name: Deny everything and enable UFW
+      ufw:
+        state: enabled
+        policy: deny
+    - name: Set logging
+      ufw:
+        logging: 'on'
+  when: firewall == true
+
+- name: Turn off UFW and delete all rules - if required
+  ufw:
+    state: reset
+  when: firewall == false

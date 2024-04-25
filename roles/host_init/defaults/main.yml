@@ -1,0 +1,10 @@
+---
+user_ansible: some_user
+pub_key_file: []
+  # If we want to use the local key in the new format
+  # - key: "{{ lookup('env','HOME') + '/.ssh/id_ed25519.pub' }}"
+  #   state: present
+  # - key: "{{ lookup('env','HOME') + '/.ssh/id_rsa.pub' }}"
+  #   state: absent
+  # - key: https://github.com/charlie.keys
+  #   state: absent

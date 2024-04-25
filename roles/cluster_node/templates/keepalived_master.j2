@@ -1,0 +1,18 @@
+# This file is maintained by Ansible
+# Any changes can be overwritten
+
+vrrp_instance {{ api_vrrp }} {
+
+            state {{ api_state }}
+            interface {{ ansible_default_ipv4.interface }}
+            virtual_router_id {{ api_vrid }}
+            priority {{ api_priority }}
+            advert_int 1
+            authentication {
+                auth_type PASS
+                auth_pass {{ api_auth_pass }}
+            }
+            virtual_ipaddress {
+                {{ api_ip }}
+            }
+        }

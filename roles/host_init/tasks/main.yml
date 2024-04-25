@@ -1,0 +1,64 @@
+---
+#   **********************************************
+#   Ansible initialization playbook - Ubuntu 22.04
+#   begin     : Wed 28 Feb 2024
+#   copyright : (c) 2024 Václav Dvorský
+#   email     : vaclav.dvorsky@dataforce.cz
+#   $Id: host-init.yaml, v1.22 30/03/2024
+#   **********************************************
+
+#   --------------------------------------------------------------------
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public Licence as published by
+#   the Free Software Foundation; either version 2 of the Licence, or
+#   (at your option) any later version.
+#   --------------------------------------------------------------------
+
+- name: Gather facts for first time
+  ansible.builtin.setup:
+
+- name: Ping all hosts
+  ansible.builtin.ping:
+  register: ping_result
+
+- name: Set hostname by inventory
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Add Ansible user
+  ansible.builtin.user:
+    name: "{{ user_ansible }}"
+    create_home: true
+    skeleton: /etc/skel
+    shell: /bin/bash
+    uid: 2000
+    state: present
+  when: ansible_user != user_ansible
+
+- name: Check if the sudoers file exists
+  ansible.builtin.stat:
+    path: "/etc/sudoers.d/{{ user_ansible }}"
+  register: sudoers_file
+
+- name: Upload the sudoers template
+  template:
+    src: templates/sudoers.j2
+    dest: "/etc/sudoers.d/{{ user_ansible }}"
+    owner: root
+    group: root
+    mode: '0640'
+  when: not sudoers_file.stat.exists
+
+- name: Add Ansible authorized ssh key
+  ansible.posix.authorized_key:
+    key: "{{ lookup('file', item.key) }}"
+    user: "{{ user_ansible }}"
+    state: "{{ item.state | default(omit) }}"
+  when: item.key is exists
+  loop: "{{ pub_key_file }}"
+
+- name: Add hostname to hosts
+  ansible.builtin.lineinfile:
+    dest: /etc/hosts
+    regexp: '^127\.0\.0\.1'
+    line: 127.0.0.1   localhost {{ inventory_hostname }}

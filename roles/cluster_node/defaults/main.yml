@@ -1,0 +1,21 @@
+---
+# Defaults file for cluster_node
+# Just as an example. Set production values via host_vars.
+
+# Uncommenting causes all tasks to pass
+# role: worker
+
+# Set state to BACKUP
+ing_state: BACKUP 
+# Set virtual router ID
+ing_vrid: 40
+# Define VRRP instance with name
+ing_vrrp: VI_2 
+# Set authentication password
+ing_auth_pass: 1234 
+# Specify virtual IP address
+ingress_ip: 192.168.88.254 
+# Set priority, lower will be next in order
+ing_priority: 150
+# Enable service keepalived
+# keepalived: true

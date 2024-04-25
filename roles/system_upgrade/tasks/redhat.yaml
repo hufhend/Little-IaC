@@ -1,0 +1,88 @@
+---
+- name: Check repositories
+  ansible.builtin.command: dnf makecache
+
+- name: Update repositories
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+
+- name: Add Prometheus repository
+  ansible.builtin.yum_repository:
+    name: prometheus
+    description: Prometheus repo
+    baseurl: https://packagecloud.io/prometheus-rpm/release/el/$releasever/$basearch
+    gpgcheck: no
+    enabled: yes
+    gpgkey: https://packagecloud.io/prometheus-rpm/release/gpgkey
+            https://raw.githubusercontent.com/lest/prometheus-rpm/master/RPM-GPG-KEY-prometheus-rpm
+
+# # FAILED! => {"changed": false, "msg": "dnf repolist parse failure: parsed another repo id before next status"}
+# - name: Ensure the crb repository is enabled
+#   community.general.dnf_config_manager:
+#     name: crb
+#     state: enabled
+#   when:
+#     - ansible_distribution == "Rocky"
+#     - ansible_distribution_major_version == "9"
+
+- name: Install epel packages
+  ansible.builtin.dnf:
+    name:
+      - epel-release
+      # - epel-next-release
+    state: latest
+  when: 
+    - ansible_distribution == "CentOS" or ansible_distribution == "Rocky"
+    - ansible_distribution_major_version == "9"
+
+- name: Install subscription-manager
+  ansible.builtin.dnf:
+    name:
+      - subscription-manager
+    state: latest
+  when: 
+    - ansible_distribution == "Rocky"
+    - ansible_distribution_major_version == "9"
+
+# - name: Install epel packages to RedHat
+#   ansible.builtin.dnf:
+#     name:
+#       - epel-release-latest-9.noarch.rpm
+#     state: latest
+#   when: 
+#     - ansible_distribution == "RedHat" 
+#     - ansible_distribution_major_version == "9"
+
+- name: Enable CodeReady Builder repository
+  rhsm_repository:
+    name: codeready-builder-for-rhel-9-x86_64-rpms
+    state: enabled
+  when:
+    - ansible_distribution == "RedHat" 
+    - ansible_distribution_major_version == "9"
+
+- name: Install useful packages
+  ansible.builtin.dnf:
+    name:
+      - ca-certificates
+      - curl
+      - htop
+      - screen
+      - mc
+      - sysstat
+      - fail2ban
+      - nfs-utils
+      - ethtool
+      - ufw
+      - langpacks-en
+      - langpacks-cs
+      - glibc-all-langpacks
+      - node_exporter
+    state: latest
+  
+- name: Start the fail2ban service
+  ansible.builtin.systemd:
+    name: fail2ban
+    state: started
+    enabled: true

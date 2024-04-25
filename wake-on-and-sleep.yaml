@@ -1,0 +1,49 @@
+---
+#   *********************************************
+#   Ansible Wake on LAN and sleep playbook
+#   begin     : Tue 27 Feb 2024
+#   copyright : (c) 2024 Václav Dvorský
+#   email     : hufhendr@gmail.com
+#   $Id: wake-on-and-sleep.yaml, v1.00 03/03/2024
+#   *********************************************
+
+#   --------------------------------------------------------------------
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public Licence as published by
+#   the Free Software Foundation; either version 2 of the Licence, or
+#   (at your option) any later version.
+#   --------------------------------------------------------------------
+
+- name: Wake up, check, update and go to sleep
+  hosts: sleep
+  become: true
+  gather_facts: false
+  vars:
+    ansible_callback_enabled: profile_tasks
+
+  pre_tasks:
+    - name: Send a magic Wake-on-LAN packet
+      community.general.wakeonlan:
+        mac: "{{ item }}"
+        port: 9
+      delegate_to: localhost
+      when: mac_adr is defined
+      loop: "{{ [mac_adr] }}"
+
+    - name: Wait for system to become reachable
+      ansible.builtin.wait_for_connection:
+
+  roles:
+    - role: host_init
+    - role: cluster_node
+
+  tasks:
+    - name: Info
+      debug:
+        msg: "Toto je task číslo 1, který bude proveden po rolích"
+
+  post_tasks:
+    - name: Shut down the machine
+      community.general.shutdown:
+        msg: "Shut down initiated by Ansible"
+        delay: 5

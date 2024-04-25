@@ -1,0 +1,6 @@
+---
+- name: Sets rules, enables or disables firewalls
+  hosts: all
+  become: true
+  roles:
+    - role: firewall

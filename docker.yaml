@@ -1,0 +1,6 @@
+---
+- name: Install Docker on the management node
+  hosts: all
+  become: true
+  roles:
+    - role: docker

@@ -1,0 +1,10 @@
+network:
+  version: 2
+  renderer: NetworkManager
+  ethernets:
+    {{ ansible_default_ipv4.interface }}:
+      dhcp4: true
+      dhcp4-overrides:
+        use-dns: false
+      nameservers:
+        addresses: [127.0.0.1]

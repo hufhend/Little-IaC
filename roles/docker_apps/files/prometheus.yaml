@@ -1,0 +1,20 @@
+---
+# Monitoring Prometheus with Grafana
+- name: Prometheus Git clone
+  ansible.builtin.git:
+    repo: 'https://github.com/hufhend/prometheus.git'
+    dest: /home/{{ docker_user }}/{{ docker_home }}/prometheus
+    force: true
+  become: true
+  become_user: root
+
+- name: Create a directory structure
+  ansible.builtin.command: sh init.sh
+  args:
+    chdir: /home/{{ docker_user }}/{{ docker_home }}/prometheus
+
+- name: Create and start Prometheus
+  community.docker.docker_compose_v2:
+    project_src: /home/{{ docker_user }}/{{ docker_home }}/prometheus
+    pull: always
+    build: always

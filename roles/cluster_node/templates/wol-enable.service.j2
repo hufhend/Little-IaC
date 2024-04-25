@@ -1,0 +1,14 @@
+# This file is maintained by Ansible
+# Any changes can be overwritten
+
+[Unit]
+Description=Enable Wake-up on LAN
+
+[Service]
+Type=oneshot
+# Check the card using 'ip a'
+# Also need to enable WOL in the BIOS
+ExecStart=/sbin/ethtool -s {{ ansible_default_ipv4.interface }} wol g
+
+[Install]
+WantedBy=basic.target

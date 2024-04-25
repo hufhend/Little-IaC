@@ -1,0 +1,71 @@
+---
+- name: Check repositories
+  ansible.builtin.command: apt --fix-broken install --yes
+
+- name: Update repositories
+  ansible.builtin.apt:
+    state: fixed
+    update_cache: true
+
+- name: System upgrade
+  ansible.builtin.apt:
+    name: "*"
+    state: latest
+  #  upgrade: dist
+    autoremove: true
+
+- name: Install useful packages
+  ansible.builtin.apt:
+    pkg:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - htop
+    - screen
+    - mc
+    - sysstat
+    - smartmontools
+    - lm-sensors
+    - fail2ban
+    - open-iscsi
+    - nfs-common
+    - ethtool
+    - prometheus-node-exporter
+    - ufw
+    - bash-completion
+
+- name: Enable sysstat service
+  ansible.builtin.lineinfile:
+    path: /etc/default/sysstat
+    regexp: '^ENABLED='
+    line: 'ENABLED="true"'
+    backup: true
+
+- name: Start the sysstat service
+  ansible.builtin.systemd:
+    name: sysstat
+    state: started
+    enabled: true
+
+- name: Start the fail2ban service
+  ansible.builtin.systemd:
+    name: fail2ban
+    state: started
+    enabled: true
+
+- name: Register the system release
+  raw: cat /etc/issue
+  register: system_release
+  changed_when: no
+  check_mode: no
+
+- name: Upload a modified sources.list
+  copy:
+    src: "{{ role_path }}/defaults/sources.list.armbian"
+    dest: /etc/apt/sources.list
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  # when: ansible_distribution_file_variety == 'Debian' and ansible_distribution_release == "jammy"
+  when: "'Armbian' in system_release.stdout and 'jammy' in system_release.stdout"

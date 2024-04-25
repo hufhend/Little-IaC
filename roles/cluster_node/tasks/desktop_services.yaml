@@ -1,0 +1,44 @@
+# disable desktop services
+- name: Disable service gvfs-afc
+  ansible.builtin.systemd_service:
+    name: gvfs-afc-volume-monitor
+    enabled: false
+    masked: yes
+- name: Disable service gvfs-daemon
+  ansible.builtin.systemd_service:
+    name: gvfs-daemon
+    enabled: false
+    masked: yes
+- name: Disable service gvfs-goa
+  ansible.builtin.systemd_service:
+    name: gvfs-goa-volume-monitor
+    enabled: false
+    masked: yes
+- name: Disable service gvfs-gphoto2
+  ansible.builtin.systemd_service:
+    name: gvfs-gphoto2-volume-monitor
+    enabled: false
+    masked: yes
+- name: Disable service gvfs-metadata
+  ansible.builtin.systemd_service:
+    name: gvfs-metadata
+    enabled: false
+    masked: yes
+- name: Disable service gvfs-mtp
+  ansible.builtin.systemd_service:
+    name: gvfs-mtp-volume-monitor
+    enabled: false
+    masked: yes
+- name: Disable service udisks2
+  ansible.builtin.systemd_service:
+    name: gvfs-udisks2-volume-monitor
+    enabled: false
+    masked: yes
+- name: Disable service gdm
+  ansible.builtin.systemd_service:
+    name: gdm
+    enabled: false
+- name: Disable service snap
+  ansible.builtin.systemd_service:
+    name: snapd
+    enabled: false

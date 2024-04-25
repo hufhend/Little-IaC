@@ -1,0 +1,89 @@
+---
+# Self-hosted DNS service
+- name: Check if Pi-hole exists
+  ansible.builtin.stat:
+    path: /home/{{ docker_user }}/{{ docker_home }}/pi-hole
+  register: pihole_dir_check
+
+- name: Build Pi-hole on OrangePi
+  block:
+    - name: Disable DNSStubListener
+      ansible.builtin.lineinfile:
+        path: /etc/systemd/resolved.conf
+        regexp: '^#?DNSStubListener='
+        line: 'DNSStubListener=no'
+        backrefs: yes
+      become: true
+      become_user: root
+
+    - name: Remove resolv.conf symlink
+      ansible.builtin.file:
+        path: /etc/resolv.conf
+        state: absent
+      become: true
+      become_user: root      
+
+    - name: Create symlink to resolv.conf
+      ansible.builtin.file:
+        src: /run/systemd/resolve/resolv.conf
+        dest: /etc/resolv.conf
+        state: link
+      become: true
+      become_user: root
+
+    - name: Restart systemd-resolved
+      ansible.builtin.systemd:
+        name: systemd-resolved
+        state: restarted
+      become: true
+      become_user: root
+
+    - name: Pi-hole Git clone
+      ansible.builtin.git:
+        repo: 'https://gitlab.torproject.org/hufhendr/pi-hole.git'
+        dest: /home/{{ docker_user }}/{{ docker_home }}/pi-hole
+        force: true
+
+    - name: Create a directory structure
+      ansible.builtin.command: sh init.sh
+      args:
+        chdir: /home/{{ docker_user }}/{{ docker_home }}/pi-hole
+
+    - name: Create and start Pi-hole
+      community.docker.docker_compose_v2:
+        project_src: /home/{{ docker_user }}/{{ docker_home }}/pi-hole
+      # register: output
+
+    - name: Find existing netplan files
+      ansible.builtin.find:
+        paths: /etc/netplan
+        patterns: "*"
+        file_type: file
+      register: netplan_files
+
+    - name: Rename existing netplan files
+      ansible.builtin.command:
+        cmd: mv "{{ netplan_file.path }}" "{{ netplan_file.path }}.bak"
+      loop: "{{ netplan_files.files }}"
+      loop_control:
+        loop_var: netplan_file
+      become: true
+      become_user: root
+
+    - name: Upload the netplan template
+      ansible.builtin.template:
+        src: templates/ansible_pihole.j2
+        dest: "/etc/netplan/ansible-pihole.yaml"
+        owner: root
+        group: root
+        mode: '0600'
+      become: true
+      become_user: root 
+
+    - name: Run netplan apply
+      ansible.builtin.command: netplan apply
+      become: true
+      become_user: root 
+
+  when: not pihole_dir_check.stat.exists
+

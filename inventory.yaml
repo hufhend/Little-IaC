@@ -1,0 +1,30 @@
+myhosts:
+  hosts:
+    node01:
+      ansible_host: node01
+    node02:
+      ansible_host: node02
+    node03:
+      ansible_host: node03
+    node04:
+      ansible_host: node04
+    node05:
+      ansible_host: node05
+    node06:
+      ansible_host: node06
+    node07:
+      ansible_host: node07
+    # node08:
+    #   ansible_host: node08
+
+  vars:
+    ansible_user: hufhendr
+master:
+  hosts:
+    node[01:02]:
+worker:
+  hosts:
+    node[03:05]:
+test:
+  hosts:
+    node[05:07]:

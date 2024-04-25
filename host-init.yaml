@@ -1,0 +1,34 @@
+---
+#   **********************************************
+#   Ansible initialization playbook - Ubuntu 22.04
+#   begin     : Wed 28 Feb 2024
+#   copyright : (c) 2024 Václav Dvorský
+#   email     : vaclav.dvorsky@dataforce.cz
+#   $Id: host-init.yaml, v1.21 28/02/2024
+#   **********************************************
+
+#   --------------------------------------------------------------------
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public Licence as published by
+#   the Free Software Foundation; either version 2 of the Licence, or
+#   (at your option) any later version.
+#   --------------------------------------------------------------------
+
+#   Role for initializing a new guest, adds a user for Ansible.
+#   Usage: 
+#   ansible-playbook -i group_vars/inventory.yaml -l select host-init.yaml -kK
+
+#   Options
+#   -k, --ask-pass
+#       Prompt for the SSH password instead of assuming key-based authentication with ssh-agent. 
+#   -K, --ask-sudo-pass
+#       Prompt for the password to use for playbook plays that request sudo access, if any. 
+
+- name: Initiation of new hosts
+  hosts: all
+  become: true
+  gather_facts: false
+  roles:
+    - role: host_init
+  vars:
+    ansible_user: hufhendr

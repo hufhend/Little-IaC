@@ -1,14 +1,15 @@
 = Ansible scripts for setting up Linux
-as a cluster node for Kubernetes
 Václav Dvorský <hufhendr@gmail.com>
-1.0, 25 April, 2022: AsciiDoc article template
+1.0, 25 April, 2022: Ansible readme
 :toc:
 :icons: font
 :url-quickref: https://github.com/hufhend/ansible
 
-These scripts were created as an Ansible learning exercise to automate the setup of a Linux role in a Kubernetes cluster. 
+These scripts were originally created as Ansible exercises. Later, they focused on automating Linux setup before installing a Kubernetes cluster. 
 
 == Usage
+
+`+ansible-playbook -l node01 setup.yaml+`
 
 To be completed
 

@@ -19,3 +19,6 @@ ingress_ip: 192.168.88.254
 ing_priority: 150
 # Enable service keepalived
 # keepalived: true
+
+# Usually a cluster node is not a destop
+desktop: false

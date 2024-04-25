@@ -35,7 +35,9 @@
 
   - name: Include tasks disable desktop services
     include_tasks: "{{ role_path }}/tasks/desktop_services.yaml"
-    when: "'ubuntu-desktop' in ubuntu_desktop_status.stdout or 'instal' in ubuntu_desktop_status.stdout"
+    when: 
+      - desktop != True
+      - "'ubuntu-desktop' in ubuntu_desktop_status.stdout or 'instal' in ubuntu_desktop_status.stdout"
 
   # set and enable Wake-on-LAN
   - name: Add Wake-on-LAN service

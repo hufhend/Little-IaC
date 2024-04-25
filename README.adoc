@@ -25,6 +25,23 @@ These scripts were originally created as Ansible exercises. Later, they focused 
 +
 `+ansible-playbook -i inventory.yaml -l node06 setup.yaml+`
 
+=== Common parameters
+
+.Common parameters
+|===
+|Name |Description|Default value
+
+|`+docker_user+`
+|user for the docker role
+|`+ansible_user+`
+
+|`+role+`
+|node role in the cluster: master or worker
+|`+computer+`
+|===
+
+The default setting of the _comuter_ role causes tasks from the cluster_node to not be executed. The required value should be set in host_vars.
+
 _To be continued_
 
 // This is a paragraph with a *bold* word and an _italicized_ word.

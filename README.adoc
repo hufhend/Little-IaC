@@ -25,7 +25,7 @@ These scripts were originally created as Ansible exercises. Later, they focused 
 +
 `+ansible-playbook -i inventory.yaml -l node06 setup.yaml+`
 
-=== Common parameters
+== Detailed description
 
 .Common parameters
 |===
@@ -38,9 +38,25 @@ These scripts were originally created as Ansible exercises. Later, they focused 
 |`+role+`
 |node role in the cluster: master or worker
 |`+computer+`
+
+|`+firewall+`
+|decides whether to turn on the firewall
+|`+false+`
 |===
 
 The default setting of the _comuter_ role causes tasks from the cluster_node to not be executed. The required value should be set in host_vars.
+
+== First launch
+Before the first launch, we need to assign a new computer and user to run Ansible. A special playbook and roles are used for this.
+
+=== Playbook host_init 
+After a clean Linux installation, we usually have one regular user with sudo privileges. This is usually enough for us to manage the system from the command line, but for Ansible we need additional settings.
+The host_init role sets the default user to run Ansible, uploads the ssh keys, adds it to sudoers, and sets the hostname.
+
+==== Usage
+
+`+ansible-playbook -i inventory.yaml -l host07 host-init.yaml -kK+`
+
 
 _To be continued_
 

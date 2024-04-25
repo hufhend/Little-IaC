@@ -7,6 +7,8 @@ Václav Dvorský <hufhendr@gmail.com>
 
 These scripts were originally created as Ansible exercises. Later, they focused on automating Linux setup before installing a Kubernetes cluster. 
 
+WARNING: The intended use is on a new bare metal installation of Linux, deployment on already running machines could be problematic.
+
 == Quick Start
 
 * First we clone the repository
@@ -24,6 +26,8 @@ These scripts were originally created as Ansible exercises. Later, they focused 
 * And simply run the first playbook 
 +
 `+ansible-playbook -i inventory.yaml -l node06 setup.yaml+`
+
+TIP: I recommend to try the functions in a non-production environment, for example via Vagrant.
 
 == Detailed description
 

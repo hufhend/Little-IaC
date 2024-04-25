@@ -1,0 +1,35 @@
+Vagrant.configure("2") do |config|
+
+  (1..7).each do |i|
+    ip_suffix = i + 10
+    user = "hufhendr"
+    config.vm.define "vm-#{i}" do |node|
+      node.vm.box = "bento/ubuntu-22.04"
+      node.vm.network "private_network", ip: "192.168.56.#{ip_suffix}", auto_config: true
+      # node.vm.network "public_network"
+      
+      node.vm.synced_folder "share/", "/mnt/share"
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = 3072
+        vb.cpus = 2
+      end
+      node.vm.provision "shell", inline: <<-SHELL
+        apt-get update
+        hostnamectl set-hostname node#{i}
+      SHELL
+      node.vm.provision "shell" do |s|
+        ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_rsa.pub").first.strip
+        s.inline = <<-SHELL
+          echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys
+          echo #{ssh_pub_key} >> /root/.ssh/authorized_keys
+          useradd -m -s /bin/bash -G sudo #{user}
+          cp -pr /home/vagrant/.ssh /home/#{user}/
+          chown -R #{user}:#{user} /home/#{user}/.ssh
+          echo "#{user} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/#{user}
+        SHELL
+      end
+      node.vm.provision "shell", inline: "echo hello #{i}"
+    end
+  end
+end

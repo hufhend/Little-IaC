@@ -1,31 +1,34 @@
 ---
 - name: Set up Ubuntu as a node in a Kubernetes cluster
   block:
-  
-  # block sleeping - especially for NTB
-  - name: Modify HandleLidSwitch setting
-    ansible.builtin.lineinfile:
-      path: /etc/systemd/logind.conf
-      regexp: '^#?HandleLidSwitch='
-      line: 'HandleLidSwitch=ignore'
+  # Human over cluster, Kubernetes can handle it
+  - name: Turn off all sleep sensors
+    block:
+      # block sleeping - especially for NTB
+    - name: Modify HandleLidSwitch setting
+      ansible.builtin.lineinfile:
+        path: /etc/systemd/logind.conf
+        regexp: '^#?HandleLidSwitch='
+        line: 'HandleLidSwitch=ignore'
 
-  - name: Modify IdleAction setting
-    ansible.builtin.lineinfile:
-      path: /etc/systemd/logind.conf
-      regexp: '^#?IdleAction='
-      line: 'IdleAction=ignore'
+    - name: Modify IdleAction setting
+      ansible.builtin.lineinfile:
+        path: /etc/systemd/logind.conf
+        regexp: '^#?IdleAction='
+        line: 'IdleAction=ignore'
 
-  - name: Check if UPower exists
-    ansible.builtin.stat:
-      path: /etc/UPower/UPower.conf
-    register: upower_conf
+    - name: Check if UPower exists
+      ansible.builtin.stat:
+        path: /etc/UPower/UPower.conf
+      register: upower_conf
 
-  - name: Modify IgnoreLid setting
-    ansible.builtin.lineinfile:
-      path: /etc/UPower/UPower.conf
-      regexp: '^IgnoreLid='
-      line: 'IgnoreLid=true'
-    when: upower_conf.stat.exists
+    - name: Modify IgnoreLid setting
+      ansible.builtin.lineinfile:
+        path: /etc/UPower/UPower.conf
+        regexp: '^IgnoreLid='
+        line: 'IgnoreLid=true'
+      when: upower_conf.stat.exists
+    when: desktop != True
 
   # block the start of GNOME Virtual File System
   - name: Check if ubuntu-desktop is installed

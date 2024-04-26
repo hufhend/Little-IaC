@@ -1,11 +1,17 @@
 ---
 - hosts: all
   become: true
-  vars:
-    container_count: 4
-    default_container_name: docker
-    default_container_image: ubuntu
-    default_container_command: sleep 1d
+  tasks:
+  - name: Disable service gdm
+    ansible.builtin.systemd_service:
+      name: gdm
+      enabled: true
 
-  roles:
-    - role: docker
+  # vars:
+  #   container_count: 4
+  #   default_container_name: docker
+  #   default_container_image: ubuntu
+  #   default_container_command: sleep 1d
+
+  # roles:
+  #   - role: docker

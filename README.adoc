@@ -46,11 +46,11 @@ TIP: I recommend to try the functions in a non-production environment, for examp
 |`+firewall+`
 |decides whether to turn on the firewall
 |`+false+`
-|===
 
 |`+desktop+`
 |determines if the computer is used by a human
 |`+false+`
+|===
 
 The default setting of the _comuter_ role causes tasks from the cluster_node to not be executed. The required value should be set in host_vars.
 

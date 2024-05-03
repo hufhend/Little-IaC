@@ -22,9 +22,7 @@ ing_priority: 150
 
 # Usually a cluster node is not a destop
 desktop: false
-
 # Day for complete maintenance
 maintenance: "01"
-
 # Always deploy ansible cron unless otherwise specified
-cron: ansible
+cron: choose # blocking for now

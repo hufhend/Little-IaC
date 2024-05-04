@@ -1,0 +1,10 @@
+---
+role: combi
+ing_state: BACKUP
+ing_priority: 70
+api_priority: 70
+cron: K8s
+maintenance: "01"
+# keepalived: false
+# desktop: true
+# orange: true

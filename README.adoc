@@ -70,7 +70,7 @@ The host_init role sets the default user to run Ansible, uploads the ssh keys, a
 
 `+ansible-playbook -i inventory.yaml -l host07 host-init.yaml -kK+`
 
-= Newly added features
+== Newly added features
 
 5 May 2024 
 

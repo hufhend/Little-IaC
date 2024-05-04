@@ -5,8 +5,10 @@
 # Any changes can be overwritten
 
 # Check the first disk
+{% if first_disk is defined and second_disk != 'none' %}
 00  1   *  *  0-5    sudo /usr/sbin/smartctl -t short {{ first_disk }} 	2>/dev/null
 00  2   *  *  sat    sudo /usr/sbin/smartctl -t long  {{ first_disk }} 	2>/dev/null   # Saturday
+{% endif %}
 
 # Check the second disk
 {% if second_disk is defined and second_disk != 'none' %}

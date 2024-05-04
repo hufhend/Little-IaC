@@ -1,6 +1,6 @@
 = Ansible scripts for setting up Linux
 Václav Dvorský <hufhendr@gmail.com>
-1.0, 25 April, 2022: Ansible readme
+1.1, 25 April, 2022: Ansible readme
 :toc:
 :icons: font
 :url-quickref: https://github.com/hufhend/ansible
@@ -50,6 +50,11 @@ TIP: I recommend to try the functions in a non-production environment, for examp
 |`+desktop+`
 |determines if the computer is used by a human
 |`+false+`
+
+
+|`+cron+`
+|enables crontab setting at K8s value
+|`+choose+`
 |===
 
 The default setting of the _comuter_ role causes tasks from the cluster_node to not be executed. The required value should be set in host_vars.
@@ -64,6 +69,14 @@ The host_init role sets the default user to run Ansible, uploads the ssh keys, a
 ==== Usage
 
 `+ansible-playbook -i inventory.yaml -l host07 host-init.yaml -kK+`
+
+= Newly added features
+
+5 May 2024 
+
+* Added functionality to insert crontabs into K8s nodes, basic disk health check and update underlying systems including restart for maintenance
+* Added example host_vars
+
 
 
 _To be continued_

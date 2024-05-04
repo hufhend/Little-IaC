@@ -27,7 +27,9 @@ desktop: false
 
 # Settings for crontab
 # Day for complete maintenance including restart
-maintenance: "01"
+mntd: "01"
+# Minute to download updates
+mntm: "47"
 # Setting the value to K8s to enable crontab 
 cron: choose
 # The device of the first disk

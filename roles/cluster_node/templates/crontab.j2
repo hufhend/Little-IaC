@@ -17,8 +17,8 @@
 {% endif %}
 
 # Complete system update
-47  5   *  *   *     sudo apt -f install && sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y && sudo apt autoremove -y
+{{ mntm }}  5   *  *   *     sudo apt -f install && sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y && sudo apt autoremove -y
 
 # Shut down the node and restart
-30  6  {{ maintenance }}  *   *     /usr/local/bin/kubectl drain --ignore-daemonsets --delete-emptydir-data {{ inventory_hostname }} && sudo init 6
-40  6  {{ maintenance }}  *   *     /usr/local/bin/kubectl uncordon {{ inventory_hostname }}
+30  6  {{ mntd }}  *   *     /usr/local/bin/kubectl drain --ignore-daemonsets --delete-emptydir-data {{ inventory_hostname }} && sudo init 6
+40  6  {{ mntd }}  *   *     /usr/local/bin/kubectl uncordon {{ inventory_hostname }}

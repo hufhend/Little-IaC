@@ -1,16 +1,18 @@
-# This file is maintained by Ansible
-# Any changes can be overwritten
-
 # For more information see the manual pages of crontab(5) and cron(8)
 # m h dom mon dow   command
 
+# This file is maintained by Ansible
+# Any changes can be overwritten
+
 # Check the first disk
-00  1   *  *  0-5    sudo /usr/sbin/smartctl -t short /dev/sda 	2>/dev/null
-00  2   *  *  sat    sudo /usr/sbin/smartctl -t long  /dev/sda 	2>/dev/null   # Saturday, duration 90 min
+00  1   *  *  0-5    sudo /usr/sbin/smartctl -t short {{ first_disk }} 	2>/dev/null
+00  2   *  *  sat    sudo /usr/sbin/smartctl -t long  {{ first_disk }} 	2>/dev/null   # Saturday
 
 # Check the second disk
-20  1   *  *  1-6    sudo /usr/sbin/smartctl -t short /dev/sdb 	2>/dev/null
-00  2   *  *  sun    sudo /usr/sbin/smartctl -t long  /dev/sdb 	2>/dev/null   # Sunday,   duration  2 min
+{% if second_disk is defined and second_disk != 'none' %}
+20  1   *  *  1-6    sudo /usr/sbin/smartctl -t short {{ second_disk }} 	2>/dev/null
+00  2   *  *  sun    sudo /usr/sbin/smartctl -t long  {{ second_disk }} 	2>/dev/null   # Sunday
+{% endif %}
 
 # Complete system update
 47  5   *  *   *     sudo apt -f install && sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y && sudo apt autoremove -y

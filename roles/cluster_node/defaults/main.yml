@@ -1,10 +1,12 @@
 ---
 # Defaults file for cluster_node
 # Just as an example. Set production values via host_vars.
+# Take a look at the sample.
 
 # Uncommenting causes all tasks to pass
 # role: worker
 
+# Settings for high availability
 # Set state to BACKUP
 ing_state: BACKUP 
 # Set virtual router ID
@@ -22,7 +24,13 @@ ing_priority: 150
 
 # Usually a cluster node is not a destop
 desktop: false
-# Day for complete maintenance
+
+# Settings for crontab
+# Day for complete maintenance including restart
 maintenance: "01"
-# Always deploy ansible cron unless otherwise specified
-cron: choose # blocking for now
+# Setting the value to K8s to enable crontab 
+cron: choose
+# The device of the first disk
+first_disk: /dev/sda
+# The device of the second disk
+second_disk: none

@@ -1,10 +1,20 @@
 ---
-role: combi
+# Description can be found in defaults
+role: worker
 ing_state: BACKUP
 ing_priority: 70
-api_priority: 70
 cron: K8s
 mntd: "01"
 # keepalived: false
-# desktop: true
+desktop: true
 # orange: true
+
+# This isn't ideal because it's done on every run, but it works and it's not that common
+# Other tasks are written in the same way
+addition_cron:
+  - name: "Documents backup"
+    minute: "30"
+    hour: "3"
+    job: "sudo /usr/bin/rsync --delete -ra /home/data/documents/ /data/backup/documents"
+    user: "{{ ansible_user }}"
+    state: present

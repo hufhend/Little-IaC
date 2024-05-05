@@ -126,6 +126,17 @@
       mode: '0600'
     when: cron == 'K8s'
 
+  - name: Add additional tasks to crontab
+    ansible.builtin.cron:
+      name: "{{ item.name }}"
+      minute: "{{ item.minute }}"
+      hour: "{{ item.hour }}"
+      job: "{{ item.job }}"
+      user: "{{ item.user }}"
+      state: "{{ item.state }}"
+    loop: "{{ addition_cron }}"
+    when: addition_cron is defined
+
   when: role in ['combi', 'master', 'worker']
   ignore_errors: true
 

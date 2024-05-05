@@ -116,15 +116,16 @@
         name: kubectl
         state: present
     when: role == 'worker'
-  
+
+  - name: Add Kubernetes crontab
+    ansible.builtin.template:
+      src: templates/crontab.j2
+      dest: "/var/spool/cron/crontabs/{{ ansible_user }}"
+      owner: "{{ ansible_user }}"
+      group: crontab
+      mode: '0600'
+    when: cron == 'K8s'
+
   when: role in ['combi', 'master', 'worker']
   ignore_errors: true
 
-- name: Add crontab
-  ansible.builtin.template:
-    src: templates/crontab.j2
-    dest: "/var/spool/cron/crontabs/{{ ansible_user }}"
-    owner: "{{ ansible_user }}"
-    group: crontab
-    mode: '0600'
-  when: cron == 'K8s'

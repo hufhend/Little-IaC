@@ -117,6 +117,14 @@
         state: present
     when: role == 'worker'
 
+  - name: Create link to kubectl
+    ansible.builtin.file:
+      src: /usr/local/bin/kubectl
+      dest: /usr/bin/kubectl
+      state: link
+    when: role == 'master' or role == 'combi'
+    ignore_errors: true
+
   - name: Add Kubernetes crontab
     ansible.builtin.template:
       src: templates/crontab.j2

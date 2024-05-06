@@ -1,11 +1,12 @@
 ---
+# Help playbook for solving ad hoc tasks
 - hosts: all
   become: true
   tasks:
-  - name: Disable service gdm
-    ansible.builtin.systemd_service:
-      name: gdm
-      enabled: true
+  # - name: Disable service gdm
+  #   ansible.builtin.systemd_service:
+  #     name: gdm
+  #     enabled: true
 
   # vars:
   #   container_count: 4
@@ -15,3 +16,16 @@
 
   # roles:
   #   - role: docker
+
+  - name: Find location of kubectl binary
+    find:
+      paths: /usr
+      patterns: kubectl
+      recurse: true
+      file_type: any
+    register: kubectl_files
+
+  - name: Print found locations of kubectl binary
+    debug:
+      msg: "kubectl binary found at location {{ item.path }}"
+    loop: "{{ kubectl_files.files }}"

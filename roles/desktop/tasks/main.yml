@@ -1,69 +1,103 @@
 ---
-- name: Ansible user doesn't log in via GUI
-  ansible.builtin.lineinfile:
-    path: "/var/lib/AccountsService/users/{{ ansible_user }}"
-    regexp: '^SystemAccount='
-    line: 'SystemAccount=true'
-
-- name: Install smart desktop packages
-  ansible.builtin.apt:
-    pkg:
-    - openvpn
-    - network-manager-openvpn
-    - network-manager-openvpn-gnome
-    - openvpn-systemd-resolved
-    - virtualbox
-    - virtualbox-guest-additions-iso
-    - virtualbox-ext-pack
-    - nextcloud-desktop
-    - flameshot
-    - solaar
-    - copyq
-    - steam
-
-- name: Install Google Chrome
+- name: Installation and setup of a desktop computer with GUI
   block:
-  - name: Download Google Chrome DEB package
-    ansible.builtin.get_url:
-      url: https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-      dest: /tmp/google-chrome-stable_current_amd64.deb
+  - name: Ansible user doesn't log in via GUI
+    ansible.builtin.lineinfile:
+      path: "/var/lib/AccountsService/users/{{ ansible_user }}"
+      regexp: '^SystemAccount='
+      line: 'SystemAccount=true'
 
+  - name: Install smart desktop packages
+    ansible.builtin.apt:
+      pkg:
+      - openvpn
+      - network-manager-openvpn
+      - network-manager-openvpn-gnome
+      - openvpn-systemd-resolved
+      - virtualbox
+      - virtualbox-guest-additions-iso
+      - virtualbox-ext-pack
+      - nextcloud-desktop
+      - flameshot
+      - solaar
+      - copyq
+      - steam
+
+  # Chrome browser
   - name: Install Google Chrome
-    ansible.builtin.apt:
-      deb: /tmp/google-chrome-stable_current_amd64.deb
-      state: present
-    ignore_errors: true
-  when: chrome == True
+    block:
+    - name: Download Google Chrome DEB package
+      ansible.builtin.get_url:
+        url: https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+        dest: /tmp/google-chrome-stable_current_amd64.deb
 
-- name: Install OnlyOffice
-  block:
-  - name: Download OnlyOffice DEB package
-    ansible.builtin.get_url:
-      url: https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb
-      dest: /tmp/onlyoffice-desktopeditors_amd64.deb
+    - name: Install Google Chrome
+      ansible.builtin.apt:
+        deb: /tmp/google-chrome-stable_current_amd64.deb
+        state: present
+      ignore_errors: true
+    when: chrome == True
 
+  # OnlyOffice desktop
   - name: Install OnlyOffice
-    ansible.builtin.apt:
-      deb: /tmp/onlyoffice-desktopeditors_amd64.deb
-      state: present
-  when: onlyoffice == True
+    block:
+    - name: Download OnlyOffice DEB package
+      ansible.builtin.get_url:
+        url: https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb
+        dest: /tmp/onlyoffice-desktopeditors_amd64.deb
 
-- name: Install Brave browser
-  block:
-  - name: Add Brave GPG apt key
-    ansible.builtin.apt_key:
-      url: https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
-      keyring: /usr/share/keyrings/brave-browser-archive-keyring.gpg
-      state: present
+    - name: Install OnlyOffice
+      ansible.builtin.apt:
+        deb: /tmp/onlyoffice-desktopeditors_amd64.deb
+        state: present
+    when: onlyoffice == True
 
-  - name: Add Brave repository
-    ansible.builtin.apt_repository:
-      repo: deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main
-      state: present
-      filename: brave-browser-release.list
-      
+  # Brave browser
   - name: Install Brave browser
-    ansible.builtin.apt:
-      name: brave-browser
-      state: present
-  when: brave == True
+    block:
+    - name: Add Brave GPG apt key
+      ansible.builtin.apt_key:
+        url: https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+        keyring: /usr/share/keyrings/brave-browser-archive-keyring.gpg
+        state: present
+
+    - name: Add Brave repository
+      ansible.builtin.apt_repository:
+        repo: deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main
+        state: present
+        filename: brave-browser-release.list
+        
+    - name: Install Brave browser
+      ansible.builtin.apt:
+        name: brave-browser
+        state: present
+    when: brave == True
+
+    # MEGA Desktop App
+  - name: Install megasync
+    block:
+    - name: Download megasync DEB package
+      ansible.builtin.get_url:
+        url: https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/amd64/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
+        dest: /tmp/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
+
+    - name: Install megasync
+      ansible.builtin.apt:
+        deb: /tmp/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
+        state: present
+    
+    - name: Download mega manager DEB package
+      ansible.builtin.get_url: 
+        url: https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/amd64/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
+        dest: /tmp/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
+
+    - name: Install mega nautilus
+      ansible.builtin.apt:
+        deb: /tmp/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
+        state: present
+    when: mega == True
+
+  when:
+    - ansible_distribution == "Ubuntu"
+    - ansible_distribution_release == "jammy"
+    - desktop == true

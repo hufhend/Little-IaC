@@ -1,6 +1,6 @@
 ---
-# defaults file for desktop
 # This needs to be enabled in host-vars
 firewall: true
 chrome: false
 onlyoffice: false
+brave: false

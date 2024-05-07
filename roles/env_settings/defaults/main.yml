@@ -1,2 +1,3 @@
 ---
-# defaults file for env_settings
+# default value for language setting
+language: english

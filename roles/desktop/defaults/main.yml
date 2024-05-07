@@ -1,15 +1,16 @@
 ---
-# Enable desktop
-desktop: true
-# Allow installation of larger software packages
-chrome: false
-onlyoffice: false
-brave: false
-mega: false
+# Globally leave the desktop disabled, let it be enabled in host-vars
+desktop: false
+# Set Czech language for desktop
+language: czech
 
 # Enable firewall setup and startup
 # This needs to be enabled in host-vars
 firewall: true
 safe_network: 192.168.88.0/24
-# Set Czech language for desktop
-language: czech
+
+# Allow installation of larger software packages
+chrome: false
+onlyoffice: false
+brave: false
+mega: false

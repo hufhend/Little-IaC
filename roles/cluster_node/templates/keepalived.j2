@@ -1,5 +1,6 @@
 # This file is maintained by Ansible
 # Any changes can be overwritten
+{% if role == 'master' or role == 'combi' %}
 
 vrrp_instance {{ api_vrrp }} {
 
@@ -16,6 +17,8 @@ vrrp_instance {{ api_vrrp }} {
                 {{ api_ip }}
             }
         }
+{% endif %}
+{% if role == 'worker' or role == 'combi' %}
 
 vrrp_instance {{ ing_vrrp }} {
 
@@ -32,3 +35,4 @@ vrrp_instance {{ ing_vrrp }} {
                 {{ ingress_ip }}
             }
         }
+{% endif %}

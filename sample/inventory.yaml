@@ -12,8 +12,12 @@ myhosts:
       ansible_host: node05
     node06:
       ansible_host: node06
+      mac_adr: 0c:94:4b:2c:31:7e
+      wol_server: localhost
     node07:
       ansible_host: node07
+      mac_adr: 01:e8:d0:a8:66:8a
+      wol_server: node01
 
   vars:
     ansible_user: hufhendr
@@ -24,5 +28,9 @@ worker:
   hosts:
     node[03:05]:
 test:
+  hosts:
+    node[06:07]:
+
+sleep:
   hosts:
     node[06:07]:

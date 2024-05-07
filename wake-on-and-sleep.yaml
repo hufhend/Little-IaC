@@ -4,7 +4,7 @@
 #   begin     : Tue 27 Feb 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: wake-on-and-sleep.yaml, v1.01 07/05/2024
+#   $Id: wake-on-and-sleep.yaml, v1.02 07/05/2024
 #   *********************************************
 
 #   --------------------------------------------------------------------
@@ -22,14 +22,15 @@
     ansible_callback_enabled: profile_tasks
 
   pre_tasks:
+    # See sample/inventory.yaml for more
     - name: Send a magic Wake-on-LAN packet
       community.general.wakeonlan:
         mac: "{{ item }}"
         port: 9
-      delegate_to: localhost
+      delegate_to: "{{ wol_server }}"
       when: mac_adr is defined
       loop: "{{ [mac_adr] }}"
-
+      
     - name: Wait for system to become reachable
       ansible.builtin.wait_for_connection:
         delay: 40

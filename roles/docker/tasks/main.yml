@@ -1,60 +1,42 @@
 ---
-- name: Install required system packages
-  ansible.builtin.apt:
-    pkg:
-      - apt-transport-https
-      - ca-certificates
-      - curl
-      - software-properties-common
-      # - python3-pip
-      # - python3-setuptools
-      # - python3-requests
-      # - virtualenv
-    state: latest
-    update_cache: true
+- name:
+  block:
+  - name: Install required system packages
+    ansible.builtin.apt:
+      pkg:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+      state: latest
+      update_cache: true
 
-- name: Add Docker GPG apt Key
-  ansible.builtin.apt_key:
-    url: https://download.docker.com/linux/ubuntu/gpg
-    keyring: /etc/apt/trusted.gpg.d/docker.gpg
-    state: present
+  - name: Add Docker GPG apt Key
+    ansible.builtin.apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      keyring: /etc/apt/trusted.gpg.d/docker.gpg
+      state: present
 
-# - name: Add Docker Repository
-#   ansible.builtin.deb822_repository:
-#     name: docker
-#     uris: https://download.docker.com/linux/ubuntu
+  - name: Add Docker repository
+    ansible.builtin.apt_repository:
+      repo: deb https://download.docker.com/linux/ubuntu focal stable
+      state: present
+      filename: docker
 
-- name: Add Docker repository
-  ansible.builtin.apt_repository:
-    repo: deb https://download.docker.com/linux/ubuntu focal stable
-    state: present
-    filename: docker
+  - name: Install Docker
+    ansible.builtin.apt:
+      pkg:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+        - docker-compose-plugin
+      state: latest
+      update_cache: true
 
-# - name: Add bookworm repository
-#   ansible.builtin.apt_repository:
-#     repo: deb [signed-by=/usr/share/keyrings/armbian.gpg] http://beta.armbian.com bookworm main bookworm-utils bookworm-desktop
-#     state: present
-#     filename: armbian
-#   when: ansible_distribution == "Armbian"
+  - name: Add current user to docker group
+    ansible.builtin.user:
+      name: "{{ docker_user }}"
+      groups: docker
+      append: yes
 
-- name: Install Docker
-  ansible.builtin.apt:
-    pkg:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      - docker-compose-plugin
-      # - python3-docker
-      # - python3-compose
-    state: latest
-    update_cache: true
-
-# - name: Install Docker Module for Python
-#   ansible.builtin.pip:
-#     name: docker
-
-- name: Add current user to docker group
-  ansible.builtin.user:
-    name: "{{ docker_user }}"
-    groups: docker
-    append: yes
+  when: role not in ['combi', 'master', 'worker']

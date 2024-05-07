@@ -4,7 +4,7 @@
 #   begin     : Tue 27 Feb 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: wake-on-and-sleep.yaml, v1.00 03/03/2024
+#   $Id: wake-on-and-sleep.yaml, v1.01 07/05/2024
 #   *********************************************
 
 #   --------------------------------------------------------------------
@@ -32,15 +32,20 @@
 
     - name: Wait for system to become reachable
       ansible.builtin.wait_for_connection:
+        delay: 40
+        timeout: 80
 
   roles:
     - role: host_init
+    - role: system_upgrade
+    - role: env_settings
+    - role: firewall
     - role: cluster_node
 
   tasks:
     - name: Info
       debug:
-        msg: "Toto je task číslo 1, který bude proveden po rolích"
+        msg: "This is task number 1, it will be done after rolls"
 
   post_tasks:
     - name: Shut down the machine

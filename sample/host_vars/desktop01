@@ -5,3 +5,5 @@ onlyoffice: true
 # Enable firewall setup and startup
 firewall: true
 safe_network: 192.168.88.0/24
+# Set Czech language for desktop
+language: czech

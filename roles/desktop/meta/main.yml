@@ -1,0 +1,16 @@
+galaxy_info:
+  author: Václav Dvorský
+  description: 
+  company: 
+
+  license: GPL-3.0-or-later
+
+  min_ansible_version: 2.1
+  platforms:
+    - name: Ubuntu
+      versions:
+        - 22.04
+
+  galaxy_tags: []
+
+dependencies: []

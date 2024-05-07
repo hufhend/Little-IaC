@@ -1,0 +1,25 @@
+---
+#   ***************************************
+#   Ansible Desktop playbook - Ubuntu 22.04
+#   begin     : Tue 7 May 2024
+#   copyright : (c) 2024 Václav Dvorský
+#   email     : hufhendr@gmail.com
+#   $Id: desktop.yaml, v1.00 07/05/2024
+#   ***************************************
+
+#   --------------------------------------------------------------------
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public Licence as published by
+#   the Free Software Foundation; either version 2 of the Licence, or
+#   (at your option) any later version.
+#   --------------------------------------------------------------------
+
+- name: Set up a desktop operating system
+  hosts: all
+  become: true
+  roles:
+    - role: system_upgrade
+    - role: env_settings
+    - role: docker
+    - role: firewall
+    - role: desktop

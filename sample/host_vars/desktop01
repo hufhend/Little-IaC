@@ -1,0 +1,7 @@
+---
+# Allow installation of larger software packages
+chrome: true
+onlyoffice: true
+# Enable firewall setup and startup
+firewall: true
+safe_network: 192.168.88.0/24

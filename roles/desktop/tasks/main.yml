@@ -21,22 +21,28 @@
     - copyq
     - steam
 
-- name: Download Google Chrome DEB package
-  ansible.builtin.get_url:
-    url: https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-    dest: /tmp/google-chrome-stable_current_amd64.deb
-
 - name: Install Google Chrome
-  ansible.builtin.apt:
-    deb: /tmp/google-chrome-stable_current_amd64.deb
-    state: present
+  block:
+  - name: Download Google Chrome DEB package
+    ansible.builtin.get_url:
+      url: https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+      dest: /tmp/google-chrome-stable_current_amd64.deb
 
-- name: Download OnlyOffice DEB package
-  ansible.builtin.get_url:
-    url: https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb
-    dest: /tmp/onlyoffice-desktopeditors_amd64.deb
+  - name: Install Google Chrome
+    ansible.builtin.apt:
+      deb: /tmp/google-chrome-stable_current_amd64.deb
+      state: present
+  when: chrome == True
 
 - name: Install OnlyOffice
-  ansible.builtin.apt:
-    deb: /tmp/onlyoffice-desktopeditors_amd64.deb
-    state: present
+  block:
+  - name: Download OnlyOffice DEB package
+    ansible.builtin.get_url:
+      url: https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb
+      dest: /tmp/onlyoffice-desktopeditors_amd64.deb
+
+  - name: Install OnlyOffice
+    ansible.builtin.apt:
+      deb: /tmp/onlyoffice-desktopeditors_amd64.deb
+      state: present
+  when: onlyoffice == True

@@ -78,6 +78,10 @@ The host_init role sets the default user to run Ansible, uploads the ssh keys, a
 * Added example host_vars
 * Add additional tasks for the crontab, they will only run if they are defined. See the example for details.
 
+7 May 2024
+
+* Added role for laptops or desktop computers with GUI on Ubuntu Linux. It is simple but functional.
+
 _To be continued_
 
 // This is a paragraph with a *bold* word and an _italicized_ word.

@@ -28,30 +28,24 @@
         rule: limit
         port: ssh
         proto: tcp
+        src: "{{ safe_network }}"
         comment: Limit brute-force login
 
     - name: Allow ssh from anywhere
       ufw:
         rule: allow
         name: OpenSSH
-        comment: Allow ssh from anywhere
+        src: "{{ safe_network }}"
+        comment: Allow ssh from a safe network
       when: ansible_os_family | lower != "redhat"
 
     - name: Allow Prometheus Node Exporter
       ufw:
         rule: allow
-        port: '9100'
+        port: '9101'
         proto: tcp
-        src: 192.168.0.0/16
+        src: "{{ safe_network }}"
         comment: Allow Node Exporter
-
-    # - name: Allow Grafana on port 3000
-    #   ufw:
-    #     rule: allow
-    #     port: '3000'
-    #     proto: tcp
-    #     comment: Allow Grafana
-    #   when: inventory_hostname in groups['mngm']
 
     - name: Deny everything and enable UFW
       ufw:

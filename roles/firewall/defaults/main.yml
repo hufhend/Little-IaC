@@ -1,3 +1,3 @@
 ---
 firewall: false
-
+safe_network: 192.168.0.0/16

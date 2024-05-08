@@ -5,5 +5,5 @@ role: computer
 
 # Deploy conternerized applications
 gitea: false
-pi-hole: false
+pihole: false
 prometheus: false

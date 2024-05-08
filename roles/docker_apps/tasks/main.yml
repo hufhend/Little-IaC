@@ -1,27 +1,31 @@
 ---
-- name: Create a Docker directory
-  ansible.builtin.file:
-    path: /home/{{ docker_user }}/{{ docker_home }}
-    state: directory
-    owner: "{{ docker_user }}"
-    group: "{{ docker_user }}"
-    mode: '0750'
-
-# Automated ACME SSL certificate generation for nginx-proxy
-- name: Clone acme-companion in Docker
+- name: Deploying contejnerized applications
   block:
-    - name: ACME companion Git clone
-      ansible.builtin.git:
-        repo: 'https://github.com/hufhend/acme-companion.git'
-        dest: /home/{{ docker_user }}/{{ docker_home }}/acme-companion
+  - name: Create a Docker directory
+    ansible.builtin.file:
+      path: /home/{{ docker_user }}/{{ docker_home }}
+      state: directory
+      owner: "{{ docker_user }}"
+      group: "{{ docker_user }}"
+      mode: '0750'
 
-- name: Create and start ACME services
-  community.docker.docker_compose_v2:
-    project_src: /home/{{ docker_user }}/{{ docker_home }}/acme-companion
-  # register: output
+  # Automated ACME SSL certificate generation for nginx-proxy
+  - name: Clone acme-companion in Docker
+    block:
+      - name: ACME companion Git clone
+        ansible.builtin.git:
+          repo: 'https://github.com/hufhend/acme-companion.git'
+          dest: /home/{{ docker_user }}/{{ docker_home }}/acme-companion
 
-- name: Add other Docker apps
-  include_tasks:
-    file: "{{ item }}"
-  loop: "{{ query('fileglob', '{{ role_path }}/files/*.yaml') }}"
-  no_log: true
+  - name: Create and start ACME services
+    community.docker.docker_compose_v2:
+      project_src: /home/{{ docker_user }}/{{ docker_home }}/acme-companion
+    # register: output
+
+  - name: Add other Docker apps
+    include_tasks:
+      file: "{{ item }}"
+    loop: "{{ query('fileglob', '{{ role_path }}/files/*.yaml') }}"
+    no_log: true
+
+  when: role not in ['combi', 'master', 'worker']

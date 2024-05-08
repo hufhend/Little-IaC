@@ -39,4 +39,6 @@
       groups: docker
       append: yes
 
-  when: role not in ['combi', 'master', 'worker']
+  when: 
+    - role not in ['combi', 'master', 'worker']
+    - ansible_os_family | lower == "debian"

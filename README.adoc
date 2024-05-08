@@ -29,6 +29,29 @@ WARNING: The intended use is on a new bare metal installation of Linux, deployme
 
 TIP: I recommend to try the functions in a non-production environment, for example via Vagrant.
 
+== First launch
+Before the first launch, we need to assign a new computer and user to run Ansible. A special playbook and roles are used for this.
+
+=== Playbook host_init 
+After a clean Linux installation, we usually have one regular user with sudo privileges. This is usually enough for us to manage the system from the command line, but for Ansible we need additional settings.
+The host_init role sets the default user to run Ansible, uploads the ssh keys, adds it to sudoers, and sets the hostname.
+
+==== Usage
+
+`+ansible-playbook -i inventory.yaml -l host07 host-init.yaml -kK+`
+
+== Features of playbooks
+
+=== Desktop
+
+The goal of this playbook is to turn a regular Ubuntu for desktop or laptop into a much better tuned system. At the same time connected to IAC automation and more manageable remotely.
+
+The playbook is simple and easy to read.
+
+Usage:
+
+`+ansible-playbook -i inventory.yaml -l notebook desktop.yaml+`
+
 == Detailed description
 
 .Common parameters
@@ -83,17 +106,6 @@ The default setting of the _comuter_ role causes tasks from the cluster_node to 
 |deploy the app prometheus
 |`+false+`
 |===
-
-== First launch
-Before the first launch, we need to assign a new computer and user to run Ansible. A special playbook and roles are used for this.
-
-=== Playbook host_init 
-After a clean Linux installation, we usually have one regular user with sudo privileges. This is usually enough for us to manage the system from the command line, but for Ansible we need additional settings.
-The host_init role sets the default user to run Ansible, uploads the ssh keys, adds it to sudoers, and sets the hostname.
-
-==== Usage
-
-`+ansible-playbook -i inventory.yaml -l host07 host-init.yaml -kK+`
 
 == Newly added features
 

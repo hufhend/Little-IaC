@@ -1,6 +1,6 @@
 ---
 # Self-hosted Git service
-- name: Installing Gitea on OrangePi
+- name: Deploy Gitea
   block:
     - name: Gitea Git clone
       ansible.builtin.git:
@@ -12,4 +12,4 @@
       community.docker.docker_compose_v2:
         project_src: /home/{{ docker_user }}/{{ docker_home }}/gitea
       # register: output
-  when: inventory_hostname == 'git.akira.cz'
+  when: gitea == true

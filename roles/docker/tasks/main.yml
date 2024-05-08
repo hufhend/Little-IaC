@@ -1,5 +1,5 @@
 ---
-- name:
+- name: Install Docker - containers for applications
   block:
   - name: Install required system packages
     ansible.builtin.apt:

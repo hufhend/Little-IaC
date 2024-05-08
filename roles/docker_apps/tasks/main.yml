@@ -9,6 +9,18 @@
       group: "{{ docker_user }}"
       mode: '0750'
 
+  #  Back everything up before any changes
+  - name: Create a Docker backup directory
+    ansible.builtin.file:
+      path: /home/{{ docker_user }}/{{ docker_home }}.backup
+      state: directory
+      owner: "{{ docker_user }}"
+      group: "{{ docker_user }}"
+      mode: '0750'
+
+  - name:  Back everything up before any changes
+    command: sudo rsync -ra --delete /home/{{ docker_user }}/{{ docker_home }}/ /home/{{ docker_user }}/{{ docker_home }}.backup
+
   # Automated ACME SSL certificate generation for nginx-proxy
   - name: Clone acme-companion in Docker
     block:

@@ -2,3 +2,8 @@
 docker_user: "{{ ansible_user }}"   # as default
 docker_home: docker
 role: computer
+
+# Deploy conternerized applications
+gitea: false
+pi-hole: false
+prometheus: false

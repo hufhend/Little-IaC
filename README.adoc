@@ -55,9 +55,34 @@ TIP: I recommend to try the functions in a non-production environment, for examp
 |`+cron+`
 |enables crontab setting at K8s value
 |`+choose+`
+
+|`+orange+`
+|enabling roles for ARM single board computers
+|`+false+`
+
 |===
 
 The default setting of the _comuter_ role causes tasks from the cluster_node to not be executed. The required value should be set in host_vars.
+
+.Docker app parameters
+|===
+|Name |Description|Default value
+|`+docker_home+`
+|directory for Docker applications
+|`+docker+`
+
+|`+gitea+`
+|deploy the app gitea
+|`+false+`
+
+|`+pihole+`
+|deploy the app pi-hole
+|`+false+`
+
+|`+prometheus+`
+|deploy the app prometheus
+|`+false+`
+|===
 
 == First launch
 Before the first launch, we need to assign a new computer and user to run Ansible. A special playbook and roles are used for this.

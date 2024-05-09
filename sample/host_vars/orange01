@@ -6,3 +6,11 @@ orange: true
 gitea: true
 pihole: true
 prometheus: true
+
+# Variables for creating firewall rules
+fw_host_svc:
+  - rule: allow
+    port: 222
+    proto: tcp
+    src: "{{ safe_network }}"
+    comment: 'Allow SSH port 222'

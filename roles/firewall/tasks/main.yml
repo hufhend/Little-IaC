@@ -106,10 +106,6 @@
         logging: 'on'
   when: firewall == true
 
-- name: Debug host services variable
-  debug:
-    var: fw_cluster_svc.worker
-
 - name: Turn off UFW and delete all rules
   community.general.ufw:
     state: reset

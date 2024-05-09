@@ -4,13 +4,14 @@ fw_cluster_svc:
   - { port: 80, comment: 'Allow http from anywhere' }
   - { port: 443, comment: 'Allow https from anywhere' }
   - { port: 53, comment: 'Allow DNS' }
-  - { port: 6443, proto: tcp, comment: 'Allow Kubernetes API server' }
-  - { port: 2379, proto: tcp, comment: 'Allow etcd-client' }
-  - { port: 2380, proto: tcp, comment: 'Allow etcd-server' }
-  - { port: 10250, proto: tcp, comment: 'Allow Kubelet API' }
-  - { port: 10259, proto: tcp, comment: 'Allow kube-scheduler' }
-  - { port: 10257, proto: tcp, comment: 'Allow kube-controller manager' }
-  - { port: "30000:32767", proto: tcp, comment: 'Allow NodePort Services' }
-  - { port: 9100, proto: tcp, comment: 'Allow node-exporter' }
-  - { port: 9153, proto: tcp, comment: 'Allow CoreDNS metrics' }
-  - { port: 9253, proto: tcp, comment: 'Allow NodeLocal DNS metrics' }
+  - { port: 53, proto: udp, comment: 'Allow DNS' }
+  - { port: 6443, comment: 'Allow Kubernetes API server' }
+  - { port: 2379, comment: 'Allow etcd-client' }
+  - { port: 2380, comment: 'Allow etcd-server' }
+  - { port: 10250, comment: 'Allow Kubelet API' }
+  - { port: 10259, comment: 'Allow kube-scheduler' }
+  - { port: 10257, comment: 'Allow kube-controller manager' }
+  - { port: "30000:32767", comment: 'Allow NodePort Services' }
+  - { port: 9100, comment: 'Allow node-exporter' }
+  - { port: 9153, comment: 'Allow CoreDNS metrics' }
+  - { port: 9253, comment: 'Allow NodeLocal DNS metrics' }

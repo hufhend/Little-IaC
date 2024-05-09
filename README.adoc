@@ -121,7 +121,8 @@ The default setting of the _comuter_ role causes tasks from the cluster_node to 
 
 9 May 2024
 
-* Major redesign of firewall rules, added cluster rules and special guest rules. See examples.
+* Major redesign of firewall rules, added cluster rules and special guest rules. See examples. 
+* Today is 3 months since I started learning Ansible. The first playbook was created in the neighboring repo https://github.com/hufhend/ubuntu-postinstall/commit/a4bc32693bae647deb433bd07dd1b3ef54a51f99[ubuntu-postinstall].
 
 _To be continued_
 

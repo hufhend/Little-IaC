@@ -119,6 +119,10 @@ The default setting of the _comuter_ role causes tasks from the cluster_node to 
 
 * Added role for laptops or desktop computers with GUI on Ubuntu Linux. It is simple but functional.
 
+9 May 2024
+
+* Major redesign of firewall rules, added cluster rules and special guest rules. See examples.
+
 _To be continued_
 
 // This is a paragraph with a *bold* word and an _italicized_ word.

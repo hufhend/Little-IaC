@@ -1,6 +1,9 @@
 ---
 - name: Install, configure, and start firewall
   block:
+    # - name:  Reset the firewall
+    #   community.general.ufw:
+    #     state: reset
 
     - name: Allow everything and enable UFW
       community.general.ufw:
@@ -12,7 +15,7 @@
     # being denied, rather than simply ignoring it. In these cases, use
     # reject instead of deny. In addition, log rejected connections:
     - name: Reject on Identification Protocol
-      ufw:
+      community.general.ufw:
         rule: reject
         port: auth
         log: yes
@@ -24,7 +27,7 @@
     # 30 seconds. See  http://www.debian-administration.org/articles/187
     # for details. Typical usage is:
     - name: Defence against brute-force login attacks
-      ufw:
+      community.general.ufw:
         rule: limit
         port: ssh
         proto: tcp
@@ -32,31 +35,53 @@
         comment: Limit brute-force login
 
     - name: Allow ssh from anywhere
-      ufw:
+      community.general.ufw:
         rule: allow
         name: OpenSSH
         src: "{{ safe_network }}"
-        comment: Allow ssh from a safe network
+        comment: Allow SSH from a safe network
       when: ansible_os_family | lower != "redhat"
 
     - name: Allow Prometheus Node Exporter
-      ufw:
+      community.general.ufw:
         rule: allow
         port: '9101'
         proto: tcp
         src: "{{ safe_network }}"
         comment: Allow Node Exporter
 
+    - name: Allow host ports and services
+      community.general.ufw:
+        rule: allow
+        port: "{{ item.port }}"
+        proto: "{{ item.proto | default('tcp') }}"
+        src: "{{ safe_network }}"
+        comment: "{{ item.comment }}"
+      loop: "{{ fw_host_svc }}"
+      when: fw_host_svc is defined
+
+    - name: Allow cluster ports and services
+      community.general.ufw:
+        rule: allow
+        port: "{{ item.port }}"
+        proto: "{{ item.proto | default('tcp') }}"
+        src: "{{ safe_network }}"
+        comment: "{{ item.comment }}"
+      loop: "{{ fw_cluster_svc }}"
+      when: 
+        - fw_cluster_svc is defined
+        - role in ['combi', 'master', 'worker']
+
     - name: Deny everything and enable UFW
-      ufw:
+      community.general.ufw:
         state: enabled
         policy: deny
     - name: Set logging
-      ufw:
+      community.general.ufw:
         logging: 'on'
   when: firewall == true
 
-- name: Turn off UFW and delete all rules - if required
-  ufw:
+- name: Turn off UFW and delete all rules
+  community.general.ufw:
     state: reset
   when: firewall == false

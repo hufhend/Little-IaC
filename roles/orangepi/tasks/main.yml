@@ -41,17 +41,8 @@
         
     when: not swap_file_check.stat.exists
 
-  - name: Shorten history for sysstat
-    ansible.builtin.lineinfile:
-      path: /etc/sysstat/sysstat
-      regexp: '^HISTORY=7'
-      line: 'HISTORY=3'
-
-  - name: Keep history for sysstat
-    ansible.builtin.lineinfile:
-      path: /etc/sysstat/sysstat
-      regexp: '^COMPRESSAFTER=10'
-      line: 'COMPRESSAFTER=1'
+  - name: Include tasks sysstat services
+    include_tasks: "{{ role_path }}/tasks/sysstat.yaml"
 
   - name: Install Git packages
     ansible.builtin.apt:

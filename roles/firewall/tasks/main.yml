@@ -65,17 +65,21 @@
         rule: allow
         port: "{{ item.port }}"
         proto: "{{ item.proto | default('tcp') }}"
-        src: "{{ safe_network }}"
+        src: 0.0.0.0/0
         comment: "{{ item.comment }}"
       loop: "{{ fw_cluster_svc }}"
       when: 
         - fw_cluster_svc is defined
         - role in ['combi', 'master', 'worker']
 
-    - name: Deny everything and enable UFW
+    - name: Enable UFW
       community.general.ufw:
         state: enabled
+
+    - name: Deny everything 
+      community.general.ufw:
         policy: deny
+
     - name: Set logging
       community.general.ufw:
         logging: 'on'

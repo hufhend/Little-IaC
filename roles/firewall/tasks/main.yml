@@ -28,14 +28,14 @@
         rule: limit
         port: ssh
         proto: tcp
-        src: "{{ safe_network }}"
+        src: 0.0.0.0/0
         comment: Limit brute-force login
 
     - name: Allow ssh from anywhere
       community.general.ufw:
         rule: allow
         name: OpenSSH
-        src: "{{ safe_network }}"
+        src: 0.0.0.0/0
         comment: Allow SSH from a safe network
       when: ansible_os_family | lower != "redhat"
 
@@ -69,29 +69,29 @@
         - fw_cluster_svc is defined
         - role in ['combi', 'master', 'worker']
 
-    - name: Allow services for the worker node
-      community.general.ufw:
-        rule: allow
-        port: "{{ item.port }}"
-        proto: "{{ item.proto | default('tcp') }}"
-        src: 0.0.0.0/0
-        comment: "{{ item.comment }}"
-      loop: "{{ fw_cluster_svc.worker }}"
-      when: 
-        - fw_cluster_svc is defined
-        - role in ['combi', 'worker']
-
     - name: Allow services for the master node
       community.general.ufw:
         rule: allow
         port: "{{ item.port }}"
         proto: "{{ item.proto | default('tcp') }}"
-        src: 0.0.0.0/0
+        src: "{{ safe_network }}"
         comment: "{{ item.comment }}"
       loop: "{{ fw_cluster_svc.master }}"
       when: 
         - fw_cluster_svc is defined
         - role in ['combi', 'master']        
+
+    - name: Allow services for the worker node
+      community.general.ufw:
+        rule: allow
+        port: "{{ item.port }}"
+        proto: "{{ item.proto | default('tcp') }}"
+        src: "{{ safe_network }}"
+        comment: "{{ item.comment }}"
+      loop: "{{ fw_cluster_svc.worker }}"
+      when: 
+        - fw_cluster_svc is defined
+        - role in ['combi', 'worker']
 
     - name: Enable UFW
       community.general.ufw:

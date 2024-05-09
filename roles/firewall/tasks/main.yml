@@ -1,9 +1,6 @@
 ---
 - name: Install, configure, and start firewall
   block:
-    # - name:  Reset the firewall
-    #   community.general.ufw:
-    #     state: reset
 
     - name: Allow everything and enable UFW
       community.general.ufw:
@@ -60,17 +57,41 @@
       loop: "{{ fw_host_svc }}"
       when: fw_host_svc is defined
 
-    - name: Allow cluster ports and services
+    - name: Allow common services
       community.general.ufw:
         rule: allow
         port: "{{ item.port }}"
         proto: "{{ item.proto | default('tcp') }}"
         src: 0.0.0.0/0
         comment: "{{ item.comment }}"
-      loop: "{{ fw_cluster_svc }}"
+      loop: "{{ fw_cluster_svc.common }}"
       when: 
         - fw_cluster_svc is defined
         - role in ['combi', 'master', 'worker']
+
+    - name: Allow services for the worker node
+      community.general.ufw:
+        rule: allow
+        port: "{{ item.port }}"
+        proto: "{{ item.proto | default('tcp') }}"
+        src: 0.0.0.0/0
+        comment: "{{ item.comment }}"
+      loop: "{{ fw_cluster_svc.worker }}"
+      when: 
+        - fw_cluster_svc is defined
+        - role in ['combi', 'worker']
+
+    - name: Allow services for the master node
+      community.general.ufw:
+        rule: allow
+        port: "{{ item.port }}"
+        proto: "{{ item.proto | default('tcp') }}"
+        src: 0.0.0.0/0
+        comment: "{{ item.comment }}"
+      loop: "{{ fw_cluster_svc.master }}"
+      when: 
+        - fw_cluster_svc is defined
+        - role in ['combi', 'master']        
 
     - name: Enable UFW
       community.general.ufw:
@@ -84,6 +105,10 @@
       community.general.ufw:
         logging: 'on'
   when: firewall == true
+
+- name: Debug host services variable
+  debug:
+    var: fw_cluster_svc.worker
 
 - name: Turn off UFW and delete all rules
   community.general.ufw:

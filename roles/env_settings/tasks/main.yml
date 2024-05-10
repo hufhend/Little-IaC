@@ -17,6 +17,7 @@
   ansible.builtin.shell: localectl set-locale LANG=cs_CZ.UTF-8 LC_MESSAGES=cs_CZ.UTF-8 LC_TIME=cs_CZ.UTF-8
   when: language == 'czech'
 
+# This won't work on RedHat, but I don't care yet
 - name: Set default locale to cs_CZ.UTF-8
   ansible.builtin.debconf:
     name: locales

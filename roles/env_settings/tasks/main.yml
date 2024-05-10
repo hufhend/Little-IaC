@@ -17,6 +17,22 @@
   ansible.builtin.shell: localectl set-locale LANG=cs_CZ.UTF-8 LC_MESSAGES=cs_CZ.UTF-8 LC_TIME=cs_CZ.UTF-8
   when: language == 'czech'
 
+- name: Set default locale to cs_CZ.UTF-8
+  ansible.builtin.debconf:
+    name: locales
+    question: locales/default_environment_locale
+    value: cs_CZ.UTF-8
+    vtype: select
+  when: language == 'czech'
+
+- name: Set to generate locales
+  ansible.builtin.debconf:
+    name: locales
+    question: locales/locales_to_be_generated
+    value: en_US.UTF-8 UTF-8, cs_CZ.UTF-8 UTF-8
+    vtype: multiselect
+  when: language == 'czech'
+
 - name: "Check if font Sacramento exists"
   ansible.builtin.stat:
     path: "/usr/local/share/fonts/Sacramento/Sacramento-Regular.ttf"

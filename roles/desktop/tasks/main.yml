@@ -6,6 +6,7 @@
       path: "/var/lib/AccountsService/users/{{ ansible_user }}"
       regexp: '^SystemAccount='
       line: 'SystemAccount=true'
+    ignore_errors: true
 
   - name: Install smart desktop packages
     ansible.builtin.apt:

@@ -17,12 +17,23 @@
       - openvpn-systemd-resolved
       - virtualbox
       - virtualbox-guest-additions-iso
-      - virtualbox-ext-pack
       - nextcloud-desktop
       - flameshot
       - solaar
       - copyq
       - steam
+
+  - name: Accept oracle license
+    ansible.builtin.debconf:
+      name: virtualbox-ext-pack
+      question: virtualbox-ext-pack/license
+      value: "true"
+      vtype: select
+
+  - name: Install VirtualBox Extension Pack
+    ansible.builtin.apt:
+      pkg:
+      - virtualbox-ext-pack
 
   # Chrome browser
   - name: Install Google Chrome

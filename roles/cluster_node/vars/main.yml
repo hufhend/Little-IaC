@@ -6,6 +6,7 @@ fw_cluster_svc:
     - { port: 443, comment: 'Allow https from anywhere' }
     - { port: 53, comment: 'Allow DNS' }
     - { port: 53, proto: udp, comment: 'Allow DNS' }
+    - { port: 112, proto: udp, comment: 'Allow VRRP' }
   master:
     - { port: 2379, comment: 'Allow etcd-client' }
     - { port: 2380, comment: 'Allow etcd-server' }

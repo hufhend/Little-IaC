@@ -1,0 +1,27 @@
+---
+role: worker
+ing_priority: 200
+cron: K8s
+mntd: "27"
+first_disk:  none
+second_disk: none
+desktop: true
+language: czech
+chrome: true
+onlyoffice: true
+brave: true
+mega: true
+
+firewall: true
+# Variables for creating firewall rules
+fw_host_svc:
+  - rule: allow
+    port: 9943:9944
+    proto: tcp
+    src: "{{ safe_network }}"
+    comment: 'Allow ALVR streaming'
+  - rule: allow
+    port: 9943:9944
+    proto: udp
+    src: "{{ safe_network }}"
+    comment: 'Allow ALVR streaming'

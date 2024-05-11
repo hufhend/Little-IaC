@@ -77,6 +77,11 @@
     when: not keepalived|default(false)
     ignore_errors: true
 
+  - name: Reload keepalived
+    ansible.builtin.systemd:
+      name: keepalived.service
+      state: reloaded    
+
   # add kubectl to the worker nodes
   - name: Install kubectl on a worker node
     block:

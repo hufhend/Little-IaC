@@ -62,11 +62,20 @@
         rule: allow
         port: "{{ item.port }}"
         proto: "{{ item.proto | default('tcp') }}"
-        src: 0.0.0.0/0
+        from: "{{ item.from | default('0.0.0.0/0')}}"
         comment: "{{ item.comment }}"
       loop: "{{ fw_cluster_svc.common }}"
       when: 
         - fw_cluster_svc is defined
+        - role in ['combi', 'master', 'worker']
+
+    - name: Enable ESP protocol for multicast address
+      community.general.ufw:
+        rule: allow
+        proto: esp
+        from: 224.0.0.18
+        comment: "Allow ESP protocol"
+      when: 
         - role in ['combi', 'master', 'worker']
 
     - name: Allow services for the master node

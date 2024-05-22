@@ -22,7 +22,7 @@
       - solaar
       - copyq
       - keepassxc
-      # - steam
+      - thunderbird
 
   - name: Accept Oracle license
     ansible.builtin.debconf:

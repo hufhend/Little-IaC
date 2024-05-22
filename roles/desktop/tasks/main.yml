@@ -23,6 +23,7 @@
       - copyq
       - keepassxc
       - thunderbird
+      - flatpak
 
   - name: Accept Oracle license
     ansible.builtin.debconf:

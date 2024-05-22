@@ -21,9 +21,10 @@
       - flameshot
       - solaar
       - copyq
-      - steam
+      - keepassxc
+      # - steam
 
-  - name: Accept oracle license
+  - name: Accept Oracle license
     ansible.builtin.debconf:
       name: virtualbox-ext-pack
       question: virtualbox-ext-pack/license
@@ -38,7 +39,7 @@
   # Chrome browser
   - name: Install Google Chrome
     block:
-    - name: Download Google Chrome DEB package
+    - name: Download Google Chrome package
       ansible.builtin.get_url:
         url: https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
         dest: /tmp/google-chrome-stable_current_amd64.deb
@@ -53,7 +54,7 @@
   # OnlyOffice desktop
   - name: Install OnlyOffice
     block:
-    - name: Download OnlyOffice DEB package
+    - name: Download OnlyOffice package
       ansible.builtin.get_url:
         url: https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb
         dest: /tmp/onlyoffice-desktopeditors_amd64.deb
@@ -88,28 +89,42 @@
     # MEGA Desktop App
   - name: Install megasync
     block:
-    - name: Download megasync DEB package
+    - name: Download Megasync package
       ansible.builtin.get_url:
         url: https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/amd64/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
         dest: /tmp/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
 
-    - name: Install megasync
+    - name: Install Megasync
       ansible.builtin.apt:
         deb: /tmp/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
         state: present
     
-    - name: Download mega manager DEB package
+    - name: Download Mega manager package
       ansible.builtin.get_url: 
         url: https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/amd64/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
         dest: /tmp/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
 
-    - name: Install mega nautilus
+    - name: Install Mega for nautilus
       ansible.builtin.apt:
         deb: /tmp/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
         state: present
     when: mega == True
 
+  # Steam game platform
+  - name: Install Steam
+    block:
+    - name: Download Steam package
+      ansible.builtin.get_url:
+        url: https://cdn.akamai.steamstatic.com/client/installer/steam.deb
+        dest: /tmp/steam.deb
+
+    - name: Install Steam
+      ansible.builtin.apt:
+        deb: /tmp/steam.deb
+        state: present
+    when: steam == True    
+
   when:
     - ansible_distribution == "Ubuntu"
-    - ansible_distribution_release == "jammy"
+    - ansible_distribution_release == "jammy" or ansible_distribution_release == "noble"
     - desktop == true

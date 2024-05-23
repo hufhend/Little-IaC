@@ -49,7 +49,11 @@
       ansible.builtin.apt:
         deb: /tmp/google-chrome-stable_current_amd64.deb
         state: present
-      ignore_errors: true
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: /tmp/google-chrome-stable_current_amd64.deb
+        state: absent
     when: chrome == True
 
   # OnlyOffice desktop
@@ -64,6 +68,12 @@
       ansible.builtin.apt:
         deb: /tmp/onlyoffice-desktopeditors_amd64.deb
         state: present
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: /tmp/onlyoffice-desktopeditors_amd64.deb
+        state: absent
+
     when: onlyoffice == True
 
   # Brave browser
@@ -80,7 +90,7 @@
         repo: deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main
         state: present
         filename: brave-browser-release.list
-        
+
     - name: Install Brave browser
       ansible.builtin.apt:
         name: brave-browser
@@ -94,21 +104,29 @@
       ansible.builtin.get_url:
         url: https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/amd64/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
         dest: /tmp/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
-
     - name: Install Megasync
       ansible.builtin.apt:
         deb: /tmp/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
         state: present
-    
+
     - name: Download Mega manager package
       ansible.builtin.get_url: 
         url: https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/amd64/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
         dest: /tmp/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
-
     - name: Install Mega for nautilus
       ansible.builtin.apt:
         deb: /tmp/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
         state: present
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: /tmp/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
+        state: absent
+    - name: Remove package file
+      ansible.builtin.file:
+        path: /tmp/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
+        state: absent
+              
     when: mega == True
 
   # Steam game platform
@@ -123,7 +141,13 @@
       ansible.builtin.apt:
         deb: /tmp/steam.deb
         state: present
-    when: steam == True    
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: /tmp/steam.deb
+        state: absent
+
+    when: steam == True
 
   when:
     - ansible_distribution == "Ubuntu"

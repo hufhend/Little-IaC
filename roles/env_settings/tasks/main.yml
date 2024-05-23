@@ -56,5 +56,10 @@
 
     - name: Change file permissions
       ansible.builtin.command: find /usr/local/share/fonts -type f -exec chmod 0644 {} +
+
+    - name: Remove fonts tarball
+      ansible.builtin.file:
+        path: /tmp/fonts.tar.gz
+        state: absent      
       
   when: not sacramento_font.stat.exists

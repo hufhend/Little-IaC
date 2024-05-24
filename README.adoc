@@ -52,6 +52,17 @@ Usage:
 
 `+ansible-playbook -i inventory.yaml -l notebook desktop.yaml+`
 
+=== Kubernetes node
+
+The goal of the playbook is to make a regular Ubuntu installation into a Kubernetes-ready system. For laptops, it disables all sleep sensors. It will install and set up keepalived for HA under the cluster for bare metal installation. Adds crontabs for updating. Optionally sets up a firewall. 
+
+This playbook can be combined with the desktop playbook.
+
+Usage:
+
+`+ansible-playbook -i inventory.yaml -l notebook K8s_cluster.yaml+`
+
+
 == Detailed description
 
 .Common parameters

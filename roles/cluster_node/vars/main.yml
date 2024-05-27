@@ -21,4 +21,7 @@ fw_cluster_svc:
     - { port: 10250, comment: 'Allow Kubelet API' }
     - { port: 10256, comment: 'Allow kube-proxy' }
     - { port: "30000:32767", comment: 'Allow NodePort Services' }
-  
+    - { port: 7946, comment: 'Allow MetalLB' }
+    - { port: 7946, comment: 'Allow MetalLB', proto: udp }
+    - { port: 8501, comment: 'Allow Longhorn Instance Manager' }
+   

@@ -71,8 +71,8 @@
       community.general.ufw:
         rule: allow
         to: "{{ kube_network }}"
-        from: "{{ kube_network }}"
-        proto: any
+        # from: "{{ kube_network }}"
+        # proto: any
         comment: "Allow Kubernetes network"
       when: 
         - fw_cluster_svc is defined

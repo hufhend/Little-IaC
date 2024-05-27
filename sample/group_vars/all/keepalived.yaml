@@ -15,3 +15,8 @@ ing_priority: 190
 
 keepalived: true
 role: computer
+
+# Internal secure network behind the firewall
+safe_network: 192.168.88.0/24
+# Kubernetes internal network
+kube_network: 10.10.0.0/16

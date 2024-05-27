@@ -7,6 +7,8 @@ fw_cluster_svc:
     - { port: 53, comment: 'Allow DNS' }
     - { port: 53, proto: udp, comment: 'Allow DNS' }
     - { port: 9100, comment: 'Allow Node Exporter (K8s)', from: 192.168.0.0/21 }
+    - { port: 8501, comment: 'Allow Longhorn Instance Manager' }
+    
   master:
     - { port: 2379, comment: 'Allow etcd-client' }
     - { port: 2380, comment: 'Allow etcd-server' }
@@ -23,5 +25,5 @@ fw_cluster_svc:
     - { port: "30000:32767", comment: 'Allow NodePort Services' }
     - { port: 7946, comment: 'Allow MetalLB' }
     - { port: 7946, comment: 'Allow MetalLB', proto: udp }
-    - { port: 8501, comment: 'Allow Longhorn Instance Manager' }
+
    

@@ -99,7 +99,7 @@
         rule: allow
         port: "{{ item.port }}"
         proto: "{{ item.proto | default('tcp') }}"
-        src: "{{ safe_network }}"
+        src: "{{ item.from | default(safe_network) }}"
         comment: "{{ item.comment }}"
       loop: "{{ fw_cluster_svc.worker }}"
       when: 

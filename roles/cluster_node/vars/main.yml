@@ -25,6 +25,7 @@ fw_cluster_svc:
   worker:
     - { port: 7946, comment: 'Allow MetalLB' }
     - { port: 7946, comment: 'Allow MetalLB', proto: udp }
+    - { port: 9253, comment: 'Allow NodeLocal DNS metrics' }    
     - { port: 10250, comment: 'Allow Kubelet API' }
     - { port: 10256, comment: 'Allow kube-proxy' }
     - { port: "30000:32767", comment: 'Allow NodePort Services' }

@@ -1,4 +1,4 @@
-= Ansible scripts for setting up Linux
+= Little-IaC Ansible scripts
 Václav Dvorský <hufhendr@gmail.com>
 1.1, 25 April, 2022: Ansible readme
 :toc:

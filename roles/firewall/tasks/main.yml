@@ -36,7 +36,7 @@
         rule: allow
         name: OpenSSH
         src: 0.0.0.0/0
-        comment: Allow SSH from a safe network
+        comment: Allow SSH from anywhere
       when: ansible_os_family | lower != "redhat"
 
     - name: Allow Prometheus Node Exporter
@@ -83,6 +83,8 @@
         port: "{{ item.port }}"
         proto: "{{ item.proto | default('tcp') }}"
         from: "{{ item.from | default('0.0.0.0/0')}}"
+        # direction: "{{ item.direction | default('in')}}"
+        route: "{{ item.route | default('false')}}"
         comment: "{{ item.comment }}"
       loop: "{{ fw_cluster_svc.common }}"
       when: 

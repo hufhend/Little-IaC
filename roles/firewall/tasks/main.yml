@@ -72,8 +72,6 @@
         rule: allow
         to: "{{ kube_network }}"
         route: true
-        # from: "{{ kube_network }}"
-        # proto: any
         comment: "Allow Kubernetes network"
       when: 
         - fw_cluster_svc is defined

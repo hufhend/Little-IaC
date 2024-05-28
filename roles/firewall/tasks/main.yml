@@ -47,6 +47,7 @@
         src: "{{ safe_network }}"
         comment: Allow Node Exporter
 
+    # Host-specific rules defined in host-vars
     - name: Allow host ports and services
       community.general.ufw:
         rule: allow
@@ -57,16 +58,7 @@
       loop: "{{ fw_host_svc }}"
       when: fw_host_svc is defined
 
-    - name: Allow all multicast
-      community.general.ufw:
-        rule: allow
-        to: 224.0.0.0/4
-        from: "{{ safe_network }}"
-        comment: "Allow all multicast"
-      when: 
-        - fw_cluster_svc is defined
-        - role in ['combi', 'master', 'worker']
-
+    # Rules for Kubernetes nodes
     - name: Allow Kubernetes internal network
       community.general.ufw:
         rule: allow
@@ -83,7 +75,6 @@
         port: "{{ item.port }}"
         proto: "{{ item.proto | default('tcp') }}"
         from: "{{ item.from | default('0.0.0.0/0')}}"
-        # direction: "{{ item.direction | default('in')}}"
         route: "{{ item.route | default('false')}}"
         comment: "{{ item.comment }}"
       loop: "{{ fw_cluster_svc.common }}"
@@ -114,6 +105,16 @@
       when: 
         - fw_cluster_svc is defined
         - role in ['combi', 'worker']
+
+    - name: Allow all multicast
+      community.general.ufw:
+        rule: allow
+        to: 224.0.0.0/4
+        from: "{{ safe_network }}"
+        comment: "Allow all multicast"
+      when: 
+        - fw_cluster_svc is defined
+        - role in ['combi', 'master', 'worker']
 
     - name: Enable UFW
       community.general.ufw:

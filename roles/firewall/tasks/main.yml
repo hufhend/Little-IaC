@@ -116,6 +116,15 @@
         - fw_cluster_svc is defined
         - role in ['combi', 'master', 'worker']
 
+    # - name: Allow Kubernetes internal network
+    #   community.general.ufw:
+    #     rule: allow
+    #     from: "{{ kube_network }}"
+    #     comment: "Allow Kubernetes network"
+    #   when: 
+    #     - fw_cluster_svc is defined
+    #     - role in ['combi', 'master', 'worker']        
+
     - name: Enable UFW
       community.general.ufw:
         state: enabled

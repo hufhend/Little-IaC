@@ -101,6 +101,7 @@ The default setting of the _comuter_ role causes tasks from the cluster_node to 
 .Docker app parameters
 |===
 |Name |Description|Default value
+
 |`+docker_home+`
 |directory for Docker applications
 |`+docker+`
@@ -116,6 +117,7 @@ The default setting of the _comuter_ role causes tasks from the cluster_node to 
 |`+prometheus+`
 |deploy the app prometheus
 |`+false+`
+
 |===
 
 === Firewall role
@@ -129,13 +131,14 @@ The major breakthrough was enabling East-West traffic, which I leave in Calico's
 .Firewall variables
 |===
 |Name |Description|Default value
+
 |`+safe_network+`
 |internal protected network
 |`+192.168.88.0/24+`
 
 |`+kube_network+`
 |Kubernetes internal network
-|`+192.168.88.0/24+`
+|`+10.10.0.0/16+`
 
 |`+port+`
 |destination port
@@ -159,6 +162,7 @@ The major breakthrough was enabling East-West traffic, which I leave in Calico's
 
 |===
 
+_Firewall is not a separately executable role, it's just an engine. You can find the rules setup in the link:roles/cluster_node/vars/main.yml[cluster node] role._
 
 == Newly added features
 

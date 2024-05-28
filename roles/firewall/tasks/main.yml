@@ -57,12 +57,12 @@
       loop: "{{ fw_host_svc }}"
       when: fw_host_svc is defined
 
-    - name: Allow keepalived multicast
+    - name: Allow all multicast
       community.general.ufw:
         rule: allow
-        to: 224.0.0.18
+        to: 224.0.0.0/4
         from: "{{ safe_network }}"
-        comment: "Allow VRRP multicast"
+        comment: "Allow all multicast"
       when: 
         - fw_cluster_svc is defined
         - role in ['combi', 'master', 'worker']

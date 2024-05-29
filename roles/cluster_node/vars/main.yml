@@ -30,6 +30,6 @@ fw_cluster_svc:
     - { port: 10256, comment: 'Allow kube-proxy' }
     - { port: 25565, comment: 'Allow Minecraft game' }
     - { port: "30000:32767", comment: 'Allow NodePort Services' }
-    - { port: 3306, comment: 'Allow MySQL', from: "{{ kube_network }}" }
-    - { port: 9500, comment: 'Allow Longhorn manager', from: "{{ kube_network }}" }
-    - { port: 9503, comment: 'Allow Longhorn recovery', from: "{{ kube_network }}" }
+    # - { port: 3306, comment: 'Allow MySQL', from: "{{ kube_network }}" }
+    # - { port: 9500, comment: 'Allow Longhorn manager', from: "{{ kube_network }}" }
+    # - { port: 9503, comment: 'Allow Longhorn recovery', from: "{{ kube_network }}" }

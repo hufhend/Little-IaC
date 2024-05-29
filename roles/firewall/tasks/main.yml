@@ -59,7 +59,7 @@
       when: fw_host_svc is defined
 
     # Rules for Kubernetes nodes
-    - name: Allow Kubernetes internal network
+    - name: Allow Kubernetes internal network (FWD)
       community.general.ufw:
         rule: allow
         to: "{{ kube_network }}"
@@ -116,14 +116,14 @@
         - fw_cluster_svc is defined
         - role in ['combi', 'master', 'worker']
 
-    # - name: Allow Kubernetes internal network
-    #   community.general.ufw:
-    #     rule: allow
-    #     from: "{{ kube_network }}"
-    #     comment: "Allow Kubernetes network"
-    #   when: 
-    #     - fw_cluster_svc is defined
-    #     - role in ['combi', 'master', 'worker']        
+    - name: Allow Kubernetes internal network
+      community.general.ufw:
+        rule: allow
+        from: "{{ kube_network }}"
+        comment: "Allow Kubernetes network"
+      when: 
+        - fw_cluster_svc is defined
+        - role in ['combi', 'master', 'worker']        
 
     - name: Enable UFW
       community.general.ufw:

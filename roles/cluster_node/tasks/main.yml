@@ -111,6 +111,25 @@
     when: role == 'master' or role == 'combi'
     ignore_errors: true
 
+  - name: Create a kube directory
+    ansible.builtin.file:
+      path: "{{ lookup('env', 'HOME') }}/.kube"
+      state: directory
+      owner: "{{ ansible_user }}"
+      group: "{{ ansible_user }}"
+      mode: '0750'
+    when: role == 'worker'
+
+  - name: Copy kubeconfig file to remote server
+    ansible.builtin.copy:
+      src: "{{ lookup('env', 'HOME') }}/.kube/config"
+      dest: "{{ lookup('env', 'HOME') }}/.kube/config"
+      owner: "{{ ansible_user }}"
+      group: "{{ ansible_user }}"      
+      mode: '0600'
+    when: role == 'worker'
+    ignore_errors: true
+
   # crontab settings
   - name: Add Kubernetes crontab
     ansible.builtin.template:
@@ -133,5 +152,5 @@
     when: addition_cron is defined
 
   when: role in ['combi', 'master', 'worker']
-  ignore_errors: true
+
 

@@ -14,9 +14,6 @@
       - name: Allocate swap file
         ansible.builtin.command: fallocate -l {{ swap_size }} "{{ swap_path }}/{{ swap_file }}"
 
-      # - name: Create swap space
-      #   command: dd if=/dev/zero of=/swapfile bs=1024 count=3670016
-
       - name: Set permissions on swap file
         ansible.builtin.file:
           path: "{{ swap_path }}/{{ swap_file }}"
@@ -39,10 +36,21 @@
           name: vm.swappiness
           value: "1"
         
-    when: not swap_file_check.stat.exists
+    when: 
+      - not swap_file_check.stat.exists
+      - role not in ['combi', 'master', 'worker']
 
   - name: Include tasks sysstat services
     include_tasks: "{{ role_path }}/tasks/sysstat.yaml"
+
+  - name: Check if pods directory exists
+    ansible.builtin.stat:
+      path: /var/log/pods
+    register: pods_dir_check
+
+  - name: Include tasks pods logging
+    include_tasks: "{{ role_path }}/tasks/pods.yaml"    
+    when: pods_dir_check.stat.exists
 
   - name: Install Git packages
     ansible.builtin.apt:

@@ -1,6 +1,6 @@
   - name: Create a pods directory
     ansible.builtin.file:
-      path: /var/pods
+      path: /var/log.hdd/pods
       state: directory
       owner: root
       group: root
@@ -13,6 +13,6 @@
 
   - name: Create link to new pods
     ansible.builtin.file:
-      src: /var/pods
+      src: /var/log.hdd/pods
       dest: /var/log/pods
       state: link

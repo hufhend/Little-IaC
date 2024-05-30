@@ -12,7 +12,7 @@
 
   - name: Create a sysstat directory
     ansible.builtin.file:
-      path: /var/sysstat
+      path: /var/log.hdd/sysstat
       state: directory
       owner: root
       group: root
@@ -23,7 +23,7 @@
     ansible.builtin.lineinfile:
       path: /etc/sysstat/sysstat
       regexp: '^SA_DIR=/var/log/sysstat'
-      line: 'SA_DIR=/var/sysstat'
+      line: 'SA_DIR=/var/log.hdd/sysstat'
 
   - name: Ensure old sysstat is absent
     ansible.builtin.file:
@@ -32,7 +32,7 @@
 
   - name: Create link to new sysstat
     ansible.builtin.file:
-      src: /var/sysstat
+      src: /var/log.hdd/sysstat
       dest: /var/log/sysstat
       state: link
 

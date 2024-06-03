@@ -39,7 +39,7 @@ fw_cluster_svc:
     - { port: 6789, comment: 'Allow UniFi speed test' }
     - { port: 10001, comment: 'Allow UniFi device discovery', proto: udp }
     - { port: 1900, comment: 'Allow UniFi discoverable on L2', proto: udp }
-    - { port: 123, comment: 'Allow UniFi NTP', proto: udp }
+    # - { port: 123, comment: 'Allow UniFi NTP', proto: udp }
     - { port: 3478, comment: 'Allow UniFi STUN outbound', route: true, from: "{{ kube_network }}", proto: udp }
     - { port: 123, comment: 'Allow UniFi NTP outbound', route: true, from: "{{ kube_network }}", proto: udp }
     - { port: 22, comment: 'Allow UniFi device access', route: true, from: "{{ kube_network }}" }

@@ -32,3 +32,14 @@ fw_cluster_svc:
     - { port: 25565, comment: 'Allow Minecraft game' }
     - { port: "30000:32767", comment: 'Allow NodePort Services' }
 
+    # UniFi Network
+    - { port: 3478, comment: 'Allow UniFi STUN', proto: udp }
+    - { port: 5514, comment: 'Allow UniFi remote syslog', proto: udp }
+    - { port: 8080, comment: 'Allow UniFi communication'}
+    - { port: 6789, comment: 'Allow UniFi speed test' }
+    - { port: 10001, comment: 'Allow UniFi device discovery', proto: udp }
+    - { port: 1900, comment: 'Allow UniFi discoverable on L2', proto: udp }
+    - { port: 123, comment: 'Allow UniFi NTP', proto: udp }
+    - { port: 3478, comment: 'Allow UniFi STUN outbound', route: true, from: "{{ kube_network }}", proto: udp }
+    - { port: 123, comment: 'Allow UniFi NTP outbound', route: true, from: "{{ kube_network }}", proto: udp }
+    - { port: 22, comment: 'Allow UniFi device access', route: true, from: "{{ kube_network }}" }

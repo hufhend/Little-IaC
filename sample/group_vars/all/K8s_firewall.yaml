@@ -10,6 +10,7 @@ fw_cluster_svc:
     - { port: 80, comment: 'Allow http outbound', route: true, from: "{{ kube_network }}" }
     - { port: 443, comment: 'Allow https outbound', route: true }
     - { port: 53, comment: 'Allow DNS outbound', route: true, from: "{{ kube_network }}", proto: udp }
+    - { port: 161, comment: 'Allow SNMP outbound', route: true, from: "{{ kube_network }}", proto: udp }
 
   master:
     - { port: 2379, comment: 'Allow etcd-client' }

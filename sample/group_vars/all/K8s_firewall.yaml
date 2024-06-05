@@ -8,7 +8,7 @@ fw_cluster_svc:
     - { port: 53, proto: udp, comment: 'Allow DNS' }
     - { port: 9100, comment: 'Allow Node Exporter (K8s)', from: "{{ safe_network }}" }
     - { port: 80, comment: 'Allow http outbound', route: true, from: "{{ kube_network }}" }
-    - { port: 443, comment: 'Allow https outbound', route: true, from: "{{ kube_network }}" }
+    - { port: 443, comment: 'Allow https outbound', route: true }
     - { port: 53, comment: 'Allow DNS outbound', route: true, from: "{{ kube_network }}", proto: udp }
 
   master:
@@ -43,4 +43,3 @@ fw_cluster_svc:
     - { port: 3478, comment: 'Allow UniFi STUN outbound', route: true, from: "{{ kube_network }}", proto: udp }
     - { port: 123, comment: 'Allow UniFi NTP outbound', route: true, from: "{{ kube_network }}", proto: udp }
     - { port: 22, comment: 'Allow UniFi device access', route: true, from: "{{ kube_network }}" }
-

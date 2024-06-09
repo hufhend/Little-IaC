@@ -1,0 +1,170 @@
+#cloud-config
+autoinstall:
+  version: 1
+  identity:
+    realname: "Va\x9A\xEDk Dvorsk\xFD"
+    hostname: p-lic01-dc1
+    username: vasik
+  ssh:
+    install-server: true
+    allow-pw: true
+  locale: cs_CZ.UTF-8
+  keyboard:
+    layout: cz
+  locale: cs_CZ.UTF-8  
+  timezone: Europe/Prague
+  updates: security
+  codecs:
+    install: true
+  drivers:
+    install: true
+  storage:
+    config:
+      - id: disk0
+        type: disk
+        match:
+          size: smallest
+        ptable: gpt
+        wipe: superblock-recursive
+        preserve: false
+      - id: part-efi
+        type: partition
+        device: disk0
+        size: 1G
+        flag: boot
+      - id: part-boot
+        type: partition
+        device: disk0
+        size: 2G
+      - id: part-lvm
+        type: partition
+        device: disk0
+        size: -1
+      - id: format-efi
+        type: format
+        fstype: fat32
+        volume: part-efi
+        label: EFI
+      - id: format-boot
+        type: format
+        fstype: ext4
+        volume: part-boot
+        label: boot
+      - id: vg-ubuntu
+        type: lvm_volgroup
+        devices:
+          - part-lvm
+        name: ubuntu-vg
+      - id: lv-root
+        type: lvm_partition
+        volgroup: vg-ubuntu
+        size: 6G
+        name: root-lv
+      - id: lv-home
+        type: lvm_partition
+        volgroup: vg-ubuntu
+        size: 350G
+        name: home-lv
+      - id: lv-usr
+        type: lvm_partition
+        volgroup: vg-ubuntu
+        size: 15G
+        name: usr-lv
+      - id: lv-var
+        type: lvm_partition
+        volgroup: vg-ubuntu
+        size: 10G
+        name: var-lv
+      - id: lv-lib
+        type: lvm_partition
+        volgroup: vg-ubuntu
+        size: 20G
+        name: lib-lv
+      - id: lv-opt
+        type: lvm_partition
+        volgroup: vg-ubuntu
+        size: 5G
+        name: opt-lv
+      - id: format-root
+        type: format
+        fstype: ext4
+        volume: lv-root
+        label: root
+      - id: format-home
+        type: format
+        fstype: ext4
+        volume: lv-home
+        label: home
+      - id: format-usr
+        type: format
+        fstype: ext4
+        volume: lv-usr
+        label: usr
+      - id: format-var
+        type: format
+        fstype: ext4
+        volume: lv-var
+        label: var
+      - id: format-lib
+        type: format
+        fstype: ext4
+        volume: lv-lib
+        label: lib
+      - id: format-opt
+        type: format
+        fstype: ext4
+        volume: lv-opt
+        label: opt
+      - id: mount-efi
+        type: mount
+        path: /boot/efi
+        device: format-efi
+        fstype: vfat
+      - id: mount-boot
+        type: mount
+        path: /boot
+        device: format-boot
+        fstype: ext4
+      - id: mount-root
+        type: mount
+        path: /
+        device: format-root
+        fstype: ext4
+      - id: mount-home
+        type: mount
+        path: /home
+        device: format-home
+        fstype: ext4
+      - id: mount-usr
+        type: mount
+        path: /usr
+        device: format-usr
+        fstype: ext4
+      - id: mount-var
+        type: mount
+        path: /var
+        device: format-var
+        fstype: ext4
+      - id: mount-lib
+        type: mount
+        path: /var/lib
+        device: format-lib
+        fstype: ext4
+      - id: mount-opt
+        type: mount
+        path: /opt
+        device: format-opt
+        fstype: ext4
+  kernel:
+    package: linux-generic-hwe-24.04
+  oem:
+    install: auto
+  source:
+    id: ubuntu-desktop-minimal
+    search_drivers: true        
+  user-data:
+    disable_root: true
+    chpasswd:
+      expire: true
+    ssh_authorized_keys:
+      - ssh-rsa AAA... your_public_ssh_key

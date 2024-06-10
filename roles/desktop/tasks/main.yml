@@ -1,12 +1,19 @@
 ---
 - name: Installation and setup of a desktop computer with GUI
   block:
+  - name: Find files in directory
+    ansible.builtin.find:
+      paths: /var/lib/AccountsService/users
+      file_type: file
+    register: found_files
+
   - name: Ansible user doesn't log in via GUI
     ansible.builtin.lineinfile:
       path: "/var/lib/AccountsService/users/{{ ansible_user }}"
       regexp: '^SystemAccount='
       line: 'SystemAccount=true'
     ignore_errors: true
+    when: found_files.matched | int >= 2
 
   - name: Install smart desktop packages
     ansible.builtin.apt:

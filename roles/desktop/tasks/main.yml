@@ -149,6 +149,26 @@
 
     when: steam == True
 
+  # Visual Studio Code
+  - name: Install VS Code
+    block:
+    - name: Download VS Code package
+      ansible.builtin.get_url:
+        url: https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64
+        dest: /tmp/vscode.deb
+
+    - name: Install VS Code
+      ansible.builtin.apt:
+        deb: /tmp/vscode.deb
+        state: present
+
+    - name: Remove package file
+      ansible.builtin.file:
+        path: /tmp/vscode.deb
+        state: absent
+
+    when: vscode == True
+
   when:
     - ansible_distribution == "Ubuntu"
     - ansible_distribution_release == "jammy" or ansible_distribution_release == "noble"

@@ -34,6 +34,14 @@
     uid: 2000
     state: present
   when: ansible_user != user_ansible
+  
+- name: Ansible user doesn't log in via GUI
+  ansible.builtin.lineinfile:
+    path: "/var/lib/AccountsService/users/{{ ansible_user }}"
+    regexp: '^SystemAccount='
+    line: 'SystemAccount=true'
+  ignore_errors: true    
+  when: ansible_user != user_ansible
 
 - name: Check if the sudoers file exists
   ansible.builtin.stat:

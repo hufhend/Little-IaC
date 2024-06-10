@@ -18,6 +18,7 @@
       - thunderbird
       - flatpak
 
+  # Oracle VM VirtualBox
   - name: Accept Oracle license
     ansible.builtin.debconf:
       name: virtualbox-ext-pack

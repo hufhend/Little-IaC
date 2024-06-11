@@ -1,10 +1,11 @@
 ---
 - name: Apply netplan configuration
-  command: netplan apply
+  ansible.builtin.command: netplan apply
   become: true
   become_user: root 
 
 - name: Restart NetworkManager
-  service:
+  ansible.builtin.service:
     name: NetworkManager
     state: reloaded
+  ignore_errors: true

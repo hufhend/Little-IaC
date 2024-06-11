@@ -85,11 +85,12 @@
         notify: Restart NetworkManager
 
       - name: Ignore automatically configured DNS
-        ansible.builtin.command:
-          cmd: nmcli connection modify "{{ ansible_default_ipv4.interface }}" ipv4.ignore-auto-dns yes
-        become: true
-        become_user: root 
-        notify: Restart NetworkManager        
+        community.general.nmcli:
+          conn_name: "{{ ansible_default_ipv4.interface }}"
+          type: ethernet
+          dns4_ignore_auto: true
+          state: present
+        notify: Restart NetworkManager
 
       - name: Upload the netplan template
         ansible.builtin.template:

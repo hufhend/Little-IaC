@@ -1,2 +1,10 @@
 ---
-# handlers file for docker_apps
+- name: Apply netplan configuration
+  command: netplan apply
+  become: true
+  become_user: root 
+
+- name: Restart NetworkManager
+  service:
+    name: NetworkManager
+    state: restarted

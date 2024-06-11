@@ -72,6 +72,16 @@
         become: true
         become_user: root
 
+      - name: Ignore automatically configured DNS
+        community.general.nmcli:
+          conn_name: "{{ ansible_default_ipv4.interface }}"
+          type: ethernet
+          dns4_ignore_auto: false
+          state: present
+        become: true
+        become_user: root 
+        notify: Restart NetworkManager
+
       - name: Upload the netplan template
         ansible.builtin.template:
           src: templates/ansible_pihole.j2
@@ -81,11 +91,7 @@
           mode: '0600'
         become: true
         become_user: root 
-
-      - name: Run netplan apply
-        ansible.builtin.command: netplan apply
-        become: true
-        become_user: root 
+        notify: Apply netplan configuration
 
     when: not pihole_dir_check.stat.exists
   when: pihole == true

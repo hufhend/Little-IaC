@@ -77,7 +77,6 @@
           conn_name: "{{ ansible_default_ipv4.interface }}"
           type: "{{ 'ethernet' if ansible_default_ipv4.type == 'ether' else ansible_default_ipv4.type }}"
           dns4:
-          - 127.0.0.53
           - 127.0.0.1
           state: present
         become: true

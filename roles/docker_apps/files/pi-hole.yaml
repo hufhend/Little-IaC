@@ -73,10 +73,28 @@
         become_user: root
 
       - name: Ignore automatically configured DNS
+        ansible.builtin.command:
+          cmd: nmcli connection modify "{{ ansible_default_ipv4.interface }}" ipv4.ignore-auto-dns yes
+        become: true
+        become_user: root 
+        notify: Restart NetworkManager
+
+      - name: Clear existing DNS settings
         community.general.nmcli:
           conn_name: "{{ ansible_default_ipv4.interface }}"
           type: ethernet
-          dns4_ignore_auto: false
+          dns4: []
+          state: absent
+        become: true
+        become_user: root 
+
+      - name: Set DNS server to Docker Pi-hole
+        community.general.nmcli:
+          conn_name: "{{ ansible_default_ipv4.interface }}"
+          type: ethernet
+          dns4:
+          - 127.0.0.53
+          - 127.0.0.1
           state: present
         become: true
         become_user: root 

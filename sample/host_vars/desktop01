@@ -9,8 +9,11 @@ firewall: true
 safe_network: 192.168.88.0/24
 
 # Allow installation of larger software packages
+virtualbox: true
 chrome: true
 onlyoffice: true
 brave: true
 mega: true
-
+steam: true
+vscode: true
+openconnect: true

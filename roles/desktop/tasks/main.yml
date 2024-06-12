@@ -19,17 +19,20 @@
       - flatpak
 
   # Oracle VM VirtualBox
-  - name: Accept Oracle license
-    ansible.builtin.debconf:
-      name: virtualbox-ext-pack
-      question: virtualbox-ext-pack/license
-      value: "true"
-      vtype: select
+  - name: Install Oracle VM VirtualBox
+    block:
+    - name: Accept Oracle license
+      ansible.builtin.debconf:
+        name: virtualbox-ext-pack
+        question: virtualbox-ext-pack/license
+        value: "true"
+        vtype: select
 
-  - name: Install VirtualBox Extension Pack
-    ansible.builtin.apt:
-      pkg:
-      - virtualbox-ext-pack
+    - name: Install VirtualBox Extension Pack
+      ansible.builtin.apt:
+        pkg:
+        - virtualbox-ext-pack
+    when: virtualbox == True
 
   # Chrome browser
   - name: Install Google Chrome
@@ -162,6 +165,16 @@
         state: absent
 
     when: vscode == True
+
+  - name: Install OpenConnect VPN client
+    ansible.builtin.apt:
+      pkg:
+      - openconnect
+      - network-manager-openconnect
+      - network-manager-openconnect-gnome
+      state: present
+    
+    when: openconnect == True
 
   when:
     - ansible_distribution == "Ubuntu"

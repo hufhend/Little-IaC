@@ -70,7 +70,6 @@
       ansible.builtin.file:
         path: /tmp/onlyoffice-desktopeditors_amd64.deb
         state: absent
-
     when: onlyoffice == True
 
   # Brave browser
@@ -101,15 +100,15 @@
       ansible.builtin.get_url:
         url: https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/amd64/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
         dest: /tmp/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
-    - name: Install Megasync
-      ansible.builtin.apt:
-        deb: /tmp/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
-        state: present
-
     - name: Download Mega manager package
       ansible.builtin.get_url: 
         url: https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/amd64/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
         dest: /tmp/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
+
+    - name: Install Megasync Desktop App
+      ansible.builtin.apt:
+        deb: /tmp/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
+        state: present
     - name: Install Mega for nautilus
       ansible.builtin.apt:
         deb: /tmp/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
@@ -123,10 +122,9 @@
       ansible.builtin.file:
         path: /tmp/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
         state: absent
-              
     when: mega == True
 
-  # Steam game platform
+  # Steam Game platform
   - name: Install Steam
     block:
     - name: Download Steam package
@@ -143,10 +141,9 @@
       ansible.builtin.file:
         path: /tmp/steam.deb
         state: absent
-
     when: steam == True
 
-  # Visual Studio Code
+  # Microsoft Visual Studio Code
   - name: Install VS Code
     block:
     - name: Download VS Code package
@@ -163,9 +160,9 @@
       ansible.builtin.file:
         path: /tmp/vscode.deb
         state: absent
-
     when: vscode == True
 
+  # Support for Cisco VPN
   - name: Install OpenConnect VPN client
     ansible.builtin.apt:
       pkg:
@@ -173,7 +170,6 @@
       - network-manager-openconnect
       - network-manager-openconnect-gnome
       state: present
-    
     when: openconnect == True
 
   when:

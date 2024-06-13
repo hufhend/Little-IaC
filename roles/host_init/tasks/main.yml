@@ -34,7 +34,7 @@
     uid: 2000
     state: present
   when: ansible_user != user_ansible
-  
+
 # If this block is commented out and only a single user is present in the system, 
 # the next time the system is started, a dialog for creating a new user is opened. 
 # This can be interesting if you are making gaming computers for sale.

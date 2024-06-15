@@ -80,7 +80,8 @@
   - name: Reload keepalived
     ansible.builtin.systemd:
       name: keepalived.service
-      state: reloaded    
+      state: reloaded
+    when: not keepalived|default(false)
 
   # add kubectl to the worker nodes
   - name: Install kubectl on a worker node

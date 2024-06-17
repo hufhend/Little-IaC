@@ -20,6 +20,8 @@
 
   - name:  Back everything up before any changes
     command: sudo rsync -ra --delete /home/{{ docker_user }}/{{ docker_home }}/ /home/{{ docker_user }}/{{ docker_home }}.backup
+    become: true
+    become_user: root
 
   # Automated ACME SSL certificate generation for nginx-proxy
   - name: Clone acme-companion in Docker

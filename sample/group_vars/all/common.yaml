@@ -1,0 +1,1 @@
+private_repo: https://git.private/{{ ansible_user }}/config.git

@@ -7,13 +7,28 @@
       repo: 'https://github.com/hufhend/prometheus.git'
       dest: /home/{{ docker_user }}/{{ docker_home }}/prometheus
       force: true
-    become: true
-    become_user: root
 
   - name: Create a directory structure
     ansible.builtin.command: sh init.sh
     args:
       chdir: /home/{{ docker_user }}/{{ docker_home }}/prometheus
+
+  - name:  Get the configuration from Git
+    ansible.builtin.git:
+      repo: "{{ private_repo }}"
+      dest: /tmp/monitoring
+      force: true
+    ignore_errors: true
+
+  - name:  Copy the relevant config files
+    command: sudo rsync -ra /tmp/monitoring/{{ inventory_hostname }}/prometheus/ /home/{{ docker_user }}/{{ docker_home }}/prometheus
+    ignore_errors: true
+
+  - name: Delete temporary files
+    ansible.builtin.file:
+      path: /tmp/monitoring
+      state: absent
+    ignore_errors: true
 
   - name: Create and start Prometheus
     community.docker.docker_compose_v2:

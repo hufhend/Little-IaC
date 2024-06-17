@@ -19,7 +19,7 @@
       mode: '0750'
 
   - name:  Back everything up before any changes
-    command: sudo rsync -ra --delete /home/{{ docker_user }}/{{ docker_home }}/ /home/{{ docker_user }}/{{ docker_home }}.backup
+    command: sudo rsync -ra --delete /home/{{ docker_user }}/{{ docker_home }}/ /home/{{ docker_user }}/backup.{{ docker_home }}
     become: true
     become_user: root
 

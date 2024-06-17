@@ -21,7 +21,7 @@
     ignore_errors: true
 
   - name:  Copy the relevant config files
-    command: sudo rsync -ra /tmp/monitoring/{{ inventory_hostname }}/prometheus/ /home/{{ docker_user }}/{{ docker_home }}/prometheus
+    ansible.builtin.command: sudo rsync -ra /tmp/monitoring/{{ inventory_hostname }}/prometheus/ /home/{{ docker_user }}/{{ docker_home }}/prometheus
     ignore_errors: true
 
   - name: Delete temporary files
@@ -29,6 +29,14 @@
       path: /tmp/monitoring
       state: absent
     ignore_errors: true
+
+  - name: Tear down Prometheus services
+    community.docker.docker_compose_v2:
+      project_src: /home/{{ docker_user }}/{{ docker_home }}/prometheus
+      state: absent
+
+  - name:  Delete everything old
+    ansible.builtin.command: docker system prune -af --volumes
 
   - name: Create and start Prometheus
     community.docker.docker_compose_v2:

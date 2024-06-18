@@ -3,3 +3,4 @@ host_vars
 .vscode
 !sample/group_vars
 !sample/host_vars
+inventory.yaml

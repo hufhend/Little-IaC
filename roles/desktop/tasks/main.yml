@@ -85,7 +85,7 @@
       ansible.builtin.apt_repository:
         repo: deb [arch=amd64 signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main
         state: present
-        filename: brave-browser-release.list
+        filename: brave-browser
 
     - name: Install Brave browser
       ansible.builtin.apt:

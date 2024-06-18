@@ -166,6 +166,12 @@ _Firewall is not a separately executable role, it's just an engine. You can find
 
 == Newly added features
 
+18 Jun 2024
+
+* Added a key feature for Docker applications, the ability to upload custom configuration files, see commit 43a46ab
+* Many bugs have been fixed, especially in the desktop installer and repositories
+* Keep an eye on the commit history, I've started adding comments to the major ones. 
+
 28 May 2024
 
 * Firewall rules for Kubernetes nodes seem to be finalized

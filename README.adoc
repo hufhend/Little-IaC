@@ -168,13 +168,13 @@ _Firewall is not a separately executable role, it's just an engine. You can find
 
 18 Jun 2024
 
-* Added a key feature for Docker applications, the ability to upload custom configuration files, see commit 43a46ab
-* Many bugs have been fixed, especially in the desktop installer and repositories
+* Added a key feature for Docker applications, the ability to upload custom configuration files, see commit https://github.com/hufhend/Little-IaC/commit/43a46ab8e3455645cf951ffc238e9022180dba82[43a46ab].
+* Many bugs have been fixed, especially in the desktop installer and repositories.
 * Keep an eye on the commit history, I've started adding comments to the major ones. 
 
 28 May 2024
 
-* Firewall rules for Kubernetes nodes seem to be finalized
+* Firewall rules for Kubernetes nodes seem to be finalized.
 
 9 May 2024
 
@@ -187,8 +187,8 @@ _Firewall is not a separately executable role, it's just an engine. You can find
 
 5 May 2024 
 
-* Added functionality to insert crontabs into K8s nodes, basic disk health check and update underlying systems including restart for maintenance
-* Added example host_vars
+* Added functionality to insert crontabs into K8s nodes, basic disk health check and update underlying systems including restart for maintenance.
+* Added example host_vars.
 * Add additional tasks for the crontab, they will only run if they are defined. See the example for details.
 
 _To be continued_

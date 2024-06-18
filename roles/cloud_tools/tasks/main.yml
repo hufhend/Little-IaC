@@ -1,6 +1,8 @@
 ---
-  # add kubectl to the worker nodes
-  - name: Install kubectl on a worker node
+- name: Set up cloud management utilities 
+  block:
+  # add kubectl
+  - name: Install kubectl for Kubernetes
     block:
     - name: Add kubectl GPG apt key
       ansible.builtin.apt_key:
@@ -14,11 +16,11 @@
         state: present
         filename: google-cloud-sdk
         
-    - name: Add kubectl on the worker node 
+    - name: Install kubectl
       ansible.builtin.apt:
         name: kubectl
         state: present
-    when: role == 'worker'
+    when: (role == 'worker') or (kubectl == True)
 
   - name: Create link to kubectl
     ansible.builtin.file:
@@ -28,7 +30,7 @@
     when: role == 'master' or role == 'combi'
     ignore_errors: true
 
-  - name: Ensure .bashrc has the alias for kubectl
+  - name: Add alias for kubectl
     ansible.builtin.lineinfile:
       path: "{{ lookup('env', 'HOME') }}/.bashrc"
       line: "alias oc='/usr/bin/kubectl'"
@@ -50,3 +52,5 @@
       group: "{{ ansible_user }}"      
       mode: '0600'
     ignore_errors: true
+
+  when: (role in ['combi', 'master', 'worker']) or (kubectl == True)

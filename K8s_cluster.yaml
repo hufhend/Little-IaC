@@ -23,5 +23,6 @@
     - role: system_upgrade
     - role: env_settings
     - role: cluster_node
+    - role: cloud_tools
     - role: firewall
 

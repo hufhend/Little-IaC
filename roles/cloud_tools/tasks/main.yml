@@ -1,7 +1,7 @@
 ---
 - name: Set up cloud management utilities 
   block:
-  # add kubectl
+  # Kubernetes command-line tool
   - name: Install kubectl for Kubernetes
     block:
     - name: Add kubectl GPG apt key
@@ -54,3 +54,25 @@
     ignore_errors: true
 
   when: (role in ['combi', 'master', 'worker']) or (kubectl == True)
+
+# Microsoft Azure CLI on Linux
+- name: Install Azure CLI on Linux
+  block:
+  - name: Add Microsoft GPG key
+    ansible.builtin.apt_key:
+      url: https://packages.microsoft.com/keys/microsoft.asc
+      keyring: /usr/share/keyrings/microsoft.gpg
+      state: present
+
+  - name: Add Azure CLI repository
+    ansible.builtin.apt_repository:
+      repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_distribution_release }} main"
+      state: present
+      filename: azure-cli      
+      
+  - name: Install Azure CLI
+    ansible.builtin.apt:
+      name: azure-cli
+      state: present
+
+  when: azcli == True

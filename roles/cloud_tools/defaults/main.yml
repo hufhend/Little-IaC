@@ -1,3 +1,4 @@
 ---
 # defaults file for cloud_tools
 kubectl: false
+azcli: false

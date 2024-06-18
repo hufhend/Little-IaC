@@ -44,6 +44,10 @@
       group: "{{ ansible_user }}"
       mode: '0750'
 
+  - name: Get local hostname
+    local_action: command hostname
+    register: local_hostname
+
   - name: Copy kubeconfig file to remote server
     ansible.builtin.copy:
       src: "{{ lookup('env', 'HOME') }}/.kube/config"
@@ -52,6 +56,7 @@
       group: "{{ ansible_user }}"      
       mode: '0600'
     ignore_errors: true
+    when: local_hostname.stdout != ansible_hostname
 
   when: (role in ['combi', 'master', 'worker']) or (kubectl == True)
 

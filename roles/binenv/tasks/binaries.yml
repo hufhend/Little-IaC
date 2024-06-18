@@ -1,0 +1,6 @@
+---
+- name: Install required binaries
+  command: binenv -g install {{ item.key }} {{ item.value | regex_replace("latest","", ignorecase=True) }}
+  loop: "{{ binenv_binaries | dict2items }}"
+  register: __binenv_install
+  changed_when: '"already installed" not in __binenv_install.stderr'

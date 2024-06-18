@@ -1,0 +1,16 @@
+---
+
+dependencies: []
+
+galaxy_info:
+  author: DevopsWorks
+  company: DevopsWorks 
+  description: ansible-influxevent role (https://gitlab.com/devopsworks/tools/influxevent)
+  license: MIT
+  min_ansible_version: "2.4"
+  platforms:
+  - name: Ubuntu
+    versions:
+    - all
+  galaxy_tags:
+  - system

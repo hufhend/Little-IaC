@@ -24,4 +24,4 @@
     - role: firewall
     - role: desktop
     - role: cloud_tools
-  
+    - role: binenv

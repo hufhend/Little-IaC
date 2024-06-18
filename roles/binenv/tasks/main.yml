@@ -1,0 +1,40 @@
+---
+# The last binary you'll ever install
+- name: Installation binenv
+  block:
+  - name: Checks if binenv is already present
+    stat:
+      path: /usr/local/bin/binenv
+    register: __binenv
+    tags:
+      - binenv
+
+  - include_tasks:
+      file: binenv.yml
+      apply:
+        tags:
+          - binenv
+    when: not __binenv.stat.exists
+    tags:
+      - always
+
+  - include_tasks:
+      file: environment.yml
+      apply:
+        tags:
+          - binenv
+    tags:
+      - always
+
+  - include_tasks:
+      file: binaries.yml
+      apply:
+        tags:
+          - binenv
+    tags:
+      - always
+
+  when:
+    - ansible_distribution == "Ubuntu"
+    - ansible_distribution_release == "jammy" or ansible_distribution_release == "noble"
+    - binenv == true

@@ -1,0 +1,12 @@
+---
+- name: Fetches latest version
+  get_url:
+    url: https://github.com/devops-works/binenv/releases/latest/download/binenv_linux_amd64
+    dest: /tmp/binenv
+    mode: 0700
+
+- name: Update binenv cache
+  command: /tmp/binenv -g update
+
+- name: Self install binenv
+  command: /tmp/binenv -g  install binenv

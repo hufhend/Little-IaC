@@ -1,0 +1,52 @@
+---
+  # add kubectl to the worker nodes
+  - name: Install kubectl on a worker node
+    block:
+    - name: Add kubectl GPG apt key
+      ansible.builtin.apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        keyring: /usr/share/keyrings/cloud.google.gpg
+        state: present
+
+    - name: Add kubectl repository
+      ansible.builtin.apt_repository:
+        repo: deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main
+        state: present
+        filename: google-cloud-sdk
+        
+    - name: Add kubectl on the worker node 
+      ansible.builtin.apt:
+        name: kubectl
+        state: present
+    when: role == 'worker'
+
+  - name: Create link to kubectl
+    ansible.builtin.file:
+      src: /usr/local/bin/kubectl
+      dest: /usr/bin/kubectl
+      state: link
+    when: role == 'master' or role == 'combi'
+    ignore_errors: true
+
+  - name: Ensure .bashrc has the alias for kubectl
+    ansible.builtin.lineinfile:
+      path: "{{ lookup('env', 'HOME') }}/.bashrc"
+      line: "alias oc='/usr/bin/kubectl'"
+      create: yes
+
+  - name: Create a kube directory
+    ansible.builtin.file:
+      path: "{{ lookup('env', 'HOME') }}/.kube"
+      state: directory
+      owner: "{{ ansible_user }}"
+      group: "{{ ansible_user }}"
+      mode: '0750'
+
+  - name: Copy kubeconfig file to remote server
+    ansible.builtin.copy:
+      src: "{{ lookup('env', 'HOME') }}/.kube/config"
+      dest: "{{ lookup('env', 'HOME') }}/.kube/config"
+      owner: "{{ ansible_user }}"
+      group: "{{ ansible_user }}"      
+      mode: '0600'
+    ignore_errors: true

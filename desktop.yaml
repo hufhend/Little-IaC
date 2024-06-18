@@ -21,5 +21,6 @@
     - role: system_upgrade
     - role: env_settings
     - role: docker
+    - role: cloud_tools
     - role: firewall
     - role: desktop

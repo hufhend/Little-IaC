@@ -17,11 +17,21 @@
       keyring: /etc/apt/trusted.gpg.d/docker.gpg
       state: present
 
+  - name: Determine architecture
+    set_fact:
+      docker_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}"      
+
+  # - name: Add Docker repository
+  #   ansible.builtin.apt_repository:
+  #     repo: deb https://download.docker.com/linux/ubuntu focal stable
+  #     state: present
+  #     filename: docker
+
   - name: Add Docker repository
     ansible.builtin.apt_repository:
-      repo: deb https://download.docker.com/linux/ubuntu focal stable
+      repo: "deb [arch={{ docker_arch }} signed-by=/etc/apt/trusted.gpg.d/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
       state: present
-      filename: docker
+      filename: docker      
 
   - name: Install Docker
     ansible.builtin.apt:

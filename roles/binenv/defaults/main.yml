@@ -1,2 +1,3 @@
-binenv_binaries: {}
 binenv: false
+binenv_binaries:
+  starship: latest

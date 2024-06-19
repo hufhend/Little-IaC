@@ -23,7 +23,7 @@
       path: /home/{{ user_ansible }}/install
       state: directory
       owner: "{{ ansible_user }}"
-      mode: '0755'      
+      mode: '0755'
 
   # Oracle VM VirtualBox
   - name: Install Oracle VM VirtualBox
@@ -53,11 +53,6 @@
       ansible.builtin.apt:
         deb: /home/{{ user_ansible }}/install/google-chrome-stable_current_amd64.deb
         state: present
-
-    # - name: Remove package file
-    #   ansible.builtin.file:
-    #     path: /tmp/google-chrome-stable_current_amd64.deb
-    #     state: absent
     when: chrome == True
 
   # OnlyOffice desktop
@@ -72,11 +67,6 @@
       ansible.builtin.apt:
         deb: /home/{{ user_ansible }}/install/onlyoffice-desktopeditors_amd64.deb
         state: present
-
-    # - name: Remove package file
-    #   ansible.builtin.file:
-    #     path: /tmp/onlyoffice-desktopeditors_amd64.deb
-    #     state: absent
     when: onlyoffice == True
 
   # Brave browser
@@ -120,15 +110,6 @@
       ansible.builtin.apt:
         deb: /home/{{ user_ansible }}/install/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
         state: present
-
-    # - name: Remove package file
-    #   ansible.builtin.file:
-    #     path: /tmp/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
-    #     state: absent
-    # - name: Remove package file
-    #   ansible.builtin.file:
-    #     path: /tmp/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
-    #     state: absent
     when: mega == True
 
   # Steam Game platform
@@ -143,11 +124,6 @@
       ansible.builtin.apt:
         deb: /home/{{ user_ansible }}/install/steam.deb
         state: present
-
-    # - name: Remove package file
-    #   ansible.builtin.file:
-    #     path: /tmp/steam.deb
-    #     state: absent
     when: steam == True
 
   # Microsoft Visual Studio Code
@@ -162,11 +138,6 @@
       ansible.builtin.apt:
         deb: /home/{{ user_ansible }}/install/vscode.deb
         state: present
-
-    # - name: Remove package file
-    #   ansible.builtin.file:
-    #     path: /tmp/vscode.deb
-    #     state: absent
     when: vscode == True
 
   # Support for Cisco VPN
@@ -178,6 +149,14 @@
       - network-manager-openconnect-gnome
       state: present
     when: openconnect == True
+
+  - name: Change ownership of packages
+    ansible.builtin.file:
+      path: /home/{{ user_ansible }}/install/
+      state: directory
+      recurse: yes
+      owner: "{{ user_ansible }}"
+      group: "{{ user_ansible }}"
 
   when:
     - ansible_distribution == "Ubuntu"

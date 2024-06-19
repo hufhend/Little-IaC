@@ -2,16 +2,18 @@
 # Self-hosted DNS service
 - name: Deploy Pi-hole
   block:
-  - name: Set a fact variable
+
+  - name: Set a app variable
     ansible.builtin.set_fact:
       app: "pi-hole"
+      app_name: "Pi-hole"
 
-  - name: Check if Pi-hole exists
+  - name: Check if {{ app_name }} exists
     ansible.builtin.stat:
       path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
     register: pihole_dir_check
 
-  - name: Build Pi-hole on OrangePi
+  - name: Build {{ app_name }} on OrangePi
     block:
       - name: Disable DNSStubListener
         ansible.builtin.lineinfile:
@@ -44,7 +46,7 @@
         become: true
         become_user: root
 
-      - name: Pi-hole Git clone
+      - name: Git clone {{ app_name }}
         ansible.builtin.git:
           repo: 'https://gitlab.torproject.org/hufhendr/pi-hole.git'
           dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
@@ -55,35 +57,8 @@
         args:
           chdir: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
-      - name:  Get the configuration from Git
-        ansible.builtin.git:
-          repo: "{{ private_repo }}"
-          dest: /tmp/config
-          force: true
-        ignore_errors: true
-
-      - name:  Copy the relevant config files
-        ansible.builtin.command: sudo rsync -ra /tmp/config/{{ inventory_hostname }}/pi-hole/ /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-        ignore_errors: true
-
-      - name: Delete temporary files
-        ansible.builtin.file:
-          path: /tmp/config
-          state: absent
-        ignore_errors: true
-
-      - name: Tear down Pi-hole services
-        community.docker.docker_compose_v2:
-          project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-          state: absent
-
-      - name:  Delete everything old
-        ansible.builtin.command: docker system prune -af --volumes
-
-      - name: Create and start {{ app }}
-        community.docker.docker_compose_v2:
-          project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-        # register: output
+      - name: Include config tasks
+        ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
 
       - name: Find existing netplan files
         ansible.builtin.find:

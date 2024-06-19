@@ -1,0 +1,29 @@
+---
+- name:  Get the configuration from Git
+  ansible.builtin.git:
+    repo: "{{ private_repo }}"
+    dest: /tmp/config
+    force: true
+  ignore_errors: true
+
+- name:  Copy the relevant config files
+  ansible.builtin.command: sudo rsync -ra /tmp/config/{{ inventory_hostname }}/{{ app }}/ /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+  ignore_errors: true
+
+- name: Delete temporary files
+  ansible.builtin.file:
+    path: /tmp/config
+    state: absent
+  ignore_errors: true
+
+- name: Shut down {{ app_name }} services
+  community.docker.docker_compose_v2:
+    project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+    state: absent
+
+- name:  Delete everything old
+  ansible.builtin.command: docker system prune -af --volumes
+
+- name: Create and start {{ app_name }}
+  community.docker.docker_compose_v2:
+    project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}

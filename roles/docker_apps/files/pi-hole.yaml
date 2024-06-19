@@ -2,9 +2,13 @@
 # Self-hosted DNS service
 - name: Deploy Pi-hole
   block:
+  - name: Set a fact variable
+    ansible.builtin.set_fact:
+      app: "pi-hole"
+
   - name: Check if Pi-hole exists
     ansible.builtin.stat:
-      path: /home/{{ docker_user }}/{{ docker_home }}/pi-hole
+      path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
     register: pihole_dir_check
 
   - name: Build Pi-hole on OrangePi
@@ -43,13 +47,13 @@
       - name: Pi-hole Git clone
         ansible.builtin.git:
           repo: 'https://gitlab.torproject.org/hufhendr/pi-hole.git'
-          dest: /home/{{ docker_user }}/{{ docker_home }}/pi-hole
+          dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
           force: true
 
       - name: Create a directory structure
         ansible.builtin.command: sh init.sh
         args:
-          chdir: /home/{{ docker_user }}/{{ docker_home }}/pi-hole
+          chdir: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
       - name:  Get the configuration from Git
         ansible.builtin.git:
@@ -59,7 +63,7 @@
         ignore_errors: true
 
       - name:  Copy the relevant config files
-        ansible.builtin.command: sudo rsync -ra /tmp/config/{{ inventory_hostname }}/pi-hole/ /home/{{ docker_user }}/{{ docker_home }}/pi-hole
+        ansible.builtin.command: sudo rsync -ra /tmp/config/{{ inventory_hostname }}/pi-hole/ /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
         ignore_errors: true
 
       - name: Delete temporary files
@@ -70,15 +74,15 @@
 
       - name: Tear down Pi-hole services
         community.docker.docker_compose_v2:
-          project_src: /home/{{ docker_user }}/{{ docker_home }}/pi-hole
+          project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
           state: absent
 
       - name:  Delete everything old
         ansible.builtin.command: docker system prune -af --volumes
 
-      - name: Create and start Pi-hole
+      - name: Create and start {{ app }}
         community.docker.docker_compose_v2:
-          project_src: /home/{{ docker_user }}/{{ docker_home }}/pi-hole
+          project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
         # register: output
 
       - name: Find existing netplan files
@@ -97,24 +101,24 @@
         become: true
         become_user: root
 
-      - name: Set DNS server to Docker Pi-hole
-        community.general.nmcli:
-          conn_name: "{{ ansible_default_ipv4.interface }}"
-          type: "{{ 'ethernet' if ansible_default_ipv4.type == 'ether' else ansible_default_ipv4.type }}"
-          dns4:
-          - 127.0.0.1
-          state: present
-        become: true
-        become_user: root 
-        # notify: Restart NetworkManager
+      # - name: Set DNS server to Docker Pi-hole
+      #   community.general.nmcli:
+      #     conn_name: "{{ ansible_default_ipv4.interface }}"
+      #     type: "{{ 'ethernet' if ansible_default_ipv4.type == 'ether' else ansible_default_ipv4.type }}"
+      #     dns4:
+      #     - 127.0.0.1
+      #     state: present
+      #   become: true
+      #   become_user: root 
+      #   # notify: Restart NetworkManager
 
-      - name: Ignore automatically configured DNS
-        community.general.nmcli:
-          conn_name: "{{ ansible_default_ipv4.interface }}"
-          type: "{{ 'ethernet' if ansible_default_ipv4.type == 'ether' else ansible_default_ipv4.type }}"
-          dns4_ignore_auto: true
-          state: present
-        # notify: Restart NetworkManager
+      # - name: Ignore automatically configured DNS
+      #   community.general.nmcli:
+      #     conn_name: "{{ ansible_default_ipv4.interface }}"
+      #     type: "{{ 'ethernet' if ansible_default_ipv4.type == 'ether' else ansible_default_ipv4.type }}"
+      #     dns4_ignore_auto: true
+      #     state: present
+      #   # notify: Restart NetworkManager
 
       - name: Upload the netplan template
         ansible.builtin.template:
@@ -127,13 +131,13 @@
         become_user: root 
         notify: Apply netplan configuration
 
-      - name: Remove default nameserver
-        ansible.builtin.lineinfile:
-          path: /etc/resolv.conf
-          state: absent
-          regexp: '^nameserver 1\.0\.0\.1$'
-        become: true
-        become_user: root      
+      # - name: Remove default nameserver
+      #   ansible.builtin.lineinfile:
+      #     path: /etc/resolv.conf
+      #     state: absent
+      #     regexp: '^nameserver 1\.0\.0\.1$'
+      #   become: true
+      #   become_user: root      
 
     when: not pihole_dir_check.stat.exists
   when: pihole == true

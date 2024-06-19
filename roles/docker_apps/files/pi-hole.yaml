@@ -51,6 +51,31 @@
         args:
           chdir: /home/{{ docker_user }}/{{ docker_home }}/pi-hole
 
+      - name:  Get the configuration from Git
+        ansible.builtin.git:
+          repo: "{{ private_repo }}"
+          dest: /tmp/config
+          force: true
+        ignore_errors: true
+
+      - name:  Copy the relevant config files
+        ansible.builtin.command: sudo rsync -ra /tmp/config/{{ inventory_hostname }}/pi-hole/ /home/{{ docker_user }}/{{ docker_home }}/pi-hole
+        ignore_errors: true
+
+      - name: Delete temporary files
+        ansible.builtin.file:
+          path: /tmp/config
+          state: absent
+        ignore_errors: true
+
+      - name: Tear down Pi-hole services
+        community.docker.docker_compose_v2:
+          project_src: /home/{{ docker_user }}/{{ docker_home }}/pi-hole
+          state: absent
+
+      - name:  Delete everything old
+        ansible.builtin.command: docker system prune -af --volumes
+
       - name: Create and start Pi-hole
         community.docker.docker_compose_v2:
           project_src: /home/{{ docker_user }}/{{ docker_home }}/pi-hole
@@ -81,7 +106,7 @@
           state: present
         become: true
         become_user: root 
-        notify: Restart NetworkManager
+        # notify: Restart NetworkManager
 
       - name: Ignore automatically configured DNS
         community.general.nmcli:
@@ -89,7 +114,7 @@
           type: "{{ 'ethernet' if ansible_default_ipv4.type == 'ether' else ansible_default_ipv4.type }}"
           dns4_ignore_auto: true
           state: present
-        notify: Restart NetworkManager
+        # notify: Restart NetworkManager
 
       - name: Upload the netplan template
         ansible.builtin.template:
@@ -101,6 +126,14 @@
         become: true
         become_user: root 
         notify: Apply netplan configuration
+
+      - name: Remove default nameserver
+        ansible.builtin.lineinfile:
+          path: /etc/resolv.conf
+          state: absent
+          regexp: '^nameserver 1\.0\.0\.1$'
+        become: true
+        become_user: root      
 
     when: not pihole_dir_check.stat.exists
   when: pihole == true

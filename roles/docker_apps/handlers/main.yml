@@ -4,8 +4,12 @@
   become: true
   become_user: root 
 
-- name: Restart NetworkManager
-  ansible.builtin.service:
-    name: NetworkManager
-    state: reloaded
-  ignore_errors: true
+# - name: Restart NetworkManager
+#   ansible.builtin.service:
+#     name: NetworkManager
+#     state: restarted
+#   ignore_errors: true
+
+# - name: Pause after restart
+#   ansible.builtin.pause:
+#     seconds: 10

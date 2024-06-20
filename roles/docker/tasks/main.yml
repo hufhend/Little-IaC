@@ -37,11 +37,23 @@
       state: latest
       update_cache: true
 
+  - name: Check if user is in docker group
+    ansible.builtin.command: id -nG {{ ansible_user }}
+    register: user_groups
+    changed_when: false      
+
   - name: Add current user to docker group
     ansible.builtin.user:
       name: "{{ docker_user }}"
       groups: docker
       append: yes
+
+  # Restart only on first pass
+  - name: Reboot the system
+    ansible.builtin.reboot:
+      msg: "Reboot initiated by Ansible for Docker installation"
+      reboot_timeout: 600
+    when: "'docker' not in user_groups.stdout.split()"
 
   when: 
     - role not in ['combi', 'master', 'worker']

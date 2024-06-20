@@ -24,14 +24,24 @@
         become: true
         become_user: root
 
+      - name: Disable Cloudflare default DNS
+        ansible.builtin.lineinfile:
+          path: /etc/systemd/resolved.conf
+          regexp: '^DNS=1\.0\.0\.1'
+          line: '#DNS=1.0.0.1'
+          state: present
+          backrefs: yes
+        become: true
+        become_user: root
+
       - name: Remove resolv.conf symlink
         ansible.builtin.file:
           path: /etc/resolv.conf
           state: absent
         become: true
-        become_user: root      
+        become_user: root
 
-      - name: Create symlink to resolv.conf
+      - name: Create symlink to new resolv.conf
         ansible.builtin.file:
           src: /run/systemd/resolve/resolv.conf
           dest: /etc/resolv.conf
@@ -76,25 +86,8 @@
         become: true
         become_user: root
 
-      # - name: Set DNS server to Docker Pi-hole
-      #   community.general.nmcli:
-      #     conn_name: "{{ ansible_default_ipv4.interface }}"
-      #     type: "{{ 'ethernet' if ansible_default_ipv4.type == 'ether' else ansible_default_ipv4.type }}"
-      #     dns4:
-      #     - 127.0.0.1
-      #     state: present
-      #   become: true
-      #   become_user: root 
-      #   # notify: Restart NetworkManager
-
-      # - name: Ignore automatically configured DNS
-      #   community.general.nmcli:
-      #     conn_name: "{{ ansible_default_ipv4.interface }}"
-      #     type: "{{ 'ethernet' if ansible_default_ipv4.type == 'ether' else ansible_default_ipv4.type }}"
-      #     dns4_ignore_auto: true
-      #     state: present
-      #   # notify: Restart NetworkManager
-
+      # This adds docker DNS to the first place
+      # Up until now they are using DNS from DHCP, if something doesn't work, check them first
       - name: Upload the netplan template
         ansible.builtin.template:
           src: templates/ansible_pihole.j2
@@ -105,14 +98,6 @@
         become: true
         become_user: root 
         notify: Apply netplan configuration
-
-      # - name: Remove default nameserver
-      #   ansible.builtin.lineinfile:
-      #     path: /etc/resolv.conf
-      #     state: absent
-      #     regexp: '^nameserver 1\.0\.0\.1$'
-      #   become: true
-      #   become_user: root      
 
     when: not pihole_dir_check.stat.exists
   when: pihole == true

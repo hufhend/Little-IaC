@@ -2,45 +2,54 @@
 # Monitoring Prometheus with Grafana
 - name: Deploy Prometheus
   block:
-  - name: Prometheus Git clone
+
+  - name: Set a app variable
+    ansible.builtin.set_fact:
+      app: "prometheus"
+      app_name: "Prometheus"
+
+  - name: Git clone {{ app_name }}
     ansible.builtin.git:
       repo: 'https://github.com/hufhend/prometheus.git'
-      dest: /home/{{ docker_user }}/{{ docker_home }}/prometheus
+      dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
       force: true
 
   - name: Create a directory structure
     ansible.builtin.command: sh init.sh
     args:
-      chdir: /home/{{ docker_user }}/{{ docker_home }}/prometheus
+      chdir: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
-  - name:  Get the configuration from Git
-    ansible.builtin.git:
-      repo: "{{ private_repo }}"
-      dest: /tmp/monitoring
-      force: true
-    ignore_errors: true
+  - name: Include config tasks
+    ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"     
 
-  - name:  Copy the relevant config files
-    ansible.builtin.command: sudo rsync -ra /tmp/monitoring/{{ inventory_hostname }}/prometheus/ /home/{{ docker_user }}/{{ docker_home }}/prometheus
-    ignore_errors: true
+  # - name:  Get the configuration from Git
+  #   ansible.builtin.git:
+  #     repo: "{{ private_repo }}"
+  #     dest: /tmp/monitoring
+  #     force: true
+  #   ignore_errors: true
 
-  - name: Delete temporary files
-    ansible.builtin.file:
-      path: /tmp/monitoring
-      state: absent
-    ignore_errors: true
+  # - name:  Copy the relevant config files
+  #   ansible.builtin.command: sudo rsync -ra /tmp/monitoring/{{ inventory_hostname }}/{{ app }}/ /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+  #   ignore_errors: true
 
-  - name: Tear down Prometheus services
-    community.docker.docker_compose_v2:
-      project_src: /home/{{ docker_user }}/{{ docker_home }}/prometheus
-      state: absent
+  # - name: Delete temporary files
+  #   ansible.builtin.file:
+  #     path: /tmp/monitoring
+  #     state: absent
+  #   ignore_errors: true
 
-  - name:  Delete everything old
-    ansible.builtin.command: docker system prune -af --volumes
+  # - name: Tear down {{ app_name }} services
+  #   community.docker.docker_compose_v2:
+  #     project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+  #     state: absent
 
-  - name: Create and start Prometheus
-    community.docker.docker_compose_v2:
-      project_src: /home/{{ docker_user }}/{{ docker_home }}/prometheus
-      pull: always
-      build: always
+  # - name:  Delete everything old
+  #   ansible.builtin.command: docker system prune -af --volumes
+
+  # - name: Create and start {{ app_name }}
+  #   community.docker.docker_compose_v2:
+  #     project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+  #     pull: always
+  #     build: always
   when: prometheus == true

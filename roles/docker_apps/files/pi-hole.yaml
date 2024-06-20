@@ -67,8 +67,19 @@
         args:
           chdir: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
+      # Download custom configuration from private Git
       - name: Include config tasks
         ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
+
+      - name: Change ownership of bind directory
+        ansible.builtin.file:
+          path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/bind
+          owner: 100
+          group: 101
+          mode: '0640'          
+          recurse: yes
+        become: true
+        become_user: root        
 
       - name: Find existing netplan files
         ansible.builtin.find:

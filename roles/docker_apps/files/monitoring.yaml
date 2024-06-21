@@ -1,13 +1,17 @@
 ---
 # Monitoring Prometheus with Grafana
-- name: Deploy Prometheus
+- name: Set a app variable
+  ansible.builtin.set_fact:
+    app: "prometheus"
+    app_name: "Prometheus"
+
+- name: Check if {{ app_name }} exists
+  ansible.builtin.stat:
+    path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+  register: prometheus_dir_check
+
+- name: Deploy {{ app_name }}
   block:
-
-  - name: Set a app variable
-    ansible.builtin.set_fact:
-      app: "prometheus"
-      app_name: "Prometheus"
-
   - name: Git clone {{ app_name }}
     ansible.builtin.git:
       repo: 'https://github.com/hufhend/prometheus.git'
@@ -20,6 +24,20 @@
       chdir: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
   - name: Include config tasks
-    ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"     
+    ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
 
-when: prometheus == true
+  - name: Set installed variable
+    ansible.builtin.set_fact:
+      "{{ app }}_installed": true
+  when: 
+    - prometheus == true
+    - not prometheus_dir_check.stat.exists
+
+# We update the configuration at every run
+- name: Configuration {{ app_name }}
+  block:
+  - name: Include config tasks
+    ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
+  when: 
+    - prometheus == true
+    - prometheus_installed | default(false) != true

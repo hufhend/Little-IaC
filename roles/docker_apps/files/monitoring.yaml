@@ -23,21 +23,14 @@
     args:
       chdir: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
-  - name: Include config tasks
-    ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
-
-  - name: Set installed variable
-    ansible.builtin.set_fact:
-      "{{ app }}_installed": true
   when: 
     - prometheus == true
     - not prometheus_dir_check.stat.exists
 
-# We update the configuration at every run
+# Update the configuration at every run
 - name: Configuration {{ app_name }}
   block:
   - name: Include config tasks
     ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
   when: 
     - prometheus == true
-    - prometheus_installed | default(false) != true

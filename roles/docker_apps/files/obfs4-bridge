@@ -1,0 +1,28 @@
+---
+# Tor Obfs4 Bridge 
+- name: Set a app variable
+  ansible.builtin.set_fact:
+    app: "torproject"
+    app_name: "Tor Obfs4 Bridge"
+
+- name: Check if {{ app_name }} exists
+  ansible.builtin.stat:
+    path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+  register: torproject_dir_check
+
+- name: Git clone {{ app_name }}
+  ansible.builtin.git:
+    repo: 'https://gitlab.torproject.org/hufhendr/docker-obfs4-bridge.git'
+    dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+    force: true
+  when: 
+    - torproject == true
+    - not torproject_dir_check.stat.exists
+
+# Update the configuration at every run
+- name: Configuration {{ app_name }}
+  block:
+  - name: Include config tasks
+    ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
+  when: 
+    - torproject == true

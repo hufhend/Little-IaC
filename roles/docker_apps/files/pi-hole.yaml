@@ -1,18 +1,17 @@
 ---
 # Self-hosted DNS service
+- name: Set a app variable
+  ansible.builtin.set_fact:
+    app: "pi-hole"
+    app_name: "Pi-hole"
+
+- name: Check if {{ app_name }} exists
+  ansible.builtin.stat:
+    path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+  register: pihole_dir_check
+
 - name: Deploy Pi-hole
   block:
-
-  - name: Set a app variable
-    ansible.builtin.set_fact:
-      app: "pi-hole"
-      app_name: "Pi-hole"
-
-  - name: Check if {{ app_name }} exists
-    ansible.builtin.stat:
-      path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-    register: pihole_dir_check
-
   - name: Build {{ app_name }} on OrangePi
     block:
       - name: Disable DNSStubListener

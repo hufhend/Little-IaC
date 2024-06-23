@@ -12,7 +12,7 @@
 
 - name: Git clone {{ app_name }}
   ansible.builtin.git:
-    repo: 'https://gitlab.torproject.org/tpo/anti-censorship/docker-obfs4-bridge.git'
+    repo: 'https://gitlab.torproject.org/hufhendr/docker-obfs4-bridge.git'
     dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
     force: true
   when: 

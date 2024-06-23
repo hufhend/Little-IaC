@@ -7,3 +7,4 @@ role: computer
 gitea: false
 pihole: false
 prometheus: false
+torproject: false

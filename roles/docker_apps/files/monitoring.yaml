@@ -28,6 +28,10 @@
     - not prometheus_dir_check.stat.exists
 
 # Update the configuration at every run
+- name: Set reset variable
+  ansible.builtin.set_fact:
+    reset: true
+    
 - name: Configuration {{ app_name }}
   block:
   - name: Include config tasks

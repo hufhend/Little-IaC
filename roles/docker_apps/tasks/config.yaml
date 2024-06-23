@@ -24,6 +24,7 @@
 
 - name:  Delete everything old
   ansible.builtin.command: docker system prune -af --volumes
+  when: reset | default(false) == true
 
 - name: Create and start {{ app_name }}
   community.docker.docker_compose_v2:

@@ -1,12 +1,12 @@
 ---
-- name:  Get the configuration from Git
+- name:  Get {{ app_name }} configuration
   ansible.builtin.git:
     repo: "{{ private_repo }}"
     dest: /tmp/config
     force: true
   ignore_errors: true
 
-- name:  Copy the relevant config files
+- name:  Copy the {{ app_name }} config files
   ansible.builtin.command: sudo rsync -ra /tmp/config/{{ inventory_hostname }}/{{ app }}/ /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
   ignore_errors: true
 

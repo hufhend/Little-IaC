@@ -21,3 +21,8 @@
     - role: system_upgrade
     - role: env_settings
     - role: firewall
+
+    # # For special cases only
+    # - role: docker_apps
+    #   become: true
+    #   become_user: "{{ docker_user }}"

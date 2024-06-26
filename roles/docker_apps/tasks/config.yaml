@@ -19,7 +19,7 @@
 - name: Shut down {{ app_name }} services
   community.docker.docker_compose_v2:
     project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-    state: absent
+    state: stopped
   ignore_errors: true
 
 - name:  Delete everything old

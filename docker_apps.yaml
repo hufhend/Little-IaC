@@ -1,10 +1,10 @@
 ---
 #   ***************************************
-#   Ansible Playbook for Linux setup
-#   begin     : Fri 29 Mar 2024
+#   Ansible Playbook for deploy Docker apps
+#   begin     : Thu 29 Jun 2024
 #   copyright : (c) 2024 Václav Dvorský
-#   email     : vaclav.dvorsky@dataforce.cz
-#   $Id: setup.yaml, v1.00 30/03/2024
+#   email     : Vaclav.Dvorsky@aricoma.com
+#   $Id: docker_apps.yaml, v1.00 27/06/2024
 #   ***************************************
 
 #   --------------------------------------------------------------------
@@ -14,10 +14,11 @@
 #   (at your option) any later version.
 #   --------------------------------------------------------------------
 
-- name: Setting up and updating the operating system
+- name: Deploy containerized apps via Docker
   hosts: all
   become: true
+  become_user: "{{ docker_user }}"
   roles:
-    - role: system_upgrade
-    - role: env_settings
-    - role: firewall
+    - role: docker_apps
+      # become: true
+      # become_user: "{{ docker_user }}"

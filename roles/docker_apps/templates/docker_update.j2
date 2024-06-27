@@ -2,30 +2,30 @@
 # Refresh the Pi-hole
 cd ~/docker/pi-hole;    docker compose pull && docker compose build && docker compose up -d
 sleep 30
-{% endif %}
 
+{% endif %}
 {% if prometheus is defined and prometheus != 'false' %}
 # Refresh the Prometheus
 cd ~/docker/prometheus; docker compose pull && docker compose build && docker compose up -d
 sleep 30
-{% endif %}
 
+{% endif %}
 {% if unify is defined and unify != 'false' %}
 # Refresh the Unify
 cd ~/docker/unifi;      docker compose pull && docker compose build && docker compose up -d
 sleep 30
-{% endif %}
 
+{% endif %}
 {% if tor is defined and tor != 'false' %}
 # Refresh the Tor
 cd ~/docker/torproject; docker compose pull && docker compose build && docker compose up -d
 sleep 30
-{% endif %}
 
+{% endif %}
 {% if openvpn is defined and openvpn != 'false' %}
 # Refresh the Openvpn
 cd ~/docker/openvpn;    docker compose pull && docker compose build && docker compose up -d
 sleep 60
-{% endif %}
 
+{% endif %}
 docker system prune --volumes -a -f

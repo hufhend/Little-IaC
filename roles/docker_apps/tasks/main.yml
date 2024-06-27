@@ -42,4 +42,20 @@
     loop: "{{ query('fileglob', '{{ role_path }}/files/*.yaml') }}"
     no_log: true
 
+  - name: Create a scr directory
+    ansible.builtin.file:
+      path: "/home/{{ docker_user }}/scr"
+      state: directory
+      mode: '0754'
+      owner: "{{ docker_user }}"
+      group: "{{ docker_user }}"    
+
+  - name: Add script to update Docker app
+    ansible.builtin.template:
+      src: templates/docker_update.j2
+      dest: "/home/{{ docker_user }}/scr/docker_update.sh"
+      owner: "{{ docker_user }}"
+      group: "{{ docker_user }}"
+      mode: '0760'
+
   when: role not in ['combi', 'master', 'worker']

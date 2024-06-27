@@ -3,3 +3,12 @@
 # Set to true to run
 
 orange: false
+role: orange
+
+# Settings for crontab
+# Day for complete maintenance including restart
+mntd: "15"
+# Minute to download updates
+mntm: "27"
+# Setting the value to OrangePi to enable crontab 
+cron: choose

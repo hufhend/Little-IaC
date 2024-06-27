@@ -1,0 +1,14 @@
+# For more information see the manual pages of crontab(5) and cron(8)
+# m h dom mon dow   command
+
+# This file is maintained by Ansible
+# Any changes can be overwritten
+
+# Complete system update
+{{ mntm }}  03   *  *   *     sudo apt -f install && sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y && sudo apt autoremove -y
+
+# Restart OrangePi
+30  06  {{ mntd }}  *   *     sudo /usr/sbin/init 6
+
+# Update Docker apps
+{{ mntm }}  05   *  *  mon    /home/{{ ansible_user }}/scr/docker_update.sh

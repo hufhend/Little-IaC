@@ -1,10 +1,10 @@
 ---
 #   ***************************************
 #   Ansible Playbook for deploy Docker apps
-#   begin     : Thu 29 Jun 2024
+#   begin     : Thu 27 Jun 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : Vaclav.Dvorsky@aricoma.com
-#   $Id: docker_apps.yaml, v1.00 27/06/2024
+#   $Id: docker_apps.yaml, v1.00 28/06/2024
 #   ***************************************
 
 #   --------------------------------------------------------------------

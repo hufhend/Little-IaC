@@ -36,5 +36,22 @@
   block:
   - name: Include config tasks
     ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
+
+  - name: Change ownership of Grafana directory
+    ansible.builtin.file:
+      path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/grafana/{{ grafana_item }}
+      owner: 472
+      group: root
+      mode: '0755'
+      recurse: yes
+    loop:
+      - etc
+      - data
+    loop_control:
+      loop_var: grafana_item
+
+    become: true
+    become_user: root   
+
   when: 
     - prometheus == true

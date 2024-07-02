@@ -1,9 +1,17 @@
 ---
 # We only define the variable
 # Set to true to run
-
 orange: false
+
+# General role for Orange, doesn't really have any meaning
 role: orange
+
+# File name for swap
+swap_file: swapfile
+# Empty for root
+swap_path: "" 
+# Default swap size
+swap_size: 3.5G
 
 # Settings for crontab
 # Day for complete maintenance including restart

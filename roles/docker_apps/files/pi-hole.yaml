@@ -111,9 +111,15 @@
     ansible.builtin.set_fact:
       "pihole_installed": true
 
+  # Start the application 
+  - name: Create and start {{ app_name }}
+    community.docker.docker_compose_v2:
+      project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+
   when: 
     - pihole == true
     - not pihole_dir_check.stat.exists
+
 
 - name: Configuration {{ app_name }}
   block:
@@ -128,7 +134,13 @@
       mode: '0750'
       recurse: yes
     become: true
-    become_user: root    
+    become_user: root
+
+  # Start the application 
+  - name: Create and start {{ app_name }}
+    community.docker.docker_compose_v2:
+      project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+
   when: 
     - pihole == true
     - pihole_installed | default(false) != true

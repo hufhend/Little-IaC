@@ -40,8 +40,9 @@
       - not swap_file_check.stat.exists
       - role not in ['combi', 'master', 'worker']
 
-  - name: Include tasks sysstat services
-    include_tasks: "{{ role_path }}/tasks/sysstat.yaml"
+  # # Resolved in recent versions of Armbian
+  # - name: Include tasks sysstat services
+  #   include_tasks: "{{ role_path }}/tasks/sysstat.yaml"
 
   - name: Check if pods directory exists
     ansible.builtin.stat:

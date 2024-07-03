@@ -45,6 +45,12 @@ cd ~/docker/openvpn;        docker compose pull && docker compose build && docke
 sleep 30
 
 {% endif %}
+{% if gitea is defined and gitea != 'false' %}
+# Refresh the Gitea
+cd ~/docker/gitea;          docker compose pull && docker compose build && docker compose up -d
+sleep 30
+
+{% endif %}
 # Refresh the Let's Encrypt
 cd ~/docker/acme-companion; docker compose pull && docker compose build && docker compose up -d
 sleep 60

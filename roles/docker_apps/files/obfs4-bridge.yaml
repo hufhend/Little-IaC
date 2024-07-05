@@ -24,5 +24,10 @@
   block:
   - name: Include config tasks
     ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
+
+  # Start the application 
+  - name: Create and start {{ app_name }}
+    community.docker.docker_compose_v2:
+      project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}       
   when: 
     - torproject == true

@@ -15,37 +15,37 @@
 #   --------------------------------------------------------------------
 
 
-{% if pihole is defined and pihole != 'false' %}
+{% if pihole is defined and pihole != 'false' and pihole != false %}
 # Refresh the Pi-hole
 cd ~/docker/pi-hole;        docker compose pull && docker compose build && docker compose up -d
 sleep 30
 
 {% endif %}
-{% if prometheus is defined and prometheus != 'false' %}
+{% if prometheus is defined and prometheus != 'false' and prometheus != false %}
 # Refresh the Prometheus
 cd ~/docker/prometheus;     docker compose pull && docker compose build && docker compose up -d
 sleep 30
 
 {% endif %}
-{% if unify is defined and unify != 'false' %}
+{% if unify is defined and unify != 'false' and unify != false %}
 # Refresh the Unify
 cd ~/docker/unifi;          docker compose pull && docker compose build && docker compose up -d
 sleep 30
 
 {% endif %}
-{% if tor is defined and tor != 'false' %}
+{% if tor is defined and tor != 'false' and tor != false %}
 # Refresh the Tor
 cd ~/docker/torproject;     docker compose pull && docker compose build && docker compose up -d
 sleep 30
 
 {% endif %}
-{% if openvpn is defined and openvpn != 'false' %}
+{% if openvpn is defined and openvpn != 'false' and openvpn != false %}
 # Refresh the Openvpn
 cd ~/docker/openvpn;        docker compose pull && docker compose build && docker compose up -d
 sleep 30
 
 {% endif %}
-{% if gitea is defined and gitea != 'false' %}
+{% if gitea is defined and gitea != 'false' and gitea != false %}
 # Refresh the Gitea
 cd ~/docker/gitea;          docker compose pull && docker compose build && docker compose up -d
 sleep 30

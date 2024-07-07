@@ -50,6 +50,10 @@
       owner: "{{ docker_user }}"
       group: "{{ docker_user }}"    
 
+  - name: Print Gitea variable
+    debug:
+      var: gitea      
+
   - name: Add script to update Docker app
     ansible.builtin.template:
       src: templates/docker_update.j2

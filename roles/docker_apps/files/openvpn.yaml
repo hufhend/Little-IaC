@@ -1,0 +1,63 @@
+---
+# Self-hosted Git service
+- name: Set a app variable
+  ansible.builtin.set_fact:
+    app: "openvpn"
+    app_name: "OpenVPN"
+
+- name: Deploy {{ app_name }}
+  block:
+    - name: Git clone {{ app_name }}
+      ansible.builtin.git:
+        repo: 'https://github.com/hufhend/openvpn.git'
+        dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+        force: true
+
+    - name: Change ownership of {{ app_name }} directory
+      ansible.builtin.file:
+        path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/data/conf
+        owner: "{{ docker_user }}"
+        mode: '0750'
+        state: directory
+
+    - name: Initialize the configuration files 
+      ansible.builtin.command: docker compose run --rm openvpn ovpn_genconfig -u udp://{{ vpn_url }}
+      args:
+        chdir: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+
+    - name: Create input file for ovpn_initpki
+      ansible.builtin.template:
+        src: templates/ovpn_initpki_input.j2
+        dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/data/conf/ovpn_initpki_input
+      register: input_file
+
+    - name: Initialize the certificates
+      ansible.builtin.command: 
+        docker compose run --rm openvpn sh -c 'cat /etc/openvpn/ovpn_initpki_input | ovpn_initpki'
+      args:
+        chdir: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+      register: pki_output
+      ignore_errors: true
+
+    - name: Print Gitea variable
+      debug:
+        var: pki_output      
+
+    # - name: Clean up input file
+    #   ansible.builtin.file:
+    #     path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/ovpn_initpki_input
+    #     state: absent
+
+
+    # - name: Initialize the certificates
+    #   ansible.builtin.command: docker compose run --rm openvpn ovpn_initpki
+    #   args:
+    #     chdir: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+    #   register: pki_output
+
+
+
+    - name: Create and start {{ app_name }}
+      community.docker.docker_compose_v2:
+        project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+  when: openvpn == true

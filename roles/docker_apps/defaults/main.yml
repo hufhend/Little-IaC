@@ -8,4 +8,5 @@ gitea: false
 pihole: false
 prometheus: false
 torproject: false
+openvpn: false
 vpn_url: vpn.example.com

@@ -33,7 +33,7 @@ cd ~/docker/unifi;          docker compose pull && docker compose build && docke
 sleep 30
 
 {% endif %}
-{% if tor is defined and tor != 'false' and tor != false %}
+{% if torproject is defined and torproject != 'false' and torproject != false %}
 # Refresh the Tor
 cd ~/docker/torproject;     docker compose pull && docker compose build && docker compose up -d
 sleep 30

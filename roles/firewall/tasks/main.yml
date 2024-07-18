@@ -44,8 +44,18 @@
         rule: allow
         port: '9101'
         proto: tcp
-        src: 0.0.0.0/0
+        src: "{{ safe_network }}"
         comment: Allow Node Exporter
+
+    # from Docker networks
+    - name: Allow Prometheus Node Exporter
+      community.general.ufw:
+        rule: allow
+        port: '9101'
+        proto: tcp
+        src: 172.16.0.0/12
+        comment: Allow Node Exporter  
+      when: role not in ['combi', 'master', 'worker']
 
     # Host-specific rules defined in host-vars
     - name: Allow host ports and services

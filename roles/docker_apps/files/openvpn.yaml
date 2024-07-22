@@ -20,71 +20,10 @@
         mode: '0750'
         state: directory
 
-    - name: Initialize the configuration files 
-      ansible.builtin.command: docker compose run --rm openvpn ovpn_genconfig -u udp://{{ vpn_url }}
-      args:
-        chdir: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-
-    - name: Create input file for ovpn_initpki
-      ansible.builtin.template:
-        src: templates/ovpn_initpki_input.j2
-        dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/data/conf/ovpn_initpki_input
-      register: input_file
-
-    - name: Initialize the certificates
-      ansible.builtin.command:
-        cmd: "docker compose run --rm openvpn sh -c 'cat /etc/openvpn/ovpn_initpki_input | ovpn_initpki'"
-      args:
-        chdir: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-      register: pki_output
-      ignore_errors: true
-
-    - name: Print Gitea variable
-      debug:
-        var: pki_output      
-
-
-    # - name: Initialize the certificates using expect
-    #   ansible.builtin.expect:
-    #     command: docker compose run --rm openvpn ovpn_initpki
-    #     responses:
-    #         "Confirm removal": 
-    #             - "yes"
-    #         "Enter New CA Key Passphrase": 
-    #             - "P4aKgG3mvSXNi6Y2a/t0g3zYTyVVBwHbzMwueB2/Xjg="
-    #         "Confirm New CA Key Passphrase": 
-    #             - "P4aKgG3mvSXNi6Y2a/t0g3zYTyVVBwHbzMwueB2/Xjg="
-    #         "Common Name (eg: your user, host, or server name) [Easy-RSA CA]": 
-    #             - "Easy-RSA CA"
-    #         "Confirm request details":
-    #             - "yes"
-    #         "Enter pass phrase for /etc/openvpn/pki/private/ca.key":
-    #             - "P4aKgG3mvSXNi6Y2a/t0g3zYTyVVBwHbzMwueB2/Xjg="
-    #         # "Enter pass phrase for /etc/openvpn/pki/private/ca.key": 
-    #         #   - "P4aKgG3mvSXNi6Y2a/t0g3zYTyVVBwHbzMwueB2/Xjg="
-
-    #     chdir: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-    #   register: pki_output
-    #   ignore_errors: true
-
-    - name: Debug PKI output
-      ansible.builtin.debug:
-        var: pki_output
-
-
-    # - name: Clean up input file
-    #   ansible.builtin.file:
-    #     path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/ovpn_initpki_input
-    #     state: absent
-
-
-    # - name: Initialize the certificates
-    #   ansible.builtin.command: docker compose run --rm openvpn ovpn_initpki
-    #   args:
-    #     chdir: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-    #   register: pki_output
-
-
+    - name: Configuration {{ app_name }}
+      block:
+      - name: Include config tasks
+        ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
 
     - name: Create and start {{ app_name }}
       community.docker.docker_compose_v2:

@@ -31,4 +31,4 @@
   roles:
     - role: host_init
   vars:
-    ansible_user: vasik
+    ansible_user: hufhendr

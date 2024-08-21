@@ -1,1 +1,2 @@
 private_repo: https://git.private/{{ ansible_user }}/config.git
+git_hosts: "192.168.9.9 git.private"

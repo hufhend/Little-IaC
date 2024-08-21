@@ -18,6 +18,15 @@
       group: "{{ docker_user }}"
       mode: '0750'
 
+  - name: Add private Gitlab to hosts
+    ansible.builtin.lineinfile:
+      path: /etc/hosts
+      line: "{{ git_hosts }}"
+      state: present
+    ignore_errors: true
+    become: true
+    become_user: root
+
   - name:  Back everything up before any changes
     command: rsync -ra --delete /home/{{ docker_user }}/{{ docker_home }}/ /home/{{ docker_user }}/backup/{{ docker_home }}
     become: true

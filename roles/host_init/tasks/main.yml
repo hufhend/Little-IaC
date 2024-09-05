@@ -4,7 +4,7 @@
 #   begin     : Wed 28 Feb 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : vaclav.dvorsky@dataforce.cz
-#   $Id: host-init.yaml, v1.24 13/06/2024
+#   $Id: host-init.yaml, v1.30 05/09/2024
 #   **********************************************
 
 #   --------------------------------------------------------------------
@@ -40,11 +40,19 @@
 # This can be interesting if you are making gaming computers for sale.
 - name: Ansible user doesn't log in via GUI
   ansible.builtin.lineinfile:
-    path: "/var/lib/AccountsService/users/{{ ansible_user }}"
+    path: "/var/lib/AccountsService/users/{{ user_ansible }}"
     regexp: '^SystemAccount='
     line: 'SystemAccount=true'
   ignore_errors: true    
   when: ansible_user != user_ansible
+
+- name: Print ansible_user variable
+  debug:
+    var: ansible_user
+
+- name: Print user_ansible variable
+  debug:
+    var: user_ansible
 
 - name: Check if the sudoers file exists
   ansible.builtin.stat:

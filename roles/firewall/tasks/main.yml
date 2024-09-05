@@ -48,7 +48,7 @@
         comment: Allow Node Exporter
 
     # from Docker networks
-    - name: Allow Prometheus Node Exporter
+    - name: Allow Node Exporter for Docker
       community.general.ufw:
         rule: allow
         port: '9101'

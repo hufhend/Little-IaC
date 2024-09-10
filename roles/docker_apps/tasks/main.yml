@@ -35,12 +35,22 @@
   # Automated ACME SSL certificate generation for nginx-proxy
   - name: Clone acme-companion in Docker
     block:
-      - name: ACME companion Git clone
+      - name: Set a app variable
+        ansible.builtin.set_fact:
+          app: "acme-companion"
+          app_name: "Let's Encrypt"
+
+      - name: Git clone {{ app_name }}
         ansible.builtin.git:
           repo: 'https://github.com/hufhend/acme-companion.git'
           dest: /home/{{ docker_user }}/{{ docker_home }}/acme-companion
+          force: yes
 
-  - name: Create and start Let's Encrypt
+      - name: Configuration {{ app_name }}
+        ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
+    when: true
+
+  - name: Create and start {{ app_name }}
     community.docker.docker_compose_v2:
       project_src: /home/{{ docker_user }}/{{ docker_home }}/acme-companion
     # register: output

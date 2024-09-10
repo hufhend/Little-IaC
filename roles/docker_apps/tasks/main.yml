@@ -48,12 +48,12 @@
 
       - name: Configuration {{ app_name }}
         ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
-    when: true
 
-  - name: Create and start {{ app_name }}
-    community.docker.docker_compose_v2:
-      project_src: /home/{{ docker_user }}/{{ docker_home }}/acme-companion
-    # register: output
+      - name: Create and start {{ app_name }}
+        community.docker.docker_compose_v2:
+          project_src: /home/{{ docker_user }}/{{ docker_home }}/acme-companion
+        # register: output
+    when: true    
 
   - name: Add other Docker apps
     include_tasks:

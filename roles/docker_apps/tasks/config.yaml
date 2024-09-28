@@ -1,4 +1,5 @@
 ---
+# Configurations are taken from our own git
 - name:  Get {{ app_name }} configuration
   ansible.builtin.git:
     repo: "{{ private_repo }}"
@@ -10,18 +11,27 @@
   ansible.builtin.command: sudo rsync -ra /tmp/config/{{ inventory_hostname }}/{{ app }}/ /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
   ignore_errors: true
 
+# Warning: tar archive must be created relatively and error-free
 - name: Check if {{ app_name }} Tar config exists
   ansible.builtin.stat:
     path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
   register: config_tar_check
 
-- name: Unpack the Tar archive of configuration files
-  ansible.builtin.unarchive:
-    src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
-    dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-    remote_src: yes
-  become: true
-  become_user: root
+- name: Config {{ app_name }}
+  block:
+  - name: Unpack the Tar archive of config files
+    ansible.builtin.unarchive:
+      src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
+      dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+      remote_src: yes
+    become: true
+    become_user: root
+
+  - name: Delete Tar temp files
+    ansible.builtin.file:
+      path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
+      state: absent
+
   when: 
     - config_tar_check.stat.exists
 
@@ -41,6 +51,4 @@
   ansible.builtin.command: docker system prune -af --volumes
   when: reset | default(false) == true
 
-# - name: Create and start {{ app_name }}
-#   community.docker.docker_compose_v2:
-#     project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+# Starting the application is a matter of the application task

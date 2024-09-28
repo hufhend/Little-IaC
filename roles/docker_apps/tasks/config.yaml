@@ -10,6 +10,21 @@
   ansible.builtin.command: sudo rsync -ra /tmp/config/{{ inventory_hostname }}/{{ app }}/ /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
   ignore_errors: true
 
+- name: Check if {{ app_name }} Tar config exists
+  ansible.builtin.stat:
+    path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
+  register: config_tar_check
+
+- name: Unpack the Tar archive of configuration files
+  ansible.builtin.unarchive:
+    src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
+    dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+    remote_src: yes
+  become: true
+  become_user: root
+  when: 
+    - config_tar_check.stat.exists
+
 - name: Delete temporary files
   ansible.builtin.file:
     path: /tmp/config

@@ -12,13 +12,10 @@
     path: /tmp/config/{{ inventory_hostname }}/{{ app }}
   register: config_exists
 
+# Copy configuration files to the current application
 - name: Copy the {{ app_name }} config files
   ansible.builtin.command: sudo rsync -ra /tmp/config/{{ inventory_hostname }}/{{ app }}/ /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
   when: config_exists.stat.exists
-
-# - name:  Copy the {{ app_name }} config files
-#   ansible.builtin.command: sudo rsync -ra /tmp/config/{{ inventory_hostname }}/{{ app }}/ /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-#   ignore_errors: true
 
 # Warning: tar archive must be created relatively and error-free
 - name: Check if {{ app_name }} config Tar exists
@@ -26,6 +23,7 @@
     path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
   register: config_tar
 
+# Block for mass configuration
 - name: Config {{ app_name }}
   block:
   - name: Get checksum value from file
@@ -45,6 +43,9 @@
         - Computed hash: "{{ actual_file.stat.checksum }}"
         - Expected hash: "{{ expected_checksum.stdout }}"
 
+  # If the checksum doesn't match, it stops
+  # If completely missing, the entire block is not executed, so the bulk configuration is conditional 
+  # on the existence of a checksum file
   - name: Checksum mismatch
     fail:
       msg: "Checksum mismatch. Aborting."

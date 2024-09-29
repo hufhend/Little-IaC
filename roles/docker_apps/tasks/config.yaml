@@ -7,19 +7,50 @@
     force: true
   ignore_errors: true
 
-- name:  Copy the {{ app_name }} config files
+- name: Check if source config files exist
+  ansible.builtin.stat:
+    path: /tmp/config/{{ inventory_hostname }}/{{ app }}
+  register: config_exists
+
+- name: Copy the {{ app_name }} config files
   ansible.builtin.command: sudo rsync -ra /tmp/config/{{ inventory_hostname }}/{{ app }}/ /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-  ignore_errors: true
+  when: config_exists.stat.exists
+
+# - name:  Copy the {{ app_name }} config files
+#   ansible.builtin.command: sudo rsync -ra /tmp/config/{{ inventory_hostname }}/{{ app }}/ /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+#   ignore_errors: true
 
 # Warning: tar archive must be created relatively and error-free
-- name: Check if {{ app_name }} Tar config exists
+- name: Check if {{ app_name }} config Tar exists
   ansible.builtin.stat:
     path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
   register: config_tar
 
 - name: Config {{ app_name }}
   block:
-  - name: Unpack the Tar archive of config files
+  - name: Get checksum value from file
+    command: awk '{print $1}' /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz.sha
+    register: expected_checksum
+
+  - name: Calculating the checksum
+    stat:
+      path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
+      checksum_algorithm: sha256
+      get_checksum: yes
+    register: actual_file
+
+  - name: List of compared checksums
+    ansible.builtin.debug:
+      msg:
+        - Computed hash: "{{ actual_file.stat.checksum }}"
+        - Expected hash: "{{ expected_checksum.stdout }}"
+
+  - name: Checksum mismatch
+    fail:
+      msg: "Checksum mismatch. Aborting."
+    when: actual_file.stat.checksum != expected_checksum.stdout
+    
+  - name: Unpack {{ app_name }} config files
     ansible.builtin.unarchive:
       src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
       dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
@@ -27,31 +58,9 @@
     become: true
     become_user: root
 
-  # - name: Read SHA512 sum from file
-  #   command: awk '{print $1}' /home/hufhendr/docker/openvpn/conf.tgz.sha
-  #   register: expected_checksum
-
-  # - name: Get SHA512 sum of the file
-  #   stat:
-  #     path: /home//home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
-  #     checksum_algorithm: sha512
-  #     get_checksum: yes
-  #   register: actual_file
-
-  # - name: Debug actual and expected checksums
-  #   debug:
-  #     msg: |
-  #       Vypočítaný hash: {{ actual_file.stat.checksum }}
-  #       Očekávaný hash: {{ expected_checksum.stdout }}
-
-  # - name: Verify SHA512 sum
-  #   fail:
-  #     msg: "Checksum mismatch. Aborting."
-  #   when: actual_file.stat.checksum != expected_checksum.stdout
-    
-  - name: Delete Tar temp files
+  - name: Delete Tar config file
     ansible.builtin.file:
-      path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz*
+      path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
       state: absent
 
   when: 

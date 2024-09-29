@@ -67,12 +67,6 @@
   when: 
     - config_tar.stat.exists
 
-- name: Delete temporary files
-  ansible.builtin.file:
-    path: /tmp/config
-    state: absent
-  ignore_errors: true
-
 - name: Shut down {{ app_name }} services
   community.docker.docker_compose_v2:
     project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}

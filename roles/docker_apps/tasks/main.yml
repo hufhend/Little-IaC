@@ -69,9 +69,11 @@
       owner: "{{ docker_user }}"
       group: "{{ docker_user }}"    
 
-  - name: Print Gitea variable
-    debug:
-      var: gitea      
+  - name: Delete temporary files
+    ansible.builtin.file:
+      path: /tmp/config
+      state: absent
+    ignore_errors: true
 
   - name: Add script to update Docker app
     ansible.builtin.template:

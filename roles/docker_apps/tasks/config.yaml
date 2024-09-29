@@ -27,42 +27,28 @@
     become: true
     become_user: root
 
-  - name: Get checksum of Tar archive
-    stat:
-      path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
-      checksum_algorithm: sha256
-      get_checksum: yes
-    register: config_tar_sha
+  # - name: Read SHA512 sum from file
+  #   command: awk '{print $1}' /home/hufhendr/docker/openvpn/conf.tgz.sha
+  #   register: expected_checksum
 
-  # - name: Read SHA512 checksum from file
-  #   slurp:
-  #     src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz.sha
-  #   register: checksum_file
+  # - name: Get SHA512 sum of the file
+  #   stat:
+  #     path: /home//home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
+  #     checksum_algorithm: sha512
+  #     get_checksum: yes
+  #   register: actual_file
 
-  - name: Read SHA512 sum from file
-    command: awk '{print $1}' /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz.sha
-    register: expected_checksum
+  # - name: Debug actual and expected checksums
+  #   debug:
+  #     msg: |
+  #       Vypočítaný hash: {{ actual_file.stat.checksum }}
+  #       Očekávaný hash: {{ expected_checksum.stdout }}
 
-  - name: Debug output for checksums
-    debug:
-      msg: |
-        Vypočítaný hash:      {{ config_tar_sha }}
-        Očekávaný hash:       {{ expected_checksum }}
-        {% if tar_stat.stat.checksum == expected_checksum %}
-        Tyto hodnoty se shodují.
-        {% else %}
-        Tyto hodnoty se neshodují.
-        {% endif %}      
-
-  - name: Verify sha512 sum of the tar file before proceeding
-    fail:
-      msg: "Checksum does not match. Aborting."
-    when: config_tar_sha.stat.checksum != expected_checksum
-
-  - name: Proceed with further tasks if checksum is valid
-    debug:
-      msg: "Checksum is valid, proceeding with further tasks."    
-
+  # - name: Verify SHA512 sum
+  #   fail:
+  #     msg: "Checksum mismatch. Aborting."
+  #   when: actual_file.stat.checksum != expected_checksum.stdout
+    
   - name: Delete Tar temp files
     ansible.builtin.file:
       path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz*

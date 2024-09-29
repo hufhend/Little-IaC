@@ -15,7 +15,7 @@
 - name: Check if {{ app_name }} Tar config exists
   ansible.builtin.stat:
     path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
-  register: config_tar_check
+  register: config_tar
 
 - name: Config {{ app_name }}
   block:
@@ -27,13 +27,49 @@
     become: true
     become_user: root
 
+  - name: Get checksum of Tar archive
+    stat:
+      path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
+      checksum_algorithm: sha256
+      get_checksum: yes
+    register: config_tar_sha
+
+  # - name: Read SHA512 checksum from file
+  #   slurp:
+  #     src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz.sha
+  #   register: checksum_file
+
+  - name: Read SHA512 sum from file
+    command: awk '{print $1}' /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz.sha
+    register: expected_checksum
+
+  - name: Debug output for checksums
+    debug:
+      msg: |
+        Vypočítaný hash:      {{ config_tar_sha }}
+        Očekávaný hash:       {{ expected_checksum }}
+        {% if tar_stat.stat.checksum == expected_checksum %}
+        Tyto hodnoty se shodují.
+        {% else %}
+        Tyto hodnoty se neshodují.
+        {% endif %}      
+
+  - name: Verify sha512 sum of the tar file before proceeding
+    fail:
+      msg: "Checksum does not match. Aborting."
+    when: config_tar_sha.stat.checksum != expected_checksum
+
+  - name: Proceed with further tasks if checksum is valid
+    debug:
+      msg: "Checksum is valid, proceeding with further tasks."    
+
   - name: Delete Tar temp files
     ansible.builtin.file:
-      path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
+      path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz*
       state: absent
 
   when: 
-    - config_tar_check.stat.exists
+    - config_tar.stat.exists
 
 - name: Delete temporary files
   ansible.builtin.file:

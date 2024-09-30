@@ -1,7 +1,9 @@
 ---
+# Main variables
 docker_user: "{{ ansible_user }}"   # as default
 docker_home: docker
 role: computer
+backup_path: /home/{{ docker_user }}/backup/{{ docker_home }}
 
 # Deploy conternerized applications
 gitea: false
@@ -11,7 +13,7 @@ torproject: false
 openvpn: false
 vpn_url: vpn.example.com
 
+# Variables for the Gitea app
 git_db_user: gitea
 git_db_password: gitea
 git_db_name: gitea
-git_backup_path: "~/backup/docker/gitea"

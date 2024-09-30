@@ -10,3 +10,8 @@ prometheus: false
 torproject: false
 openvpn: false
 vpn_url: vpn.example.com
+
+git_db_user: gitea
+git_db_password: gitea
+git_db_name: gitea
+git_backup_path: "~/backup/docker/gitea"

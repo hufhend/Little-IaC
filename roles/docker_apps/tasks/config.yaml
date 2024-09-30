@@ -12,6 +12,10 @@
     path: /tmp/config/{{ inventory_hostname }}/{{ app }}
   register: config_exists
 
+# - name: Print the value of config_exists
+#   debug:
+#     var: config_exists
+
 - name: Config {{ app_name }}
   block:
     # Warning: tar archive must be created relatively and error-free
@@ -19,6 +23,10 @@
       ansible.builtin.stat:
         path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
       register: config_tar
+
+    # - name: Print the value of config_tar
+    #   debug:
+    #     var: config_tar
 
     # Block for mass configuration
     - name: Config {{ app_name }}
@@ -64,10 +72,9 @@
       when: 
         - config_tar.stat.exists
 
-    # Copy configuration files to the current application
+    # Copy configuration files to the application
     - name: Copy the {{ app_name }} config files
       ansible.builtin.command: sudo rsync -ra /tmp/config/{{ inventory_hostname }}/{{ app }}/ /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-      # when: config_exists.stat.exists
 
     - name: Shut down {{ app_name }} services
       community.docker.docker_compose_v2:

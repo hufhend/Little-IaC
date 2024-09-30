@@ -12,69 +12,73 @@
     path: /tmp/config/{{ inventory_hostname }}/{{ app }}
   register: config_exists
 
-# Copy configuration files to the current application
-- name: Copy the {{ app_name }} config files
-  ansible.builtin.command: sudo rsync -ra /tmp/config/{{ inventory_hostname }}/{{ app }}/ /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-  when: config_exists.stat.exists
-
-# Warning: tar archive must be created relatively and error-free
-- name: Check if {{ app_name }} config Tar exists
-  ansible.builtin.stat:
-    path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
-  register: config_tar
-
-# Block for mass configuration
 - name: Config {{ app_name }}
   block:
-  - name: Get checksum value from file
-    command: awk '{print $1}' /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz.sha
-    register: expected_checksum
+    # Warning: tar archive must be created relatively and error-free
+    - name: Check if {{ app_name }} config Tar exists
+      ansible.builtin.stat:
+        path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
+      register: config_tar
 
-  - name: Calculating the checksum
-    stat:
-      path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
-      checksum_algorithm: sha256
-      get_checksum: yes
-    register: actual_file
+    # Block for mass configuration
+    - name: Config {{ app_name }}
+      block:
+      - name: Get checksum value from file
+        command: awk '{print $1}' /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz.sha
+        register: expected_checksum
 
-  - name: List of compared checksums
-    ansible.builtin.debug:
-      msg:
-        - Computed hash: "{{ actual_file.stat.checksum }}"
-        - Expected hash: "{{ expected_checksum.stdout }}"
+      - name: Calculating the checksum
+        stat:
+          path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
+          checksum_algorithm: sha256
+          get_checksum: yes
+        register: actual_file
 
-  # If the checksum doesn't match, it stops
-  # If completely missing, the entire block is not executed, so the bulk configuration is conditional 
-  # on the existence of a checksum file
-  - name: Checksum mismatch
-    fail:
-      msg: "Checksum mismatch. Aborting."
-    when: actual_file.stat.checksum != expected_checksum.stdout
-    
-  - name: Unpack {{ app_name }} config files
-    ansible.builtin.unarchive:
-      src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
-      dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-      remote_src: yes
-    become: true
-    become_user: root
+      - name: List of compared checksums
+        ansible.builtin.debug:
+          msg:
+            - Computed hash: "{{ actual_file.stat.checksum }}"
+            - Expected hash: "{{ expected_checksum.stdout }}"
 
-  - name: Delete Tar config file
-    ansible.builtin.file:
-      path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
-      state: absent
+      # If the checksum doesn't match, it stops
+      # If completely missing, the entire block is not executed, so the bulk configuration is conditional 
+      # on the existence of a checksum file
+      - name: Checksum mismatch
+        fail:
+          msg: "Checksum mismatch. Aborting."
+        when: actual_file.stat.checksum != expected_checksum.stdout
+        
+      - name: Unpack {{ app_name }} config files
+        ansible.builtin.unarchive:
+          src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
+          dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+          remote_src: yes
+        become: true
+        become_user: root
 
-  when: 
-    - config_tar.stat.exists
+      - name: Delete Tar config file
+        ansible.builtin.file:
+          path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/conf.tgz
+          state: absent
 
-- name: Shut down {{ app_name }} services
-  community.docker.docker_compose_v2:
-    project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-    state: absent
-  ignore_errors: true
+      when: 
+        - config_tar.stat.exists
 
-- name:  Delete everything old
-  ansible.builtin.command: docker system prune -af --volumes
-  when: reset | default(false) == true
+    # Copy configuration files to the current application
+    - name: Copy the {{ app_name }} config files
+      ansible.builtin.command: sudo rsync -ra /tmp/config/{{ inventory_hostname }}/{{ app }}/ /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+      # when: config_exists.stat.exists
+
+    - name: Shut down {{ app_name }} services
+      community.docker.docker_compose_v2:
+        project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+        state: absent
+      ignore_errors: true
+
+    - name:  Delete everything old
+      ansible.builtin.command: docker system prune -af --volumes
+      when: reset | default(false) == true
+
+  when: config_exists.stat.exists
 
 # Starting the application is a matter of the application task

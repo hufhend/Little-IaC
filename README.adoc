@@ -166,7 +166,16 @@ _Firewall is not a separately executable role, it's just an engine. You can find
 
 == Newly added features
 
-23 July 2024
+1 Oct 2024
+
+* The last planned part of the project is nearing completion and that is the automation of Raspberry Pi and 
+Orange Pi. They are single board computers with minimal power consumption that will do a lot of work in home 
+IT for almost free. They actually act as infrastructure, at the moment the DNS, Monitoring, VPN and Git parts 
+are finished.
+* This is the most complex part of the whole project, so it came last on the agenda. 
+* I will finish the documentation when I have time.
+
+23 Jul 2024
 
 * Since nothing much has been changed to the Kubernetes firewall for a long time and it seems to be working, I consider this part basically done.
 * I've moved on to the most complicated part and that's the Raspberry/OrangePi. Gradually, I want to add small but very useful things to the infrastructure that these single board computers can handle, making a strong backend for the home network and Kubernetes cluster.

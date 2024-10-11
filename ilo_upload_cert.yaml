@@ -1,0 +1,49 @@
+# https://servermanagementportal.ext.hpe.com/docs/redfishservices/ilos/supplementdocuments/securityservice/#Generic-POST-request
+# https://medium.com/@fariss.omar.ensi/ilo-restful-api-an-introduction-and-overview-36c2b39263b
+
+- hosts: localhost
+  vars:
+    ilo_username: "username"
+    ilo_password: "password"
+    ilo_url: "https://ilo.example.com"
+    cert_content: "{{ lookup('file', 'ilo.crt') }}"
+    key_content: "{{ lookup('file', 'ilo.key') }}"
+  tasks:
+    - name: Combine certificate and private key
+      ansible.builtin.set_fact:
+        combined_cert_key: "{{ cert_content | regex_replace('\\n', '\\\\n') }}\\n{{ key_content | regex_replace('\\n', '\\\\n') }}"
+
+    - name: Get iLO session token
+      ansible.builtin.uri:
+        url: "{{ ilo_url }}/redfish/v1/Sessions"
+        method: POST
+        body_format: json
+        headers:
+          Content-Type: "application/json"
+        body: |
+          {
+            "UserName": "{{ ilo_username }}",
+            "Password": "{{ ilo_password }}"
+          }
+        validate_certs: no
+        status_code: [200, 201]
+      register: session_response
+
+    - name: Debug session response
+      debug:
+        var: session_response      
+
+    - name: Upload SSL certificate to iLO
+      ansible.builtin.uri:
+        url: "{{ ilo_url }}/redfish/v1/Managers/1/SecurityService/HttpsCert/Actions/HpeHttpsCert.ImportCertificate"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          X-Auth-Token: "{{ session_response.x_auth_token }}"
+        body_format: json
+        body: |
+          {
+            "Certificate": "{{ combined_cert_key }}"
+          }
+        validate_certs: no
+      delegate_to: localhost

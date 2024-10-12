@@ -9,6 +9,15 @@
     cert_content: "{{ lookup('file', 'ilo.crt') }}"
     key_content: "{{ lookup('file', 'ilo.key') }}"
   tasks:
+    - name: Get Kubernetes node information
+      kubernetes.core.k8s_info:
+        kind: node
+      register: cluster_info
+
+    - name: Display node information
+      debug:
+        var: cluster_info
+
     - name: Combine certificate and private key
       ansible.builtin.set_fact:
         combined_cert_key: "{{ cert_content | regex_replace('\\n', '\\\\n') }}\\n{{ key_content | regex_replace('\\n', '\\\\n') }}"

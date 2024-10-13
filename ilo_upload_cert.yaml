@@ -1,23 +1,83 @@
-# https://servermanagementportal.ext.hpe.com/docs/redfishservices/ilos/supplementdocuments/securityservice/#Generic-POST-request
-# https://medium.com/@fariss.omar.ensi/ilo-restful-api-an-introduction-and-overview-36c2b39263b
+#   ********************************************
+#   Upload SSL Certificate to hp iLO via Ansible 
+#   begin     : Fri 11 Oct 2024
+#   copyright : (c) 2024 Václav Dvorský
+#   email     : hufhendr@gmail.com
+#   $Id: ilo_upload_cert.yaml, v1.40  13/10/2024
+#   ********************************************
+
+#   --------------------------------------------------------------------
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public Licence as published by
+#   the Free Software Foundation; either version 2 of the Licence, or
+#   (at your option) any later version.
+#   --------------------------------------------------------------------
+
+#   Usage:
+#   Modify the variables according to your environment and simply run
+#   ansible-playbook ilo_upload_cert.yaml
+
+#   What it does:
+#   The main function of the script is to fetch the Let's Encrypt SSL 
+#   certificate from Kubernetes, transform it in RAM and upload it via API 
+#   to HPE Integrated Lights-Out.
 
 - hosts: localhost
   vars:
     ilo_username: "username"
     ilo_password: "password"
     ilo_url: "https://ilo.example.com"
-    cert_content: "{{ lookup('file', 'ilo.crt') }}"
-    key_content: "{{ lookup('file', 'ilo.key') }}"
+    k8s_secret_name: "ilo-tls-secret"
+    k8s_namespace: "cert-manager"
   tasks:
-    - name: Get Kubernetes node information
+
+    # Pick up the secret with the certificate and key from Kubernetes
+    # There it is downloaded via cert-manager
+    - name: Get Kubernetes secret
       kubernetes.core.k8s_info:
-        kind: node
-      register: cluster_info
+        api_version: v1
+        kind: Secret
+        name: "{{ k8s_secret_name }}"
+        namespace: "{{ k8s_namespace }}"
+      register: secret_info
 
-    - name: Display node information
+    # Part of decoding the certificate and key
+    - name: Extract TLS certificate from secret
+      ansible.builtin.set_fact:
+        cert_content_base64: "{{ secret_info.resources[0].data['tls.crt'] }}"
+
+    - name: Decode TLS certificate from base64
+      ansible.builtin.set_fact:
+        cert_content: "{{ cert_content_base64 | b64decode }}"
+
+    - name: Extract private key from secret
+      ansible.builtin.set_fact:
+        key_content_base64: "{{ secret_info.resources[0].data['tls.key'] }}"
+
+    - name: Decode private key from base64
+      ansible.builtin.set_fact:
+        key_content: "{{ key_content_base64 | b64decode }}"
+
+    # Analyzing and displaying key SSL certificate information
+    - name: Analyze TLS certificate using x509_info
+      community.crypto.x509_certificate_info:
+        content: "{{ cert_content }}"
+      register: cert_info
+
+    - name: Show certificate details
       debug:
-        var: cluster_info
+        msg:
+          - "Issuer: {{ cert_info.issuer.organizationName }} ({{ cert_info.issuer.countryName }})"
+          - "Common Name: {{ cert_info.subject.commonName }}"
+          - "Valid From:  {{ (cert_info.not_before | regex_replace('Z$', '') | to_datetime('%Y%m%d%H%M%S')).strftime('%d.%m.%Y %H:%M:%S') }} UTC"
+          - "Valid Until: {{ (cert_info.not_after | regex_replace('Z$', '') | to_datetime('%Y%m%d%H%M%S')).strftime('%d.%m.%Y %H:%M:%S') }} UTC"
+          - "Expired: {{ cert_info.expired }}"
+          - "Key Usage: {{ cert_info.key_usage | join(', ') }}"
+          - "Extended Key Usage: {{ cert_info.extended_key_usage | join(', ') }}"
+          - "Public Key Size: {{ cert_info.public_key_data.size }} bits"
+          - "SHA256 Fingerprint: {{ cert_info.fingerprints.sha256 }}"
 
+    # Combining the certificate and key into a format for the iLO Redfish API
     - name: Combine certificate and private key
       ansible.builtin.set_fact:
         combined_cert_key: "{{ cert_content | regex_replace('\\n', '\\\\n') }}\\n{{ key_content | regex_replace('\\n', '\\\\n') }}"
@@ -38,10 +98,7 @@
         status_code: [200, 201]
       register: session_response
 
-    - name: Debug session response
-      debug:
-        var: session_response      
-
+    # Uploading a Let's Encrypt SSL certificate to HPE Integrated Lights-Out
     - name: Upload SSL certificate to iLO
       ansible.builtin.uri:
         url: "{{ ilo_url }}/redfish/v1/Managers/1/SecurityService/HttpsCert/Actions/HpeHttpsCert.ImportCertificate"

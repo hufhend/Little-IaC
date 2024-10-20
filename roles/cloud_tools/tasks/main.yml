@@ -33,7 +33,7 @@
   - name: Add alias for kubectl
     ansible.builtin.lineinfile:
       path: "{{ lookup('env', 'HOME') }}/.bashrc"
-      line: "alias oc='/usr/bin/kubectl'"
+      line: "alias k='/usr/bin/kubectl'"
       create: yes
 
   - name: Create a kube directory

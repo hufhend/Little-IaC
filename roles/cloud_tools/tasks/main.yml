@@ -4,23 +4,31 @@
   # Kubernetes command-line tool
   - name: Install kubectl for Kubernetes
     block:
-    - name: Add kubectl GPG apt key
+    - name: Add Kubernetes GPG apt key
       ansible.builtin.apt_key:
-        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        keyring: /usr/share/keyrings/cloud.google.gpg
+        url: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/Release.key"
+        keyring: /usr/share/keyrings/k8s.gpg
         state: present
 
-    - name: Add kubectl repository
+    - name: Add Kubernetes repository
       ansible.builtin.apt_repository:
-        repo: deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main
+        repo: 'deb [signed-by=/usr/share/keyrings/k8s.gpg] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/ /'
         state: present
-        filename: google-cloud-sdk
+        filename: kubernetes
         
-    - name: Install kubectl
+    - name: Install latest kubectl from v{{ k8s_version }}
       ansible.builtin.apt:
-        name: kubectl
+        name: "kubectl={{ k8s_version }}.*"
         state: present
-    when: (role == 'worker') or (kubectl == True)
+        # force: yes
+        allow_downgrade: yes
+      when: (role == 'worker') or (kubectl == True)
+
+    - name: Install latest kubeadm from v{{ k8s_version }}
+      ansible.builtin.apt:
+        name: "kubeadm={{ k8s_version }}.*"
+        state: present
+      when: (role == 'worker') or (kubectl == True)
 
   - name: Create link to kubectl
     ansible.builtin.file:

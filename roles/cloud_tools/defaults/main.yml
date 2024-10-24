@@ -2,3 +2,4 @@
 # defaults file for cloud_tools
 kubectl: false
 azcli: false
+k8s_version: "1.30"

@@ -30,12 +30,12 @@
         allow_downgrade: yes
       when: (role == 'worker') or (kubectl == True)
 
-    - name: Remove latest kubeadm from v{{ k8s_version }}
-      ansible.builtin.apt:
-        name: "kubeadm={{ k8s_version }}.*"
-        state: absent
-        purge: true
-      when: (role == 'worker') or (kubectl == True)
+    # - name: Remove latest kubeadm from v{{ k8s_version }}
+    #   ansible.builtin.apt:
+    #     name: "kubeadm={{ k8s_version }}.*"
+    #     state: absent
+    #     purge: true
+    #   when: (role == 'worker') or (kubectl == True)
 
   - name: Create link to kubectl
     ansible.builtin.file:

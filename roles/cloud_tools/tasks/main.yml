@@ -10,6 +10,7 @@
         keyring: /usr/share/keyrings/cloud.google.gpg
         state: present
 
+    # just in case there's a conflict with Kubespray
     - name: Remove k8s repository
       ansible.builtin.apt_repository:
         repo: 'deb [signed-by=/usr/share/keyrings/k8s.gpg] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/ /'
@@ -26,16 +27,14 @@
       ansible.builtin.apt:
         name: kubectl
         state: present
-        # force: yes
         allow_downgrade: yes
-      when: (role == 'worker') or (kubectl == True)
+    when: (role == 'worker') or (kubectl == True)
 
-    # - name: Remove latest kubeadm from v{{ k8s_version }}
-    #   ansible.builtin.apt:
-    #     name: "kubeadm={{ k8s_version }}.*"
-    #     state: absent
-    #     purge: true
-    #   when: (role == 'worker') or (kubectl == True)
+  - name: Enable kubectl bash completion
+    ansible.builtin.shell: |
+      kubectl completion bash | tee /etc/bash_completion.d/kubectl > /dev/null
+    args:
+      creates: /etc/bash_completion.d/kubectl
 
   - name: Create link to kubectl
     ansible.builtin.file:

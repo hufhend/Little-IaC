@@ -40,7 +40,7 @@
     include_tasks: "{{ role_path }}/tasks/desktop_services.yaml"
     when: 
       - desktop != True
-      - "'ubuntu-desktop' in ubuntu_desktop_status.stdout or 'instal' in ubuntu_desktop_status.stdout"
+      - ubuntu_desktop_status.stdout is search("instal")
 
   # set and enable Wake-on-LAN
   - name: Add Wake-on-LAN service

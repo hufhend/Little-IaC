@@ -50,11 +50,14 @@
       owner: root
       group: root
       mode: '0644'
+    when: server != True
 
+  # servers have iLO, iDRAC or XClarity
   - name: Wake-on-LAN activation at startup
     ansible.builtin.systemd:
       name: wol-enable
       enabled: true
+    when: server != True
 
   # high availability via keepalived
   - name: Install keepalived service

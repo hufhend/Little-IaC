@@ -22,8 +22,9 @@ ing_priority: 150
 # Enable service keepalived
 # keepalived: true
 
-# Usually a cluster node is not a destop
+# Usually a cluster node is not a destop or server
 desktop: false
+server: false
 
 # Settings for crontab
 # Day for complete maintenance including restart

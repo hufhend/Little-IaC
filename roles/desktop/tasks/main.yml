@@ -150,6 +150,13 @@
       state: present
     when: openconnect == True
 
+  - name: Install Kodi Home Theater Software
+    ansible.builtin.apt:
+      pkg:
+      - kodi
+      state: present
+    when: kodi == True      
+
   - name: Change ownership of packages
     ansible.builtin.file:
       path: /home/{{ user_ansible }}/install/

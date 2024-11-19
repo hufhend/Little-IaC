@@ -83,17 +83,24 @@
         backrefs: yes
     when: chrome == True
 
-  # OnlyOffice desktop
+  # OnlyOffice desktop editors
   - name: Install OnlyOffice
     block:
-    - name: Download OnlyOffice package
-      ansible.builtin.get_url:
-        url: https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors_amd64.deb
-        dest: /home/{{ user_ansible }}/install/onlyoffice-desktopeditors_amd64.deb
+    - name: Add OnlyOffice GPG key
+      ansible.builtin.apt_key:
+        url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xCB2DE8E5
+        keyring: /usr/share/keyrings/onlyoffice.gpg
+        state: present
+
+    - name: Add OnlyOffice repository
+      ansible.builtin.apt_repository:
+        repo: deb [signed-by=/usr/share/keyrings/onlyoffice.gpg] https://download.onlyoffice.com/repo/debian squeeze main
+        state: present
+        filename: onlyoffice
 
     - name: Install OnlyOffice
       ansible.builtin.apt:
-        deb: /home/{{ user_ansible }}/install/onlyoffice-desktopeditors_amd64.deb
+        name: onlyoffice-desktopeditors
         state: present
     when: onlyoffice == True
 

@@ -75,7 +75,7 @@
         keyring: /usr/share/keyrings/chrome.gpg
         state: present
 
-    - name: Add Simplifying repository
+    - name: Add Chrome repository
       ansible.builtin.apt_repository:
         repo: deb [arch=amd64 signed-by=/usr/share/keyrings/chrome.gpg ] http://dl.google.com/linux/chrome/deb/ stable main
         state: present

@@ -150,14 +150,26 @@
   # Microsoft Visual Studio Code
   - name: Install VS Code
     block:
-    - name: Download VS Code package
-      ansible.builtin.get_url:
-        url: https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64
-        dest: /home/{{ user_ansible }}/install/vscode.deb
+    - name: Add Microsoft GPG apt key
+      ansible.builtin.apt_key:
+        url: https://packages.microsoft.com/keys/microsoft.asc
+        keyring: /usr/share/keyrings/microsoft.gpg
+        state: present
 
-    - name: Install VS Code
+    - name: Add Microsoft repository
+      ansible.builtin.apt_repository:
+        repo: deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main
+        state: present
+        filename: vscode
+
+    - name: Delete repo old file
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/vscode.sources
+        state: absent
+
+    - name: Install Visual Studio Code
       ansible.builtin.apt:
-        deb: /home/{{ user_ansible }}/install/vscode.deb
+        name: code
         state: present
     when: vscode == True
 

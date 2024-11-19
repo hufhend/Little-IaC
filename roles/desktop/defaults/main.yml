@@ -11,6 +11,7 @@ safe_network: 192.168.88.0/24
 
 # Allow installation of larger software packages
 virtualbox: false
+vagrant: false
 chrome: false
 onlyoffice: false
 brave: false

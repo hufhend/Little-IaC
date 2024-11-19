@@ -37,8 +37,7 @@
 
     - name: Install VirtualBox Extension Pack
       ansible.builtin.apt:
-        pkg:
-        - virtualbox-ext-pack
+        pkg: virtualbox-ext-pack
     when: virtualbox == True
 
   # Vagrant by HashiCorp
@@ -193,8 +192,7 @@
   # Kodi media player
   - name: Install Kodi Home Theater Software
     ansible.builtin.apt:
-      pkg:
-      - kodi
+      pkg: kodi
       state: present
     when: kodi == True      
 

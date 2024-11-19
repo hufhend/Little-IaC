@@ -171,6 +171,7 @@
       state: present
     when: openconnect == True
 
+  # Kodi media player
   - name: Install Kodi Home Theater Software
     ansible.builtin.apt:
       pkg:

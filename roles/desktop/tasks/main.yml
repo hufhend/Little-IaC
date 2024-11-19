@@ -74,6 +74,13 @@
       ansible.builtin.apt:
         deb: /home/{{ user_ansible }}/install/google-chrome-stable_current_amd64.deb
         state: present
+
+    - name: Enable Chrome Repository
+      ansible.builtin.lineinfile:
+        path: /etc/apt/sources.list.d/google-chrome.sources
+        regexp: '^Enabled: no'
+        line: 'Enabled: yes'
+        backrefs: yes
     when: chrome == True
 
   # OnlyOffice desktop

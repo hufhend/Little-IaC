@@ -61,7 +61,6 @@
         state: present
     when: vagrant == True    
 
-
   # Chrome browser
   - name: Install Google Chrome
     block:
@@ -70,60 +69,18 @@
         path: /etc/apt/sources.list.d/google-chrome.sources
         state: absent
 
-    # - name: Add Chrome GPG apt key
-    #   ansible.builtin.apt_key:
-    #     url:  https://dl-ssl.google.com/linux/linux_signing_key.pub
-    #     keyring: /usr/share/keyrings/chrome.gpg
-    #     state: present
+    - name: Add Chrome GPG apt key
+      ansible.builtin.apt_key:
+        url:  https://dl.google.com/linux/linux_signing_key.pub
+        keyring: /usr/share/keyrings/chrome.gpg
+        state: present
 
-    - name: Download Google GPG key
-      ansible.builtin.get_url:
-        url: https://dl.google.com/linux/linux_signing_key.pub
-        dest: /tmp/google_signing_key.pub
-        mode: '0644'
-
-    - name: Convert GPG key to keyring format
-      ansible.builtin.command:
-        cmd: gpg --dearmor -o /usr/share/keyrings/chrome.gpg /tmp/google_signing_key.pub
-        creates: /usr/share/keyrings/chrome.gpg
-
-    - name: Remove temporary GPG key file
-      ansible.builtin.file:
-        path: /tmp/google_signing_key.pub
-        state: absent
-
-    # - name: Add Google GPG apt key
-    #   ansible.builtin.command:
-    #     cmd: "curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/chrome.gpg"
-    #   args:
-    #     creates: /usr/share/keyrings/chrome.gpg        
-
-    - name: Add Chrome repository
+    - name: Add Simplifying repository
       ansible.builtin.apt_repository:
         repo: deb [arch=amd64 signed-by=/usr/share/keyrings/chrome.gpg ] http://dl.google.com/linux/chrome/deb/ stable main
         state: present
         filename: chrome
-
-    # - name: Download Google Chrome package
-    #   ansible.builtin.get_url:
-    #     url: https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-    #     dest: /home/{{ user_ansible }}/install/google-chrome-stable_current_amd64.deb
-
-    # - name: Install Google Chrome
-    #   ansible.builtin.apt:
-    #     deb: /home/{{ user_ansible }}/install/google-chrome-stable_current_amd64.deb
-    #     state: present
-    #   ignore_errors: true
-
-    # - name: Enable Chrome Repository
-    # # It's better, but still not good
-    #   ansible.builtin.lineinfile:
-    #     path: /etc/apt/sources.list.d/google-chrome.sources
-    #     regexp: '^Enabled: no'
-    #     line: 'Enabled: yes'
-    #     backrefs: yes
-    # when: chrome == True
-
+    when: chrome == True
 
   # OnlyOffice desktop editors
   - name: Install OnlyOffice

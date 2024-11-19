@@ -76,6 +76,7 @@
       ignore_errors: true
 
     - name: Enable Chrome Repository
+    # It's better, but still not good
       ansible.builtin.lineinfile:
         path: /etc/apt/sources.list.d/google-chrome.sources
         regexp: '^Enabled: no'
@@ -86,7 +87,7 @@
   # OnlyOffice desktop editors
   - name: Install OnlyOffice
     block:
-    - name: Add OnlyOffice GPG key
+    - name: Add OnlyOffice GPG key from a public server
       ansible.builtin.apt_key:
         url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xCB2DE8E5
         keyring: /usr/share/keyrings/onlyoffice.gpg
@@ -148,6 +149,7 @@
     when: mega == True
 
   # Steam Game platform
+  # It then installs to the user's home and automatically watches for updates
   - name: Install Steam
     block:
     - name: Download Steam package
@@ -197,8 +199,8 @@
       state: present
     when: openconnect == True
 
-  # Kodi media player
-  - name: Install Kodi Home Theater Software
+  # Kodi Home Theater Software
+  - name: Install Kodi media player
     ansible.builtin.apt:
       pkg: kodi
       state: present

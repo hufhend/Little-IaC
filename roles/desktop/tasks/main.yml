@@ -73,6 +73,7 @@
       ansible.builtin.apt:
         deb: /home/{{ user_ansible }}/install/google-chrome-stable_current_amd64.deb
         state: present
+      ignore_errors: true
 
     - name: Enable Chrome Repository
       ansible.builtin.lineinfile:

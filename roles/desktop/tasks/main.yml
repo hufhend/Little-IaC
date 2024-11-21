@@ -43,7 +43,7 @@
   # Vagrant by HashiCorp
   - name: Install Vagrant
     block:
-    - name: Add Vagrant GPG apt key
+    - name: Add Vagrant GPG key
       ansible.builtin.apt_key:
         url: https://apt.releases.hashicorp.com/gpg
         keyring: /usr/share/keyrings/hashicorp-archive-keyring.gpg
@@ -69,7 +69,7 @@
         path: /etc/apt/sources.list.d/google-chrome.sources
         state: absent
 
-    - name: Add Chrome GPG apt key
+    - name: Add Chrome GPG key
       ansible.builtin.apt_key:
         url:  https://dl.google.com/linux/linux_signing_key.pub
         keyring: /usr/share/keyrings/chrome.gpg
@@ -106,7 +106,7 @@
   # Brave browser
   - name: Install Brave browser
     block:
-    - name: Add Brave GPG apt key
+    - name: Add Brave GPG key
       ansible.builtin.apt_key:
         url: https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
         keyring: /usr/share/keyrings/brave-browser-archive-keyring.gpg
@@ -170,7 +170,7 @@
   # Microsoft Visual Studio Code
   - name: Install VS Code
     block:
-    - name: Add Microsoft GPG apt key
+    - name: Add Microsoft GPG key
       ansible.builtin.apt_key:
         url: https://packages.microsoft.com/keys/microsoft.asc
         keyring: /usr/share/keyrings/microsoft.gpg
@@ -210,6 +210,7 @@
       state: present
     when: kodi == True
 
+  # Python via DeadSnakes repo
   - name: Install Python
     block:
     - name: Add DeadSnakes GPG key

@@ -147,11 +147,11 @@
         deb: /home/{{ user_ansible }}/install/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
         state: present
         
-    - name: Add Megasync repository
-      ansible.builtin.apt_repository:
-        repo: deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/meganz-archive-keyring.gpg] https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/ ./
-        state: present
-        filename: megasync
+    # - name: Add Megasync repository
+    #   ansible.builtin.apt_repository:
+    #     repo: deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/meganz-archive-keyring.gpg] https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/ ./
+    #     state: present
+    #     filename: megasync
     when: mega == True
 
   # Steam Game platform

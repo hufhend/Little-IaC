@@ -11,7 +11,7 @@
       state: latest
       update_cache: true
 
-  - name: Add Docker GPG apt Key
+  - name: Add Docker GPG Key
     ansible.builtin.apt_key:
       url: https://download.docker.com/linux/ubuntu/gpg
       keyring: /etc/apt/trusted.gpg.d/docker.gpg

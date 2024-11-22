@@ -4,7 +4,7 @@
   # Kubernetes command-line tool
   - name: Install kubectl for Kubernetes
     block:
-    - name: Add Google GPG apt key
+    - name: Add Google GPG key
       ansible.builtin.apt_key:
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
         keyring: /usr/share/keyrings/cloud.google.gpg

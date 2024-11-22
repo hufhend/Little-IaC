@@ -66,7 +66,7 @@
   # Chrome browser
   - name: Install Google Chrome
     block:
-    - name: Delete old repo file
+    - name: Cleaning
       ansible.builtin.file:
         path: /etc/apt/sources.list.d/google-chrome.sources
         state: absent
@@ -184,7 +184,7 @@
         state: present
         filename: vscode-signed
 
-    - name: Delete repo old file
+    - name: Cleaning
       ansible.builtin.file:
         path: /etc/apt/sources.list.d/vscode.sources
         state: absent

@@ -1,0 +1,25 @@
+# Chrome browser
+- name: Set a app variable
+  ansible.builtin.set_fact:
+    app: "chrome"
+    app_name: "Google Chrome"
+
+- name: Install {{ app_name }}
+  block:
+  - name: Cleaning
+    ansible.builtin.file:
+      path: /etc/apt/sources.list.d/google-chrome.sources
+      state: absent
+
+  - name: Add {{ app_name }} GPG key
+    ansible.builtin.apt_key:
+      url:  https://dl.google.com/linux/linux_signing_key.pub
+      keyring: /usr/share/keyrings/chrome.gpg
+      state: present
+
+  - name: Add {{ app_name }} repository
+    ansible.builtin.apt_repository:
+      repo: deb [arch=amd64 signed-by=/usr/share/keyrings/chrome.gpg ] http://dl.google.com/linux/chrome/deb/ stable main
+      state: present
+      filename: chrome
+  when: chrome == True

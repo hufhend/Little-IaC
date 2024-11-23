@@ -41,33 +41,22 @@
       ansible.builtin.apt:
         pkg: virtualbox-ext-pack
     when: virtualbox == True
+    
+  - name: Cleaning
+    ansible.builtin.file:
+      path: /etc/apt/sources.list.d/hashicorp.list
+      state: absent
+
+  - name: Cleaning
+    ansible.builtin.file:
+      path: /etc/apt/sources.list.d/google-chrome.sources
+      state: absent
 
   - name: Add other software
     include_tasks:
       file: "{{ item }}"
     loop: "{{ query('fileglob', '{{ role_path }}/files/*.yaml') }}"
     no_log: true
-
-  # OnlyOffice desktop editors
-  - name: Install OnlyOffice
-    block:
-    - name: Add OnlyOffice GPG key from a public server
-      ansible.builtin.apt_key:
-        url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xCB2DE8E5
-        keyring: /usr/share/keyrings/onlyoffice.gpg
-        state: present
-
-    - name: Add OnlyOffice repository
-      ansible.builtin.apt_repository:
-        repo: deb [signed-by=/usr/share/keyrings/onlyoffice.gpg] https://download.onlyoffice.com/repo/debian squeeze main
-        state: present
-        filename: onlyoffice
-
-    - name: Install OnlyOffice
-      ansible.builtin.apt:
-        name: onlyoffice-desktopeditors
-        state: present
-    when: onlyoffice == True
 
   # Brave browser
   - name: Install Brave browser

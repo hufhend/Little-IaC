@@ -1,0 +1,25 @@
+# OnlyOffice desktop editors
+- name: Set a app variable
+  ansible.builtin.set_fact:
+    app: "onlyoffice"
+    app_name: "OnlyOffice"
+
+- name: Install {{ app_name }}
+  block:
+  - name: Add {{ app_name }} GPG key from a public server
+    ansible.builtin.apt_key:
+      url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xCB2DE8E5
+      keyring: /usr/share/keyrings/onlyoffice.gpg
+      state: present
+
+  - name: Add {{ app_name }} repository
+    ansible.builtin.apt_repository:
+      repo: deb [signed-by=/usr/share/keyrings/onlyoffice.gpg] https://download.onlyoffice.com/repo/debian squeeze main
+      state: present
+      filename: onlyoffice
+
+  - name: Install {{ app_name }}
+    ansible.builtin.apt:
+      name: onlyoffice-desktopeditors
+      state: present
+  when: onlyoffice == True

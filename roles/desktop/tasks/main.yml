@@ -85,6 +85,12 @@
       state: present
     when: kodi == True
 
+  - name: Add Flathub repo
+    community.general.flatpak_remote:
+      name: flathub
+      state: present
+      method: system
+
   - name: Change ownership of packages
     ansible.builtin.file:
       path: /home/{{ user_ansible }}/install/

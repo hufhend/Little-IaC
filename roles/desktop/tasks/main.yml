@@ -58,27 +58,6 @@
     loop: "{{ query('fileglob', '{{ role_path }}/files/*.yaml') }}"
     no_log: true
 
-  # Brave browser
-  - name: Install Brave browser
-    block:
-    - name: Add Brave GPG key
-      ansible.builtin.apt_key:
-        url: https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
-        keyring: /usr/share/keyrings/brave-browser-archive-keyring.gpg
-        state: present
-
-    - name: Add Brave repository
-      ansible.builtin.apt_repository:
-        repo: deb [arch=amd64 signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main
-        state: present
-        filename: brave-browser
-
-    - name: Install Brave browser
-      ansible.builtin.apt:
-        name: brave-browser
-        state: present
-    when: brave == True
-
     # MEGA Desktop App
   - name: Install megasync
     block:

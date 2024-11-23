@@ -55,7 +55,12 @@
   - name: Cleaning
     ansible.builtin.file:
       path: /etc/apt/sources.list.d/megasync.list
-      state: absent  
+      state: absent
+
+  - name: Cleaning
+    ansible.builtin.file:
+      path: /etc/apt/sources.list.d/vscode.sources
+      state: absent
 
   - name: Add other software
     include_tasks:
@@ -77,32 +82,6 @@
         deb: /home/{{ user_ansible }}/install/steam.deb
         state: present
     when: steam == True
-
-  # Microsoft Visual Studio Code
-  - name: Install VS Code
-    block:
-    - name: Add Microsoft GPG key
-      ansible.builtin.apt_key:
-        url: https://packages.microsoft.com/keys/microsoft.asc
-        keyring: /usr/share/keyrings/microsoft.gpg
-        state: present
-
-    - name: Add Microsoft repository
-      ansible.builtin.apt_repository:
-        repo: deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main
-        state: present
-        filename: vscode-signed
-
-    - name: Cleaning
-      ansible.builtin.file:
-        path: /etc/apt/sources.list.d/vscode.sources
-        state: absent
-
-    - name: Install Visual Studio Code
-      ansible.builtin.apt:
-        name: code
-        state: present
-    when: vscode == True
 
   # Support for Cisco VPN
   - name: Install OpenConnect VPN client

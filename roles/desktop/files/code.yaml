@@ -1,0 +1,25 @@
+# Microsoft Visual Studio Code
+- name: Set a app variable
+  ansible.builtin.set_fact:
+    app: "code"
+    app_name: "Visual Studio Code"
+
+- name: Install {{ app_name }}
+  block:
+  - name: Add Microsoft GPG key
+    ansible.builtin.apt_key:
+      url: https://packages.microsoft.com/keys/microsoft.asc
+      keyring: /usr/share/keyrings/microsoft.gpg
+      state: present
+
+  - name: Add {{ app_name }} repository
+    ansible.builtin.apt_repository:
+      repo: deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main
+      state: present
+      filename: vscode-signed
+
+  - name: Install {{ app_name }}
+    ansible.builtin.apt:
+      name: code
+      state: present
+  when: vscode == True

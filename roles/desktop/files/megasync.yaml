@@ -1,0 +1,30 @@
+# MEGA Desktop App
+- name: Set a app variable
+  ansible.builtin.set_fact:
+    app: "megasync"
+    app_name: "Megasync"
+
+- name: Install {{ app_name }}
+  block:
+  - name: Add {{ app_name }} GPG key
+    ansible.builtin.apt_key:
+      url: https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/Release.key
+      keyring: /usr/share/keyrings/megasync.gpg
+      state: present
+      
+  - name: Add {{ app_name }} repository
+    ansible.builtin.apt_repository:
+      repo: deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/megasync.gpg] https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/ ./
+      state: present
+      filename: megasync
+
+  - name: Install {{ app_name }}
+    ansible.builtin.apt:
+      name: megasync
+      state: present
+
+  - name: Install {{ app_name }} for Nautilus
+    ansible.builtin.apt:
+      name: nautilus-megasync
+      state: present
+  when: mega == True

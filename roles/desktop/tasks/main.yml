@@ -68,21 +68,6 @@
     loop: "{{ query('fileglob', '{{ role_path }}/files/*.yaml') }}"
     no_log: true
 
-  # Steam Game platform
-  # It then installs to the user's home and automatically watches for updates
-  - name: Install Steam
-    block:
-    - name: Download Steam package
-      ansible.builtin.get_url:
-        url: https://cdn.akamai.steamstatic.com/client/installer/steam.deb
-        dest: /home/{{ user_ansible }}/install/steam.deb
-
-    - name: Install Steam
-      ansible.builtin.apt:
-        deb: /home/{{ user_ansible }}/install/steam.deb
-        state: present
-    when: steam == True
-
   # Support for Cisco VPN
   - name: Install OpenConnect VPN client
     ansible.builtin.apt:

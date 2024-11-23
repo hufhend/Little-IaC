@@ -1,3 +1,4 @@
+---
 # OnlyOffice desktop editors
 - name: Set a app variable
   ansible.builtin.set_fact:
@@ -23,4 +24,3 @@
       name: onlyoffice-desktopeditors
       state: present
   when: onlyoffice == True
-  

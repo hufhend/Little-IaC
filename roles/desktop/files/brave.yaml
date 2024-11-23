@@ -1,3 +1,4 @@
+---
 # Brave browser
 - name: Set a app variable
   ansible.builtin.set_fact:

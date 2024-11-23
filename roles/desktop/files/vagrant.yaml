@@ -1,3 +1,4 @@
+---
 # Vagrant by HashiCorp
 - name: Set a app variable
   ansible.builtin.set_fact:
@@ -23,4 +24,3 @@
       name: vagrant
       state: present
   when: vagrant == True
-  

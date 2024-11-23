@@ -1,4 +1,4 @@
-
+---
 # Python via DeadSnakes repo
 - name: Set a app variable
   ansible.builtin.set_fact:

@@ -1,3 +1,4 @@
+---
 # Steam Game platform
 # It then installs to the user's home and automatically watches for updates
 - name: Set a app variable

@@ -1,3 +1,4 @@
+---
 # MEGA Desktop App
 - name: Set a app variable
   ansible.builtin.set_fact:

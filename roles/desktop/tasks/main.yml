@@ -45,6 +45,11 @@
   # Vagrant by HashiCorp
   - name: Install Vagrant
     block:
+    - name: Cleaning
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/hashicorp.list
+        state: absent
+
     - name: Add Vagrant GPG key
       ansible.builtin.apt_key:
         url: https://apt.releases.hashicorp.com/gpg
@@ -129,29 +134,32 @@
     # MEGA Desktop App
   - name: Install megasync
     block:
-    - name: Download Megasync package
-      ansible.builtin.get_url:
-        url: https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/amd64/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
-        dest: /home/{{ user_ansible }}/install/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
-    - name: Download Mega manager package
-      ansible.builtin.get_url: 
-        url: https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/amd64/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
-        dest: /home/{{ user_ansible }}/install/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
+    - name: Cleaning
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/megasync.list
+        state: absent    
 
-    - name: Install Megasync Desktop App
-      ansible.builtin.apt:
-        deb: /home/{{ user_ansible }}/install/megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
-        state: present
-    - name: Install Mega for nautilus
-      ansible.builtin.apt:
-        deb: /home/{{ user_ansible }}/install/nautilus-megasync-xUbuntu_{{ ansible_distribution_version }}_amd64.deb
+    - name: Add Megasync GPG key
+      ansible.builtin.apt_key:
+        url: https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/Release.key
+        keyring: /usr/share/keyrings/megasync.gpg
         state: present
         
-    # - name: Add Megasync repository
-    #   ansible.builtin.apt_repository:
-    #     repo: deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/meganz-archive-keyring.gpg] https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/ ./
-    #     state: present
-    #     filename: megasync
+    - name: Add Megasync repository
+      ansible.builtin.apt_repository:
+        repo: deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/megasync.gpg] https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/ ./
+        state: present
+        filename: megasync
+
+    - name: Install Megasync
+      ansible.builtin.apt:
+        name: megasync
+        state: present
+
+    - name: Install Megasync for Nautilus
+      ansible.builtin.apt:
+        name: nautilus-megasync
+        state: present
     when: mega == True
 
   # Steam Game platform

@@ -22,4 +22,5 @@
     ansible.builtin.apt:
       name: vagrant
       state: present
-  when: vagrant == True    
+  when: vagrant == True
+  

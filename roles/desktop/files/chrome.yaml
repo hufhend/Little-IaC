@@ -6,11 +6,6 @@
 
 - name: Install {{ app_name }}
   block:
-  - name: Cleaning
-    ansible.builtin.file:
-      path: /etc/apt/sources.list.d/google-chrome.sources
-      state: absent
-
   - name: Add {{ app_name }} GPG key
     ansible.builtin.apt_key:
       url:  https://dl.google.com/linux/linux_signing_key.pub

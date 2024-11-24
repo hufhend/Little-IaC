@@ -78,13 +78,6 @@
       state: present
     when: openconnect == True
 
-  # Kodi Home Theater Software
-  - name: Install Kodi media player
-    ansible.builtin.apt:
-      pkg: kodi
-      state: present
-    when: kodi == True
-
   - name: Add Flathub repo
     community.general.flatpak_remote:
       name: flathub

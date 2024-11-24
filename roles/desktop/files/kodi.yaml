@@ -1,0 +1,11 @@
+# Kodi Home Theater Software
+- name: Set a app variable
+  ansible.builtin.set_fact:
+    app: "kodi"
+    app_name: "Kodi media player"
+
+- name: Install {{ app_name }}
+  ansible.builtin.apt:
+    pkg: kodi
+    state: present
+  when: kodi == True

@@ -27,21 +27,6 @@
       owner: "{{ ansible_user }}"
       mode: '0755'
 
-  # Oracle VM VirtualBox
-  - name: Install Oracle VM VirtualBox
-    block:
-    - name: Accept Oracle license
-      ansible.builtin.debconf:
-        name: virtualbox-ext-pack
-        question: virtualbox-ext-pack/license
-        value: "true"
-        vtype: select
-
-    - name: Install VirtualBox Extension Pack
-      ansible.builtin.apt:
-        pkg: virtualbox-ext-pack
-    when: virtualbox == True
-    
   - name: Cleaning
     ansible.builtin.file:
       path: /etc/apt/sources.list.d/hashicorp.list

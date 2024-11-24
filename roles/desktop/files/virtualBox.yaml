@@ -1,0 +1,20 @@
+# Oracle VM VirtualBox
+- name: Set a app variable
+  ansible.builtin.set_fact:
+    app: "virtualbox"
+    app_name: "Oracle VM VirtualBox"
+
+- name: Install {{ app_name }}
+  block:
+  - name: Accept Oracle license
+    ansible.builtin.debconf:
+      name: virtualbox-ext-pack
+      question: virtualbox-ext-pack/license
+      value: "true"
+      vtype: select
+
+  - name: Install {{ app_name }} Extension Pack
+    ansible.builtin.apt:
+      pkg: virtualbox-ext-pack
+  when: virtualbox == True
+  

@@ -33,31 +33,6 @@
       state: present
       method: system
 
-  - name: Cleaning
-    ansible.builtin.file:
-      path: /etc/apt/sources.list.d/hashicorp.list
-      state: absent
-
-  - name: Cleaning
-    ansible.builtin.file:
-      path: /etc/apt/sources.list.d/google-chrome.sources
-      state: absent
-  
-  - name: Cleaning
-    ansible.builtin.file:
-      path: /etc/apt/sources.list.d/megasync.list
-      state: absent
-
-  - name: Cleaning
-    ansible.builtin.file:
-      path: /etc/apt/sources.list.d/vscode.sources
-      state: absent
-
-  - name: Cleaning
-    ansible.builtin.file:
-      path: /etc/apt/sources.list.d/docker.list
-      state: absent      
-
   - name: Add other software
     include_tasks:
       file: "{{ item }}"

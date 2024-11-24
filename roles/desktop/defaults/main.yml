@@ -21,3 +21,4 @@ vscode: false
 openconnect: false
 kodi: false
 python: false
+wine: false

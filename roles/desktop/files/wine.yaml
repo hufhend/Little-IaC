@@ -1,0 +1,26 @@
+---
+# Wine Is Not an Emulator
+- name: Set a app variable
+  ansible.builtin.set_fact:
+    app: "wine"
+    app_name: "Wine Is Not an Emulator"
+
+- name: Install {{ app_name }}
+  block:
+  - name: Add {{ app_name }} GPG key
+    ansible.builtin.apt_key:
+      url: https://dl.winehq.org/wine-builds/Release.key
+      keyring: /usr/share/keyrings/wine.gpg
+      state: present
+
+  - name: Add {{ app_name }} repository
+    ansible.builtin.apt_repository:
+      repo: deb [signed-by=/usr/share/keyrings/wine.gpg] https://dl.winehq.org/wine-builds/ubuntu {{ ansible_distribution_release }} main
+      state: present
+      filename: wine
+
+  - name: Install {{ app_name }}
+    ansible.builtin.apt:
+      name: wine
+      state: present
+  when: wine == True

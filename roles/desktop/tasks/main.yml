@@ -53,6 +53,11 @@
       path: /etc/apt/sources.list.d/vscode.sources
       state: absent
 
+  - name: Cleaning
+    ansible.builtin.file:
+      path: /etc/apt/sources.list.d/docker.list
+      state: absent      
+
   - name: Add other software
     include_tasks:
       file: "{{ item }}"

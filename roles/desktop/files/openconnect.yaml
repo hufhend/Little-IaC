@@ -1,0 +1,14 @@
+# Support for Cisco VPN
+- name: Set a app variable
+  ansible.builtin.set_fact:
+    app: "openconnect"
+    app_name: "OpenConnect VPN client"
+    
+- name: Install {{ app_name }}
+  ansible.builtin.apt:
+    pkg:
+    - openconnect
+    - network-manager-openconnect
+    - network-manager-openconnect-gnome
+    state: present
+  when: openconnect == True

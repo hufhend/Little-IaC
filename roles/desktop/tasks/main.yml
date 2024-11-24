@@ -27,6 +27,12 @@
       owner: "{{ ansible_user }}"
       mode: '0755'
 
+  - name: Add Flathub repo
+    community.general.flatpak_remote:
+      name: flathub
+      state: present
+      method: system
+
   - name: Cleaning
     ansible.builtin.file:
       path: /etc/apt/sources.list.d/hashicorp.list
@@ -52,22 +58,6 @@
       file: "{{ item }}"
     loop: "{{ query('fileglob', '{{ role_path }}/files/*.yaml') }}"
     no_log: true
-
-  # Support for Cisco VPN
-  - name: Install OpenConnect VPN client
-    ansible.builtin.apt:
-      pkg:
-      - openconnect
-      - network-manager-openconnect
-      - network-manager-openconnect-gnome
-      state: present
-    when: openconnect == True
-
-  - name: Add Flathub repo
-    community.general.flatpak_remote:
-      name: flathub
-      state: present
-      method: system
 
   - name: Change ownership of packages
     ansible.builtin.file:

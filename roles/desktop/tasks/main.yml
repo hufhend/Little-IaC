@@ -17,8 +17,8 @@
       - keepassxc
       - thunderbird
       - flatpak
-      - gnome-software-plugin-flatpak 
-      - gnome-software      
+      - gnome-software-plugin-flatpak
+      - gnome-software
 
   - name: Create a install directory
     ansible.builtin.file:
@@ -33,6 +33,7 @@
       state: present
       method: system
 
+  # This is where everything else is installed
   - name: Add other software
     include_tasks:
       file: "{{ item }}"
@@ -47,6 +48,7 @@
       owner: "{{ user_ansible }}"
       group: "{{ user_ansible }}"
 
+  # All conditions need to be met at once
   when:
     - ansible_distribution == "Ubuntu"
     - ansible_distribution_release == "jammy" or ansible_distribution_release == "noble"

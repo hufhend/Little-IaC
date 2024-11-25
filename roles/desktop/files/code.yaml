@@ -1,6 +1,6 @@
 ---
 # Microsoft Visual Studio Code
-- name: Set a app variable
+- name: Package Variable Setting
   ansible.builtin.set_fact:
     app: "code"
     app_name: "Visual Studio Code"

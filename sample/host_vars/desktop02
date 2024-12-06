@@ -25,3 +25,10 @@ fw_host_svc:
     proto: udp
     src: "{{ safe_network }}"
     comment: 'Allow ALVR streaming'
+
+addition_cron:
+  - name: "Etcd backup"
+    minute: "00"
+    hour: " *"
+    job: "/home/hufhendr/scr/etcd-backup.sh"
+    

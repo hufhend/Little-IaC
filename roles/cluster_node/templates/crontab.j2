@@ -28,7 +28,7 @@
 # Special tasks just for this
 {% for task in addition_cron %}
 # {{ task.name }}
-{{ task.minute | default('*') }} {{ task.hour | default('*') }}   *  *   *     {{ task.job }}
+{{ task.minute | default(' *') }} {{ task.hour | default(' *') }}  {{ task.day | default(' *') }}  *   *     {{ task.job }}
 
 {% endfor %}
 {% endif %}

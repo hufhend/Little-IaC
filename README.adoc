@@ -166,6 +166,10 @@ _Firewall is not a separately executable role, it's just an engine. You can find
 
 == Newly added features
 
+9 Dec 2024
+
+* Exposing a separate role for crontab
+
 1 Oct 2024
 
 * The last planned part of the project is nearing completion and that is the automation of Raspberry Pi and 

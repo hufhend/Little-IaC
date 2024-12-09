@@ -25,7 +25,7 @@
 40 06  {{ mntd }}  *   *     /usr/bin/kubectl uncordon {{ inventory_hostname }}
 
 {% if addition_cron is defined %}
-# Special tasks just for this
+# Special tasks only for this machine
 {% for task in addition_cron %}
 # {{ task.name }}
 {{ task.minute | default(' *') }} {{ task.hour | default(' *') }}  {{ task.day | default(' *') }}  *   *     {{ task.job }}

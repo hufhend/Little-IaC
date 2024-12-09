@@ -3,7 +3,7 @@
 #   Ansible initialization playbook - Ubuntu 22.04
 #   begin     : Wed 28 Feb 2024
 #   copyright : (c) 2024 Václav Dvorský
-#   email     : vaclav.dvorsky@dataforce.cz
+#   email     : hufhendr@gmail.com
 #   $Id: host-init.yaml, v1.30 05/09/2024
 #   **********************************************
 

@@ -1,14 +1,19 @@
 galaxy_info:
   author: Václav Dvorský
-  description: Consultant IT
+  description: OpenShift Administrator
+  company: Aricoma
 
-  license: GPL-3.0-or-later
+  license: GPL-2.0-or-later
+  min_ansible_version: "2.16"
 
-  min_ansible_version: 2.1
   platforms:
-    - name: Debian
-      versions:
-        - all
+  - name: Ubuntu
+    versions:
+    - jammy
+    - noble
+  - name: Debian
+    versions:
+    - bookworm
 
   galaxy_tags: []
     # List tags for your role here, one per line. A tag is a keyword that describes

@@ -3,7 +3,7 @@
 #   Ansible Orange Pi playbook - Armbian 24.5.0
 #   begin     : Fri 29 Mar 2024
 #   copyright : (c) 2024 Václav Dvorský
-#   email     : vaclav.dvorsky@dataforce.cz
+#   email     : hufhendr@gmail.com
 #   $Id: orangepi.yaml, v1.00 30/03/2024
 #   *******************************************
 

@@ -18,11 +18,11 @@
   hosts: all
   become: true
   roles:
-    # - role: system_upgrade
-    # - role: env_settings
-    # - role: docker
-    # - role: orangepi
-    # - role: firewall
+    - role: system_upgrade
+    - role: env_settings
+    - role: docker
+    - role: orangepi
+    - role: firewall
     - role: docker_apps
       become: true
       become_user: "{{ docker_user }}"

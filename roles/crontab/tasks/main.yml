@@ -1,0 +1,14 @@
+---
+- name: Set up Ubuntu as a node in a Kubernetes cluster
+  block:
+  # crontab settings
+  - name: Add Kubernetes crontab
+    ansible.builtin.template:
+      src: templates/crontab.j2
+      dest: "/var/spool/cron/crontabs/{{ ansible_user }}"
+      owner: "{{ ansible_user }}"
+      group: crontab
+      mode: '0600'
+    when: cron == 'K8s'
+
+  when: role in ['combi', 'master', 'worker']

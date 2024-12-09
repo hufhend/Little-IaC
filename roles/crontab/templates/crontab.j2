@@ -1,0 +1,35 @@
+# For more information see the manual pages of crontab(5) and cron(8)
+# m h dom mon dow   command
+
+# This file is maintained by Ansible
+# Any changes can be overwritten
+
+# Check the first disk
+{% if first_disk is defined and first_disk != 'none' %}
+00 01   *  *  0-5    sudo /usr/sbin/smartctl -t short {{ first_disk }} 	2>/dev/null
+00 02   *  *  sat    sudo /usr/sbin/smartctl -t long  {{ first_disk }} 	2>/dev/null   # Saturday
+{% endif %}
+{% if second_disk is defined and second_disk != 'none' %}
+
+# Check the second disk
+20 01   *  *  1-6    sudo /usr/sbin/smartctl -t short {{ second_disk }} 	2>/dev/null
+00 02   *  *  sun    sudo /usr/sbin/smartctl -t long  {{ second_disk }} 	2>/dev/null   # Sunday
+{% endif %}
+
+# Complete system update
+{{ mntm }} 05   *  *   *     sudo apt -f install && sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y && sudo apt autoremove -y
+
+# Shut down the K8s node and restart
+29 06  {{ mntd }}  *   *     /usr/bin/kubectl drain --ignore-daemonsets --delete-emptydir-data --force --grace-period=50 {{ inventory_hostname }}
+30 06  {{ mntd }}  *   *     sudo /usr/sbin/init 6
+40 06  {{ mntd }}  *   *     /usr/bin/kubectl uncordon {{ inventory_hostname }}
+
+{% if addition_cron is defined %}
+# Special tasks just for this
+{% for task in addition_cron %}
+# {{ task.name }}
+{{ task.minute | default(' *') }} {{ task.hour | default(' *') }}  {{ task.day | default(' *') }}  *   *     {{ task.job }}
+
+{% endfor %}
+{% endif %}
+

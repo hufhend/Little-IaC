@@ -4,7 +4,7 @@
 #   begin     : Sat 20 Apr 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: K8s_cluster.yaml, v1.10 18/06/2024
+#   $Id: K8s_cluster.yaml, v1.15 09/12/2024
 #   *******************************************
 
 #   --------------------------------------------------------------------
@@ -23,6 +23,7 @@
     - role: system_upgrade
     - role: env_settings
     - role: cluster_node
+    - role: crontab
     - role: cloud_tools
     - role: firewall
 

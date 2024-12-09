@@ -4,7 +4,7 @@
 #   begin     : Tue 7 May 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: desktop.yaml, v1.10 18/06/2024
+#   $Id: desktop.yaml, v1.15 09/12/2024
 #   ***************************************
 
 #   --------------------------------------------------------------------
@@ -23,5 +23,6 @@
     - role: docker
     - role: firewall
     - role: desktop
+    - role: crontab
     - role: cloud_tools
     - role: binenv

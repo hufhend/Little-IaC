@@ -142,5 +142,10 @@
       project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
   when: 
-    - pihole == true
-    - pihole_installed | default(false) != true
+    ansible_play_hosts.index(inventory_hostname) == 0 or
+    hostvars[ansible_play_hosts[ansible_play_hosts.index(inventory_hostname) - 1]].previous_tasks_ok | default(true) and
+    pihole == true and
+    pihole_installed | default(false) != true
+  
+  vars:
+    previous_tasks_ok: "{{ ansible_failed_task is not defined }}"

@@ -22,3 +22,4 @@ openconnect: false
 kodi: false
 python: false
 wine: false
+signal: false

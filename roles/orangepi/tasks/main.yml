@@ -58,14 +58,14 @@
       pkg:
         - git
 
-  # crontab settings
-  - name: Add OrangePi crontab
-    ansible.builtin.template:
-      src: templates/crontab.j2
-      dest: "/var/spool/cron/crontabs/{{ ansible_user }}"
-      owner: "{{ ansible_user }}"
-      group: crontab
-      mode: '0600'
-    when: role not in ['combi', 'master', 'worker']      
+  # # crontab settings
+  # - name: Add OrangePi crontab
+  #   ansible.builtin.template:
+  #     src: templates/crontab.j2
+  #     dest: "/var/spool/cron/crontabs/{{ ansible_user }}"
+  #     owner: "{{ ansible_user }}"
+  #     group: crontab
+  #     mode: '0600'
+  #   when: role not in ['combi', 'master', 'worker']
 
   when: orange == true

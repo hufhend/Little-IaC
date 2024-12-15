@@ -18,11 +18,22 @@
 
 # Complete system update
 {{ mntm }} 05   *  *   *     sudo apt -f install && sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y && sudo apt autoremove -y
+{% if role in ['combi', 'master', 'worker'] %}
 
 # Shut down the K8s node and restart
 29 06  {{ mntd }}  *   *     /usr/bin/kubectl drain --ignore-daemonsets --delete-emptydir-data --force --grace-period=50 {{ inventory_hostname }}
 30 06  {{ mntd }}  *   *     sudo /usr/sbin/init 6
 40 06  {{ mntd }}  *   *     /usr/bin/kubectl uncordon {{ inventory_hostname }}
+{% endif %}
+{% if orange == true and role not in ['combi', 'master', 'worker'] %}
+
+# Update Docker apps #2
+{{ mntm }} 05   *  *  mon    /home/{{ ansible_user }}/scr/docker_update.sh
+
+# Restart OrangePi
+30 06  {{ mntd }}  *   *     sudo /usr/sbin/init 6
+
+{% endif %}
 
 {% if addition_cron is defined %}
 # Special tasks only for this machine

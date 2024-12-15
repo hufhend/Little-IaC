@@ -25,22 +25,12 @@
 30 06  {{ mntd }}  *   *     sudo /usr/sbin/init 6
 40 06  {{ mntd }}  *   *     /usr/bin/kubectl uncordon {{ inventory_hostname }}
 {% endif %}
-{% if orange == true and role not in ['combi', 'master', 'worker'] %}
-
-# Update Docker apps #2
-{{ mntm }} 05   *  *  mon    /home/{{ ansible_user }}/scr/docker_update.sh
-
-# Restart OrangePi
-30 06  {{ mntd }}  *   *     sudo /usr/sbin/init 6
-
-{% endif %}
 
 {% if addition_cron is defined %}
 # Special tasks only for this machine
 {% for task in addition_cron %}
+
 # {{ task.name }}
 {{ task.minute | default(' *') }} {{ task.hour | default(' *') }}  {{ task.day | default(' *') }}  *   *     {{ task.job }}
-
 {% endfor %}
 {% endif %}
-

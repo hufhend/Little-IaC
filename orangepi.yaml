@@ -22,6 +22,7 @@
     - role: env_settings
     - role: docker
     - role: orangepi
+    - role: crontab
     - role: firewall
     - role: docker_apps
       become: true

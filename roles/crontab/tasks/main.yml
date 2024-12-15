@@ -9,6 +9,15 @@
       owner: "{{ ansible_user }}"
       group: crontab
       mode: '0600'
-    when: cron == 'K8s'
+    when: role in ['combi', 'master', 'worker']
 
-  when: role in ['combi', 'master', 'worker']
+  - name: Add OrangePi crontab
+    ansible.builtin.template:
+      src: templates/crontab-orange.j2
+      dest: "/var/spool/cron/crontabs/{{ ansible_user }}"
+      owner: "{{ ansible_user }}"
+      group: crontab
+      mode: '0600'
+    when:
+      - orange == true
+      - role not in ['combi', 'master', 'worker']

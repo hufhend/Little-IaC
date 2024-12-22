@@ -4,7 +4,7 @@
 #   begin     : Fri 28 Jun 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : Vaclav.Dvorsky@aricoma.com
-#   $Id: docker_update.sh, v1.00 28/06/2024
+#   $Id: docker_update.sh, v1.10 22/12/2024
 #   ***************************************
 
 #   --------------------------------------------------------------------
@@ -48,6 +48,12 @@ sleep 30
 {% if gitea is defined and gitea != 'false' and gitea != false %}
 # Refresh the Gitea
 cd ~/docker/gitea;          docker compose pull && docker compose build && docker compose up -d
+sleep 30
+
+{% endif %}
+{% if homeassistant is defined and homeassistant != 'false' and homeassistant != false %}
+# Refresh the Home Assistant
+cd ~/docker/home-assistant; docker compose pull && docker compose build && docker compose up -d
 sleep 30
 
 {% endif %}

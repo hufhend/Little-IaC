@@ -3,9 +3,14 @@ Václav Dvorský <hufhendr@gmail.com>
 1.1, 25 April, 2022: Ansible readme
 :toc:
 :icons: font
-:url-quickref: https://github.com/hufhend/ansible
+:url-quickref: https://github.com/hufhend/Little-IaC
 
-These scripts were originally created as Ansible exercises. Later, they focused on automating Linux setup before installing a Kubernetes cluster. 
+Recently, I was intrigued by the idea that it is possible to use Ansible to manage real computers similar 
+to the services in Kubernetes. That is, to achieve such a degree of automation that we can replace a burnt 
+computer with another one and give it the same settings relatively quickly via Ansible.
+
+This small project builds on these principles and strongly integrates DevOps approaches of infrastructure 
+as code.
 
 WARNING: The intended use is on a new bare metal installation of Linux, deployment on already running machines could be problematic.
 
@@ -165,6 +170,10 @@ The major breakthrough was enabling East-West traffic, which I leave in Calico's
 _Firewall is not a separately executable role, it's just an engine. You can find the rules setup in the link:roles/cluster_node/vars/main.yml[cluster node] role._
 
 == Newly added features
+
+22 Dec 2024
+
+* New Home Assistant service added, both for Kubernetes and for OrangePi in remote locations
 
 9 Dec 2024
 

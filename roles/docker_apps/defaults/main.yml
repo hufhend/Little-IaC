@@ -12,6 +12,7 @@ prometheus: false
 torproject: false
 openvpn: false
 vpn_url: vpn.example.com
+homeassistant: false
 
 # Variables for the Gitea app
 git_db_user: gitea

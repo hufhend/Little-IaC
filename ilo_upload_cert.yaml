@@ -26,7 +26,7 @@
   vars:
     ilo_username: "username"
     ilo_password: "password"
-    ilo_url: "ilo.example.com"
+    ilo_url: "ilo.example.cz"
     k8s_secret_name: "ilo-tls-secret"
     k8s_namespace: "cert-manager"
   tasks:
@@ -86,7 +86,7 @@
     # Downloading the certificate from the iLO server
     - name: Download certificate from iLO
       ansible.builtin.shell:
-        cmd: "echo | openssl s_client -connect ilo.akira.cz:443 -servername ilo.akira.cz 2>/dev/null | openssl x509 -noout -enddate | sed 's/notAfter=//' | xargs -I{} date -d '{}' +%Y%m%d%H%M%SZ"
+        cmd: "echo | openssl s_client -connect {{ ilo_url }}:443 -servername {{ ilo_url }} 2>/dev/null | openssl x509 -noout -enddate | sed 's/notAfter=//' | xargs -I{} date -u -d '{}' +%Y%m%d%H%M%SZ"
       register: cert_info_run
 
     # - name: Show certificate output

@@ -3,7 +3,7 @@
 #   begin     : Fri 11 Oct 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: ilo_upload_cert.yaml, v1.60  27/12/2024
+#   $Id: ilo_upload_cert.yaml, v1.62  28/12/2024
 #   ********************************************
 
 #   --------------------------------------------------------------------
@@ -59,7 +59,7 @@
         key_content: "{{ key_content_base64 | b64decode }}"
 
     # Analyzing and displaying key SSL certificate information
-    - name: Analyze TLS certificate using x509_info
+    - name: Analyze TLS certificate using x509 info
       community.crypto.x509_certificate_info:
         content: "{{ cert_content }}"
       register: cert_info
@@ -87,12 +87,29 @@
     - name: Get expiration from iLO
       ansible.builtin.shell:
         cmd: "echo | openssl s_client -connect {{ ilo_url }}:443 -servername {{ ilo_url }} 2>/dev/null | openssl x509 -noout -enddate | sed 's/notAfter=//' | xargs -I{} date -u -d '{}' +%Y%m%d%H%M%SZ"
-      register: cert_info_run
+      register: cert_expire_run
+
+    - name: Get certificate issuer from iLO
+      ansible.builtin.shell:
+        cmd: "echo | openssl s_client -connect {{ ilo_url }}:443 -servername {{ ilo_url }} 2>/dev/null | openssl x509 -noout -issuer"
+      register: cert_issuer_run
+
+    # Evaluating whether it is a default certificate
+    - name: Check if certificate is default
+      ansible.builtin.set_fact:
+        is_default_cert: "{{ 'Hewlett Packard Enterprise' in cert_issuer_run.stdout }}"
+
+    # Debugging the results
+    - name: Display certificate issuer and decision
+      ansible.builtin.debug:
+        msg:
+          - "Certificate Issuer: {{ cert_issuer_run.stdout }}"
+          - "Is Default Certificate: {{ is_default_cert }}"
 
     # Convert the dates to integers for comparison
     - name: Convert dates to integers
       ansible.builtin.set_fact:
-        ilo_cert_date: "{{ cert_info_run.stdout | regex_replace('Z$', '') | int }}"
+        ilo_cert_date: "{{ cert_expire_run.stdout | regex_replace('Z$', '') | int }}"
         k8s_cert_date: "{{ cert_info.not_after | regex_replace('Z$', '') | int }}"
 
     # Compare the expiration dates of the certificates
@@ -103,16 +120,16 @@
           {% set ilo_readable = (ilo_cert_date | string | to_datetime('%Y%m%d%H%M%S')).strftime('%d.%m.%Y %H:%M:%S') %}
           {% set k8s_readable = (k8s_cert_date | string | to_datetime('%Y%m%d%H%M%S')).strftime('%d.%m.%Y %H:%M:%S') %}
           {% if ilo_cert_date > k8s_cert_date %}
-          iLO certificate is newer:
+          iLO certificate is newer
           - Expiry: {{ ilo_readable }} UTC
           - Compared to Kubernetes certificate: {{ k8s_readable }} UTC
           {% elif ilo_cert_date < k8s_cert_date %}
-          Kubernetes certificate is newer:
+          Kubernetes certificate is newer
           - Expiry: {{ k8s_readable }} UTC
           - Compared to iLO certificate: {{ ilo_readable }} UTC
           {% else %}
-          Both certificates expire at the same time:
-          - Expiry: {{ ilo_readable }} UTC
+          Both certificates expire at the same time
+          Expiry: {{ ilo_readable }} UTC
           {% endif %}
       debug:
         msg: "{{ msg.split('\n') }}"
@@ -151,4 +168,4 @@
           validate_certs: no
         delegate_to: localhost
       
-      when: ilo_cert_date < k8s_cert_date
+      when: ilo_cert_date < k8s_cert_date or is_default_cert

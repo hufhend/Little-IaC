@@ -84,41 +84,40 @@
         combined_cert_key: "{{ cert_content | regex_replace('\\n', '\\\\n') }}\\n{{ key_content | regex_replace('\\n', '\\\\n') }}"
 
     # Downloading the certificate from the iLO server
-    - name: Download certificate from iLO
+    - name: Get expiration from iLO
       ansible.builtin.shell:
         cmd: "echo | openssl s_client -connect {{ ilo_url }}:443 -servername {{ ilo_url }} 2>/dev/null | openssl x509 -noout -enddate | sed 's/notAfter=//' | xargs -I{} date -u -d '{}' +%Y%m%d%H%M%SZ"
       register: cert_info_run
 
-    # - name: Show certificate output
-    #   debug:
-    #     msg: "{{ cert_info_run.stdout }}"
-
-    - name: Convert dates to integers for comparison
+    # Convert the dates to integers for comparison
+    - name: Convert dates to integers
       ansible.builtin.set_fact:
         ilo_cert_date: "{{ cert_info_run.stdout | regex_replace('Z$', '') | int }}"
         k8s_cert_date: "{{ cert_info.not_after | regex_replace('Z$', '') | int }}"
 
     # Compare the expiration dates of the certificates
+    # It is used only for displaying on the screen
     - name: Compare certificate dates
       vars:
         msg: |
           {% set ilo_readable = (ilo_cert_date | string | to_datetime('%Y%m%d%H%M%S')).strftime('%d.%m.%Y %H:%M:%S') %}
           {% set k8s_readable = (k8s_cert_date | string | to_datetime('%Y%m%d%H%M%S')).strftime('%d.%m.%Y %H:%M:%S') %}
           {% if ilo_cert_date > k8s_cert_date %}
-            iLO certificate is newer:
-            - Expiry: {{ ilo_readable }} UTC
-            - Compared to Kubernetes certificate: {{ k8s_readable }} UTC
+          iLO certificate is newer:
+          - Expiry: {{ ilo_readable }} UTC
+          - Compared to Kubernetes certificate: {{ k8s_readable }} UTC
           {% elif ilo_cert_date < k8s_cert_date %}
-            Kubernetes certificate is newer:
-            - Expiry: {{ k8s_readable }} UTC
-            - Compared to iLO certificate: {{ ilo_readable }} UTC
+          Kubernetes certificate is newer:
+          - Expiry: {{ k8s_readable }} UTC
+          - Compared to iLO certificate: {{ ilo_readable }} UTC
           {% else %}
-            Both certificates expire at the same time:
-            - Expiry: {{ ilo_readable }} UTC
+          Both certificates expire at the same time:
+          - Expiry: {{ ilo_readable }} UTC
           {% endif %}
       debug:
         msg: "{{ msg.split('\n') }}"
 
+    # Part of uploading a new certificate to the iLO server
     - block:
       - name: Get iLO session token
         ansible.builtin.uri:

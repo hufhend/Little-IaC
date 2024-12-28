@@ -14,7 +14,7 @@ desktop: true
 addition_cron:
   - name: "Documents backup"
     minute: "30"
-    hour: "3"
+    hour: " * "
     job: "sudo /usr/bin/rsync --delete -ra /home/data/documents/ /data/backup/documents"
     user: "{{ ansible_user }}"
     state: present

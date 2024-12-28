@@ -29,6 +29,6 @@ fw_host_svc:
 addition_cron:
   - name: "Etcd backup"
     minute: "00"
-    hour: " *"
+    hour: "*/6"
     job: "/home/hufhendr/scr/etcd-backup.sh"
     

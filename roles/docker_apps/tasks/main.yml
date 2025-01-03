@@ -61,6 +61,10 @@
     loop: "{{ query('fileglob', '{{ role_path }}/files/*.yaml') }}"
     no_log: true
 
+  # - name: Application debugging part
+  #   include_tasks:
+  #     file: "{{ role_path }}/files/openvpn.yaml"
+
   - name: Create a scr directory
     ansible.builtin.file:
       path: "/home/{{ docker_user }}/scr"

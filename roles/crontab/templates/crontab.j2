@@ -21,9 +21,9 @@
 {% if role in ['combi', 'master', 'worker'] %}
 
 # Shut down the K8s node and restart
-29 06  {{ mntd }}  *   *     /usr/bin/kubectl drain --ignore-daemonsets --delete-emptydir-data --force --grace-period=50 {{ inventory_hostname }}
-30 06  {{ mntd }}  *   *     sudo /usr/sbin/init 6
-45 06  {{ mntd }}  *   *     /usr/bin/kubectl uncordon {{ inventory_hostname }}
+29 07  {{ mntd }}  *   *     /usr/bin/kubectl drain --ignore-daemonsets --delete-emptydir-data --force --grace-period=50 {{ inventory_hostname }}
+30 07  {{ mntd }}  *   *     sudo /usr/sbin/init 6
+45 07  {{ mntd }}  *   *     /usr/bin/kubectl uncordon {{ inventory_hostname }}
 {% endif %}
 
 {% if addition_cron is defined %}

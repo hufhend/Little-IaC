@@ -17,7 +17,7 @@
     ansible.builtin.apt_repository:
       repo: deb [arch=amd64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main
       state: present
-      filename: signal-xenial
+      filename: signal
 
   - name: Install {{ app_name }} for Desktop
     ansible.builtin.apt:

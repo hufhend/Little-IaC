@@ -39,13 +39,28 @@
     path: "{{ item }}"
     state: absent
   loop:
-    - /etc/apt/sources.list.d/hashicorp.list
+    # - /etc/apt/sources.list.d/hashicorp.list
     - /etc/apt/sources.list.d/google-chrome.sources
-    - /etc/apt/sources.list.d/megasync.list
+    # - /etc/apt/sources.list.d/megasync.list
     - /etc/apt/sources.list.d/vscode.sources
     - /etc/apt/sources.list.d/docker.list
     - /etc/apt/sources.list.d/google.list
     - /etc/apt/sources.list.d/kubernetes.list
+    - /etc/apt/sources.list.d/signal-xenial.list
+    - /etc/apt/sources.list.d/vscode-signed.list
+    - /etc/apt/sources.list.d/ansible-ubuntu-ansible-jammy.sources
+
+- name: Find all distUpgrade files
+  ansible.builtin.find:
+    paths: /etc/apt/sources.list.d
+    patterns: "*.distUpgrade"
+  register: found_files
+
+- name: Remove found distUpgrade files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ found_files.files }}"    
 
 - name: Enable sysstat service
   ansible.builtin.lineinfile:

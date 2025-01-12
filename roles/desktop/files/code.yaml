@@ -17,7 +17,7 @@
     ansible.builtin.apt_repository:
       repo: deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main
       state: present
-      filename: vscode-signed
+      filename: vscode
 
   - name: Install {{ app_name }}
     ansible.builtin.apt:

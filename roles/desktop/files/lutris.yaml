@@ -1,0 +1,26 @@
+---
+# Lutris is an Open Source gaming platform for Linux
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "lutris"
+    app_name: "Lutris games"
+
+- name: Install {{ app_name }}
+  block:
+  - name: Add {{ app_name }} GPG key
+    ansible.builtin.apt_key:
+      url: https://download.opensuse.org/repositories/home:/strycore/Debian_12/Release.key
+      keyring: /usr/share/keyrings/lutris.gpg
+      state: present
+  
+  - name: Add {{ app_name }} repository
+    ansible.builtin.apt_repository:
+      repo:  deb [signed-by=/usr/share/keyrings/lutris.gpg] https://download.opensuse.org/repositories/home:/strycore/Debian_12/ ./
+      state: present
+      filename: lutris
+
+  - name: Install {{ app_name }}
+    ansible.builtin.apt:
+      name: lutris
+      state: present
+  when: lutris == True

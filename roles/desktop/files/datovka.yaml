@@ -1,5 +1,6 @@
 ---
-# Lutris is an Open Source gaming platform for Linux
+# Datovka je multiplatformní desktopová aplikace pro přístup k datovým schránkám 
+# a k trvalému uchovávání datových zpráv v lokální databázi. 
 - name: Package Variable Setting
   ansible.builtin.set_fact:
     app: "datovka"

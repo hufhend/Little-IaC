@@ -12,7 +12,7 @@
       url: https://download.opensuse.org/repositories/home:/strycore/Debian_12/Release.key
       keyring: /usr/share/keyrings/lutris.gpg
       state: present
-  
+
   - name: Add {{ app_name }} repository
     ansible.builtin.apt_repository:
       repo:  deb [signed-by=/usr/share/keyrings/lutris.gpg] https://download.opensuse.org/repositories/home:/strycore/Debian_12/ ./

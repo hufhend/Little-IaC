@@ -13,7 +13,7 @@
       url: https://download.opensuse.org/repositories/home:CZ-NIC:datovka-latest/xUbuntu_24.04/Release.key
       keyring: /usr/share/keyrings/datovka.gpg
       state: present
-  
+
   - name: Add {{ app_name }} repository
     ansible.builtin.apt_repository:
       repo:  deb [signed-by=/usr/share/keyrings/datovka.gpg] http://download.opensuse.org/repositories/home:/CZ-NIC:/datovka-latest/xUbuntu_24.04/ /

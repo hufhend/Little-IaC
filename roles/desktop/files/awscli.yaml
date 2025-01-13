@@ -1,0 +1,43 @@
+# from https://community.aws/content/2rGOv0VY5bSbxI4HEXTjQisRU8L/automate-aws-cli-deployment-using-ansible-step-by-step
+---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "awscli"
+    app_name: "ASW CLI"
+
+- name: Install {{ app_name }} on Ubuntu
+  block:
+    - name: Update apt package index
+      apt:
+        update_cache: yes
+
+    - name: Install required packages for {{ app_name }}
+      apt:
+        name:
+          - curl
+          - unzip
+        state: present
+
+    - name: Download {{ app_name }} installer
+      get_url:
+        url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+        dest: "/tmp/awscliv2.zip"
+
+    - name: Unzip {{ app_name }} installer
+      unarchive:
+        src: "/tmp/awscliv2.zip"
+        dest: "/tmp"
+        remote_src: yes
+
+    - name: Run {{ app_name }} installer
+      command: "/tmp/aws/install"
+
+    - name: Verify {{ app_name }} installation
+      command: "aws --version"
+      register: aws_cli_version
+
+    - name: Display {{ app_name }} version
+      debug:
+        msg: "{{ aws_cli_version.stdout }}"
+
+  when: awscli == True

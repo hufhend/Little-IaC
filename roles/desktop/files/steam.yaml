@@ -1,13 +1,32 @@
 ---
 # Steam Game platform
-# It then installs to the user's home and automatically watches for updates
 - name: Package Variable Setting
   ansible.builtin.set_fact:
     app: "steam"
     app_name: "Steam"
 
 - name: Install {{ app_name }}
-  ansible.builtin.apt:
-    pkg: steam
-    state: present
+  block:
+  - name: Add {{ app_name }} GPG key from a public server
+    ansible.builtin.apt_key:
+      url: https://repo.steampowered.com/steam/archive/stable/steam.gpg
+      keyring: /usr/share/keyrings/steam.gpg
+      state: present
+
+  - name: Add {{ app_name }} repository
+    ansible.builtin.apt_repository:
+      repo: deb [arch=amd64,i386 signed-by=/usr/share/keyrings/steam.gpg] https://repo.steampowered.com/steam/ stable steam
+      state: present
+      filename: steam
+  
+  - name: Add {{ app_name }} src repository
+    ansible.builtin.apt_repository:
+      repo: deb-src [arch=amd64,i386 signed-by=/usr/share/keyrings/steam.gpg] https://repo.steampowered.com/steam/ stable steam
+      state: present
+      filename: steam
+
+  - name: Install {{ app_name }}
+    ansible.builtin.apt:
+      name: steam
+      state: present
   when: steam == True

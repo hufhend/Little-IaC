@@ -3,7 +3,7 @@
 - name: Package Variable Setting
   ansible.builtin.set_fact:
     app: "steam"
-    app_name: "Steam"
+    app_name: "Steam client"
 
 - name: Install {{ app_name }}
   block:

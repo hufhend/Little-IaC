@@ -1,0 +1,11 @@
+---
+# Discord - Group Chat That's All Fun & Games
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "discord"
+    app_name: "Discord Group Chat"
+
+- name: Install {{ app_name }}
+  community.general.snap:
+    name: discord
+  when: discord == True

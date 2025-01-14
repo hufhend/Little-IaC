@@ -9,7 +9,7 @@
   block:
   - name: Add {{ app_name }} GPG key
     ansible.builtin.apt_key:
-      url: https://dl.winehq.org/wine-builds/Release.key
+      url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x76F1A20FF987672F
       keyring: /usr/share/keyrings/wine.gpg
       state: present
 

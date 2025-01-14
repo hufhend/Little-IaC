@@ -43,7 +43,7 @@
     - /etc/apt/sources.list.d/google-chrome.sources
     # - /etc/apt/sources.list.d/megasync.list
     - /etc/apt/sources.list.d/vscode.sources
-    - /etc/apt/sources.list.d/docker.list
+    # - /etc/apt/sources.list.d/docker.list
     - /etc/apt/sources.list.d/google.list
     - /etc/apt/sources.list.d/kubernetes.list
     - /etc/apt/sources.list.d/signal-xenial.list

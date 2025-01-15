@@ -30,7 +30,7 @@
         remote_src: yes
 
     - name: Run {{ app_name }} installer
-      command: "/tmp/aws/install"
+      command: "/tmp/aws/install --update"
 
     - name: Verify {{ app_name }} installation
       command: "aws --version"

@@ -1,0 +1,17 @@
+---
+# Zoom video conferencing
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "zoom"
+    app_name: "Zoom Meetings"
+
+- name: Uninstall {{ app_name }} deb package
+  ansible.builtin.apt:
+    pkg: zoom
+    state: absent
+
+- name: Install {{ app_name }} via snap
+  community.general.snap:
+    name: zoom-client
+    channel: latest/edge
+  when: zoom == True

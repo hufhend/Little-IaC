@@ -1,0 +1,93 @@
+# from https://spacelift.io/blog/ansible-aws
+- name: Create EC2 and necessary AWS resources
+  hosts: localhost
+  gather_facts: no
+  vars:
+    region: eu-central-1
+    instance_type: t2.micro
+    ami_id: ami-07eef52105e8a2059
+    vpc_cidr_block: 10.0.0.0/16
+    subnet_cidr_block: 10.0.1.0/24
+    security_group_cidr_ingress: 0.0.0.0/0
+    security_group_cidr_egress: 0.0.0.0/0
+    security_group_ports:
+        - 80
+        - 443
+
+  tasks:
+    - name: Create VPC
+      ec2_vpc_net:
+        name: MyVPC
+        cidr_block: "{{ vpc_cidr_block }}"
+        region: "{{ region }}"
+        tags:
+          Name: MyVPC
+      register: my_vpc
+
+    - name: Output VPC ID
+      debug:
+        msg: "VPC ID is {{ my_vpc.vpc.id }}"
+    
+    - name: Create subnet
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{ my_vpc.vpc.id }}"
+        cidr: "{{ subnet_cidr_block  }}"
+        region: "{{ region }}"
+        tags:
+          Name: MySubnet
+      register: my_subnet
+
+    - name: Output Subnet ID
+      debug:
+        msg: "Subnet ID is {{ my_subnet.subnet.id }}"
+
+    - name: Create internet gateway
+      ec2_vpc_igw:
+        vpc_id: "{{ my_vpc.vpc.id }}"
+        region: "{{ region }}"
+        tags:
+          Name: MyIGW
+      register: igw
+
+    - name: Output Internet Gateway ID
+      debug:
+        msg: "Internet Gateway ID is {{ igw.gateway_id }}"
+
+    - name: Create security group
+      ec2_group:
+        name: "MySc"
+        description: "My security group"
+        vpc_id: "{{ my_vpc.vpc.id }}"
+        region: "{{ region }}"
+        rules:
+          - proto: tcp
+            ports: "{{ security_group_ports }}"
+            cidr_ip: "{{ security_group_cidr_ingress }}"
+        rules_egress:
+          - proto: all
+            cidr_ip: "{{ security_group_cidr_egress }}"
+      register: security_group
+
+    - name: Output Security Group ID
+      debug:
+        msg: "Security Group ID is {{ security_group.group_id }}"
+
+    - name: Launch instance
+      ec2_instance:
+        name: "MyInstance"
+        instance_type: "{{ instance_type }}"
+        region: "{{ region }}"
+        image_id: "{{ ami_id }}"
+        subnet_id: "{{ my_subnet.subnet.id }}"
+        wait: yes
+        security_group: "{{ security_group.group_id }}"
+        network_interfaces:
+          - assign_public_ip: true
+        tags:
+          Environment: Testing
+      register: ec2
+
+    - name: Output Instance Details
+      debug:
+        msg: "Instance ID is {{ ec2.instances[0].instance_id }}"

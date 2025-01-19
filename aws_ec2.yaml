@@ -16,7 +16,7 @@
 
   tasks:
     - name: Create VPC
-      ec2_vpc_net:
+      amazon.aws.ec2_vpc_net:
         name: MyVPC
         cidr_block: "{{ vpc_cidr_block }}"
         region: "{{ region }}"
@@ -29,7 +29,7 @@
         msg: "VPC ID is {{ my_vpc.vpc.id }}"
     
     - name: Create subnet
-      ec2_vpc_subnet:
+      amazon.aws.ec2_vpc_subnet:
         state: present
         vpc_id: "{{ my_vpc.vpc.id }}"
         cidr: "{{ subnet_cidr_block  }}"
@@ -43,7 +43,7 @@
         msg: "Subnet ID is {{ my_subnet.subnet.id }}"
 
     - name: Create internet gateway
-      ec2_vpc_igw:
+      amazon.aws.ec2_vpc_igw:
         vpc_id: "{{ my_vpc.vpc.id }}"
         region: "{{ region }}"
         tags:
@@ -55,7 +55,7 @@
         msg: "Internet Gateway ID is {{ igw.gateway_id }}"
 
     - name: Create security group
-      ec2_group:
+      amazon.aws.ec2_group:
         name: "MySc"
         description: "My security group"
         vpc_id: "{{ my_vpc.vpc.id }}"
@@ -74,7 +74,7 @@
         msg: "Security Group ID is {{ security_group.group_id }}"
 
     - name: Launch instance
-      ec2_instance:
+      amazon.aws.ec2_instance:
         name: "MyInstance"
         instance_type: "{{ instance_type }}"
         region: "{{ region }}"
@@ -84,6 +84,7 @@
         security_group: "{{ security_group.group_id }}"
         network_interfaces:
           - assign_public_ip: true
+        state: running
         tags:
           Environment: Testing
       register: ec2

@@ -13,7 +13,7 @@
         - 80
         - 443
         - 22
-    instance_count: 4
+    instance_count: 1
     user_data: |
       #!/bin/bash
       mkdir -p /home/ubuntu/.ssh
@@ -62,6 +62,24 @@
       debug:
         msg: "Internet Gateway ID is {{ igw.gateway_id }}"
 
+    - name: Create Route Table
+      amazon.aws.ec2_vpc_route_table:
+        vpc_id: "{{ my_vpc.vpc.id }}"
+        # route_table_id: "{{ route_table.route_table.route_table_id }}"
+        routes:
+          - dest: 0.0.0.0/0
+            gateway_id: "{{ igw.gateway_id }}"
+        subnets:
+          - "{{ my_subnet.subnet.id }}"
+        region: "{{ region }}"
+        tags:
+          Name: MyRouteTable 
+      register: route_table  
+
+    - name: Output Route Table ID
+      debug:
+        msg: "Route Table ID is {{ route_table.route_table.route_table_id }}"
+
     - name: Create security group
       amazon.aws.ec2_group:
         name: "MySc"
@@ -90,8 +108,8 @@
         subnet_id: "{{ my_subnet.subnet.id }}"
         wait: yes
         security_group: "{{ security_group.group_id }}"
-        # user_data: "{{ user_data }}"
-        key_name: "main"
+        user_data: "{{ user_data }}"
+        # key_name: "main"
         network_interfaces:
           - assign_public_ip: true
         state: running
@@ -113,7 +131,6 @@
       loop: "{{ ec2.results }}"
       loop_control:
         label: "{{ item.instances[0].instance_id }}"
-
 
     - name: Output all Instances Details
       debug:

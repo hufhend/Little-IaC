@@ -1,4 +1,3 @@
-# from https://spacelift.io/blog/ansible-aws
 - name: Create EC2 and necessary AWS resources
   hosts: localhost
   gather_facts: no
@@ -13,6 +12,15 @@
     security_group_ports:
         - 80
         - 443
+        - 22
+    instance_count: 4
+    user_data: |
+      #!/bin/bash
+      mkdir -p /home/ubuntu/.ssh
+      echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDY1+tsKXfCkR6YRdPt7Jefz2UZmRToBtC1q6/8+pzsL6iB3zCeQoS/uRVhfrXEvPg90QY6FhMNWnlfrQlBl8u325fQNPVByJEXSJIKyJwpb/tGqStqvvpuyLwXpcko+AFVHty/kW6NoQ8GTPZ8+a8BzBJHUlwaiYFRdpi5voFRcWWYTCygtTMhR4O0Dv0yLJsTJ6L8nqCXkuUcYgAyPS635V5z4UTX5RyOlxT7JDaBZ9auBZ2T+lCE+5+NsR/STaPpnYs5a1hLyfLX6NVbPh5TS9ZFzTjlRAh9OvwvuZcT81JoeL+7k7GxhapxDDBDYJ/ASKsEwuX3N81I2/qU02y1EHfnKWslGeAEVUzBfjqJCae0fhNy6x0rjvlawSgLIqSTzh6/pjh4vdWuP+Hm95v4A7aapliz9AhebQBnWPLqoRSeIIl1Jy/Rk2O9UHmX30uQCsNZ9hHqnkdM5JvhuYlua5ilBx9yVR1dKf8rzo4+7omg3QGZ086TGAOyPbbQRTGsThm7c0bKuQBKyPVZ57q/Zyp0aPgcCcrXB8f091Do3lZBpi4S6jozGwxtYGAUjMH+sX1v709WM7oAlPZXcNUpIk39MGA/zi3s8sPQk/Hyp+w7g5A8mSJeTCibsxIego8VINsino1QFdRCWVuh48Mk4AooFvQacwNV++uYIBRzSw== hufhendr@ThinkPad" >> /home/ubuntu/.ssh/authorized_keys
+      chown -R ubuntu:ubuntu /home/ubuntu/.ssh
+      chmod 700 /home/ubuntu/.ssh
+      chmod 600 /home/ubuntu/.ssh/authorized_keys    
 
   tasks:
     - name: Create VPC
@@ -73,22 +81,50 @@
       debug:
         msg: "Security Group ID is {{ security_group.group_id }}"
 
-    - name: Launch instance
+    - name: Launch instances
       amazon.aws.ec2_instance:
-        name: "MyInstance"
+        name: "MyInstance-{{ item }}"
         instance_type: "{{ instance_type }}"
         region: "{{ region }}"
         image_id: "{{ ami_id }}"
         subnet_id: "{{ my_subnet.subnet.id }}"
         wait: yes
         security_group: "{{ security_group.group_id }}"
+        # user_data: "{{ user_data }}"
+        key_name: "main"
         network_interfaces:
           - assign_public_ip: true
         state: running
         tags:
           Environment: Testing
       register: ec2
+      loop: "{{ range(1, instance_count + 1) | list }}"
 
-    - name: Output Instance Details
+    - name: Set instance facts for all instances
+      set_fact:
+        instance_details: >-
+          {{ (instance_details | default([])) + [{
+            'instance_id': item.instances[0].instance_id,
+            'public_ip': item.instances[0].public_ip_address,
+            'instance_type': item.instances[0].instance_type,
+            'cpu_cores': item.instances[0].cpu_options.core_count,
+            'os': item.instances[0].image_id
+          }] }}
+      loop: "{{ ec2.results }}"
+      loop_control:
+        label: "{{ item.instances[0].instance_id }}"
+
+
+    - name: Output all Instances Details
       debug:
-        msg: "Instance ID is {{ ec2.instances[0].instance_id }}"
+        msg:
+          - "────────────────────────────────────────"
+          - "Instance ID      : {{ item.instance_id }}"
+          - "Public IP        : {{ item.public_ip | default('N/A') }}"
+          - "Instance Type    : {{ item.instance_type }}"
+          - "CPU Cores        : {{ item.cpu_cores }}"
+          - "OS (AMI ID)      : {{ item.os }}"
+          - "────────────────────────────────────────"
+      loop: "{{ instance_details }}"
+      loop_control:
+        label: "{{ item.instance_id }}"

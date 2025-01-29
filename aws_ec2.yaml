@@ -3,7 +3,8 @@
   gather_facts: no
   vars:
     region: eu-central-1
-    instance_type: t2.micro
+    # instance_type: t2.micro
+    instance_type: t3.xlarge
     ami_id: ami-07eef52105e8a2059
     vpc_cidr_block: 10.0.0.0/16
     subnet_cidr_block: 10.0.1.0/24
@@ -13,7 +14,7 @@
         - 80
         - 443
         - 22
-    instance_count: 1
+    instance_count: 4
     user_data: |
       #!/bin/bash
       mkdir -p /home/ubuntu/.ssh
@@ -65,7 +66,6 @@
     - name: Create Route Table
       amazon.aws.ec2_vpc_route_table:
         vpc_id: "{{ my_vpc.vpc.id }}"
-        # route_table_id: "{{ route_table.route_table.route_table_id }}"
         routes:
           - dest: 0.0.0.0/0
             gateway_id: "{{ igw.gateway_id }}"
@@ -126,7 +126,9 @@
             'public_ip': item.instances[0].public_ip_address,
             'instance_type': item.instances[0].instance_type,
             'cpu_cores': item.instances[0].cpu_options.core_count,
-            'os': item.instances[0].image_id
+            'os': item.instances[0].image_id,
+            'url': item.instances[0].public_dns_name,
+            'name': item.invocation.module_args.name
           }] }}
       loop: "{{ ec2.results }}"
       loop_control:
@@ -136,12 +138,16 @@
       debug:
         msg:
           - "────────────────────────────────────────"
+          - "Instance Name    : {{ item.name }}"
           - "Instance ID      : {{ item.instance_id }}"
           - "Public IP        : {{ item.public_ip | default('N/A') }}"
           - "Instance Type    : {{ item.instance_type }}"
           - "CPU Cores        : {{ item.cpu_cores }}"
           - "OS (AMI ID)      : {{ item.os }}"
           - "────────────────────────────────────────"
+          - "ssh ubuntu@{{ item.url }}"
+      # debug:
+      #   var: ec2.results          
       loop: "{{ instance_details }}"
       loop_control:
         label: "{{ item.instance_id }}"

@@ -28,7 +28,7 @@
     env: dev
     unit: EBS
     region: eu-central-1
-    instance_type: t2.micro
+    instance_type: t3.small
     # instance_type: t3.xlarge
     ami_id: ami-07eef52105e8a2059
     vpc_cidr_block: 10.0.0.0/16
@@ -100,7 +100,16 @@
       debug:
         msg: "Internet Gateway ID is {{ igw.gateway_id }}"
 
-    - name: Create Route Table
+    - name: Check if Route Table already exists
+      amazon.aws.ec2_vpc_route_table_info:
+        filters:
+          vpc-id: "{{ my_vpc.vpc.id }}"
+          tag:Name: "{{ name_rt }}"
+        region: "{{ region }}"
+      register: existing_rt
+
+    - name: Create Route Table if not exists
+      when: existing_rt.route_tables | length == 0
       amazon.aws.ec2_vpc_route_table:
         vpc_id: "{{ my_vpc.vpc.id }}"
         state: present
@@ -120,7 +129,7 @@
 
     - name: Output Route Table ID
       debug:
-        msg: "Route Table ID is {{ route_table.route_table.route_table_id }}"
+        msg: "Route Table ID is {{ (route_table.route_table.route_table_id | default(existing_rt.route_tables[0].route_table_id)) }}"
 
     - name: Create security group
       amazon.aws.ec2_group:

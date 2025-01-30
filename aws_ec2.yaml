@@ -1,10 +1,10 @@
-#   ************************************
-#   Launch a couple of VMs in the Amazon
+#   ******************************************
+#   Quick launch a couple of VMs in Amazon AWS
 #   begin     : Wed 29 Jan 2025
 #   copyright : (c) 2025 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: aws_ec2.yaml, v1.00  29/01/2025
-#   ************************************
+#   $Id: aws_ec2.yaml, v1.02  30/01/2025
+#   ******************************************
 
 #   --------------------------------------------------------------------
 #   This program is free software; you can redistribute it and/or modify
@@ -13,24 +13,33 @@
 #   (at your option) any later version.
 #   --------------------------------------------------------------------
 
+#   Usage:
+#   After setting up the aws cli, just edit the variable values, set the 
+#   number of VMs required and run without inventory
+#   $ ansible-playbook aws_ec2.yaml
+
+#   Troubleshooting:
+#   Verify that aws cli is set up correctly
+#   $ aws sts get-caller-identity
+
 - name: Create EC2 and necessary AWS resources
   hosts: localhost
   gather_facts: no
   vars:
+    # variables for tagging, always check
+    creator: hufhendr
+    app: Kuberetes
+    env: dev
+    unit: EBS
+    # cloud infrastructure resource names
     name_vpc: MyVPC
     name_subnet: MySubnet
     name_igw: MyIGW
     name_rt: MyRouteTable
     name_sc: MySc
     name_vm: Node
-    creator: hufhendr
-    app: Kuberetes
-    env: dev
-    unit: EBS
+     # variables of the VPC environment
     region: eu-central-1
-    instance_type: t3.small
-    # instance_type: t3.xlarge
-    ami_id: ami-07eef52105e8a2059
     vpc_cidr_block: 10.0.0.0/16
     subnet_cidr_block: 10.0.1.0/24
     security_group_cidr_ingress: 0.0.0.0/0
@@ -41,13 +50,16 @@
         - 22
         - 6443
     instance_count: 4
+    instance_type: t3.small 
+    # instance_type: t3.xlarge
+    ami_id: ami-07eef52105e8a2059 # Ubuntu 24.04 server
     user_data: |
       #!/bin/bash
       mkdir -p /home/ubuntu/.ssh
       echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDY1+tsKXfCkR6YRdPt7Jefz2UZmRToBtC1q6/8+pzsL6iB3zCeQoS/uRVhfrXEvPg90QY6FhMNWnlfrQlBl8u325fQNPVByJEXSJIKyJwpb/tGqStqvvpuyLwXpcko+AFVHty/kW6NoQ8GTPZ8+a8BzBJHUlwaiYFRdpi5voFRcWWYTCygtTMhR4O0Dv0yLJsTJ6L8nqCXkuUcYgAyPS635V5z4UTX5RyOlxT7JDaBZ9auBZ2T+lCE+5+NsR/STaPpnYs5a1hLyfLX6NVbPh5TS9ZFzTjlRAh9OvwvuZcT81JoeL+7k7GxhapxDDBDYJ/ASKsEwuX3N81I2/qU02y1EHfnKWslGeAEVUzBfjqJCae0fhNy6x0rjvlawSgLIqSTzh6/pjh4vdWuP+Hm95v4A7aapliz9AhebQBnWPLqoRSeIIl1Jy/Rk2O9UHmX30uQCsNZ9hHqnkdM5JvhuYlua5ilBx9yVR1dKf8rzo4+7omg3QGZ086TGAOyPbbQRTGsThm7c0bKuQBKyPVZ57q/Zyp0aPgcCcrXB8f091Do3lZBpi4S6jozGwxtYGAUjMH+sX1v709WM7oAlPZXcNUpIk39MGA/zi3s8sPQk/Hyp+w7g5A8mSJeTCibsxIego8VINsino1QFdRCWVuh48Mk4AooFvQacwNV++uYIBRzSw== hufhendr@ThinkPad" >> /home/ubuntu/.ssh/authorized_keys
       chown -R ubuntu:ubuntu /home/ubuntu/.ssh
       chmod 700 /home/ubuntu/.ssh
-      chmod 600 /home/ubuntu/.ssh/authorized_keys    
+      chmod 600 /home/ubuntu/.ssh/authorized_keys
 
   tasks:
     - name: Create VPC
@@ -100,16 +112,16 @@
       debug:
         msg: "Internet Gateway ID is {{ igw.gateway_id }}"
 
-    - name: Check if Route Table already exists
-      amazon.aws.ec2_vpc_route_table_info:
-        filters:
-          vpc-id: "{{ my_vpc.vpc.id }}"
-          tag:Name: "{{ name_rt }}"
-        region: "{{ region }}"
-      register: existing_rt
+    # - name: Check if Route Table already exists
+    #   amazon.aws.ec2_vpc_route_table_info:
+    #     filters:
+    #       vpc-id: "{{ my_vpc.vpc.id }}"
+    #       tag:Name: "{{ name_rt }}"
+    #     region: "{{ region }}"
+    #   register: existing_rt
 
     - name: Create Route Table if not exists
-      when: existing_rt.route_tables | length == 0
+      # when: existing_rt.route_tables | length == 0
       amazon.aws.ec2_vpc_route_table:
         vpc_id: "{{ my_vpc.vpc.id }}"
         state: present
@@ -129,7 +141,7 @@
 
     - name: Output Route Table ID
       debug:
-        msg: "Route Table ID is {{ (route_table.route_table.route_table_id | default(existing_rt.route_tables[0].route_table_id)) }}"
+        msg: "Route Table ID is {{ route_table.route_table.route_table_id }}"
 
     - name: Create security group
       amazon.aws.ec2_group:
@@ -149,7 +161,7 @@
           Application: "{{ app }}"
           Creator: "{{ creator }}"
           Environment: "{{ env }}"
-          Department: "{{ unit }}"        
+          Department: "{{ unit }}"
       register: security_group
 
     - name: Output Security Group ID
@@ -207,7 +219,15 @@
           - "────────────────────────────────────────"
           - "ssh ubuntu@{{ item.url }}"
       # debug:
-      #   var: ec2.results          
+      #   var: ec2.results
       loop: "{{ instance_details }}"
       loop_control:
         label: "{{ item.instance_id }}"
+
+
+#   VMs we have, options what next:
+#
+#   After starting VMs, it is possible to put them into permanent inventory 
+#   and roll them further, for example:
+#   $ ansible-playbook -l aws host-init.yaml
+#   $ ansible-playbook -l aws K8s_cluster.yaml 

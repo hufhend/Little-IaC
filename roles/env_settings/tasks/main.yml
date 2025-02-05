@@ -3,6 +3,15 @@
   ansible.builtin.timezone:
     name: Europe/Prague
 
+- name: Get current system locale
+  ansible.builtin.shell: echo $LANG
+  register: current_locale
+  changed_when: false
+
+- name: Save current locale as a fact
+  ansible.builtin.set_fact:
+    original_locale: "{{ current_locale.stdout }}"
+
 - name: Ensure a Czech locale exists
   community.general.locale_gen:
     name: cs_CZ.UTF-8
@@ -24,7 +33,7 @@
     question: locales/default_environment_locale
     value: cs_CZ.UTF-8
     vtype: select
-  when: language == 'czech'
+  when: language == 'czech' or (desktop == true and original_locale == 'cs_CZ.UTF-8')
 
 - name: Set to generate locales
   ansible.builtin.debconf:
@@ -33,6 +42,17 @@
     value: en_US.UTF-8 UTF-8, cs_CZ.UTF-8 UTF-8
     vtype: multiselect
   when: language == 'czech'
+
+- name: Get current system locale
+  ansible.builtin.shell: echo $LANG
+  register: new_locale
+  changed_when: false
+
+- name: Print original and current locale
+  ansible.builtin.debug:
+    msg:
+      - "Original locale : {{ original_locale }}"
+      - "Current locale  : {{ new_locale.stdout }}"    
 
 - name: "Check if font Sacramento exists"
   ansible.builtin.stat:

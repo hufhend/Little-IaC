@@ -2,6 +2,9 @@
 - name: Check repositories
   ansible.builtin.command: apt --fix-broken install --yes
 
+- name: Repair and configure packages
+  ansible.builtin.command: sudo dpkg --configure -a
+
 - name: Update repositories
   ansible.builtin.apt:
     state: fixed
@@ -32,6 +35,7 @@
     - prometheus-node-exporter
     - ufw
     - bash-completion
+    - bind9-dnsutils
 
 # We delete files created in earlier versions and now obsolete 
 - name: Remove specific files

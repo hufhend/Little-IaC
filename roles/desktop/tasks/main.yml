@@ -19,6 +19,7 @@
       - flatpak
       - gnome-software-plugin-flatpak
       - gnome-software
+      - gnome-tweaks 
 
   - name: Create a install directory
     ansible.builtin.file:

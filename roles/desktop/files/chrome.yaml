@@ -10,12 +10,18 @@
   - name: Add {{ app_name }} GPG key
     ansible.builtin.apt_key:
       url:  https://dl.google.com/linux/linux_signing_key.pub
-      keyring: /usr/share/keyrings/chrome.gpg
+      keyring: /usr/share/keyrings/google-chrome.gpg
       state: present
 
   - name: Add {{ app_name }} repository
     ansible.builtin.apt_repository:
-      repo: deb [arch=amd64 signed-by=/usr/share/keyrings/chrome.gpg ] http://dl.google.com/linux/chrome/deb/ stable main
+      repo: deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main
       state: present
-      filename: chrome
+      filename: google-chrome
+
+  - name: Install {{ app_name }}
+    ansible.builtin.apt:
+      name: google-chrome-stable
+      state: present
+
   when: chrome == True

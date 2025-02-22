@@ -1,0 +1,27 @@
+---
+# Spotify for Linux
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "spotify"
+    app_name: "Spotify"
+
+- name: Install {{ app_name }}
+  block:
+  - name: Add {{ app_name }} GPG key
+    ansible.builtin.apt_key:
+      url:  https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg
+      keyring: /usr/share/keyrings/spotify.gpg
+      state: present
+
+  - name: Add {{ app_name }} repository
+    ansible.builtin.apt_repository:
+      repo: deb [signed-by=/usr/share/keyrings/spotify.gpg] http://repository.spotify.com stable non-free
+      state: present
+      filename: spotify
+
+  - name: Install {{ app_name }}
+    ansible.builtin.apt:
+      name: spotify-client
+      state: present
+
+  when: spotify == True

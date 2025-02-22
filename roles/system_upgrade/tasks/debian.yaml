@@ -53,6 +53,7 @@
     - /etc/apt/sources.list.d/signal-xenial.list
     - /etc/apt/sources.list.d/vscode-signed.list
     - /etc/apt/sources.list.d/ansible-ubuntu-ansible-jammy.sources
+    - /etc/apt/sources.list.d/chrome.list
 
 - name: Find all distUpgrade files
   ansible.builtin.find:

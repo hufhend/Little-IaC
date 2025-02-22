@@ -1,0 +1,11 @@
+---
+# VLC media player is a free and open source cross-platform multimedia player
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "vlc"
+    app_name: "VLC media player"
+
+- name: Install {{ app_name }}
+  community.general.snap:
+    name: vlc
+  when: vlc == True

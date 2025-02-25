@@ -1,0 +1,26 @@
+---
+# Microsoft Intune
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "intune"
+    app_name: "Microsoft Intune"
+
+- name: Install {{ app_name }}
+  block:
+  - name: Add Microsoft GPG key
+    ansible.builtin.apt_key:
+      url: https://packages.microsoft.com/keys/microsoft.asc
+      keyring: /usr/share/keyrings/microsoft.gpg
+      state: present
+
+  - name: Add {{ app_name }} repository
+    ansible.builtin.apt_repository:
+      repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/ubuntu/{{ ansible_lsb.release }}/prod {{ ansible_distribution_release }} main"
+      state: present
+      filename: microsoft-ubuntu-{{ ansible_distribution_release }}-prod
+
+  - name: Install {{ app_name }}
+    ansible.builtin.apt:
+      name: intune-portal
+      state: present
+  when: intune == True

@@ -1,5 +1,5 @@
 ---
-# Microsoft Intune
+# Microsoft Intune - compliance for organisations
 - name: Package Variable Setting
   ansible.builtin.set_fact:
     app: "intune"
@@ -24,3 +24,17 @@
       name: intune-portal
       state: present
   when: intune == True
+
+
+# Microsoft Intune on Linux - What Can an Employer/Organization See and Do?
+#
+# 1. **Enforce Security Policies** - The organization can apply security settings such as disk encryption, firewall rules, and OS updates.
+# 2. **Device Compliance Checks** - The system must meet corporate security requirements to access Microsoft 365 services.
+# 3. **Block Access to Microsoft 365** - If the device is not enrolled in Intune or does not comply, access to company resources can be restricted.
+# 4. **Remove Corporate Accounts** - The organization can revoke access to Microsoft 365 accounts and remove company data.
+# 5. **Limited Visibility** - Unlike Windows, Intune on Linux does *not* allow full remote control, app installation, or remote wipe.
+# 6. **No File Access or Monitoring** - The employer *cannot* view personal files, browser history, or general device usage.
+# 7. **MDM (Mobile Device Management) Only** - Linux support is limited to compliance enforcement, with no deep system access.
+
+# **Important**: If using a personal laptop, enrolling in Intune means the organization can enforce security policies 
+# and potentially limit access to corporate services unless the device is managed.

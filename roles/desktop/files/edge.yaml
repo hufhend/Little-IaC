@@ -1,0 +1,26 @@
+---
+# Microsoft Edge browser
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "edge"
+    app_name: "Microsoft Edge"
+
+- name: Install {{ app_name }}
+  block:
+  - name: Add Microsoft GPG key
+    ansible.builtin.apt_key:
+      url: https://packages.microsoft.com/keys/microsoft.asc
+      keyring: /usr/share/keyrings/microsoft.gpg
+      state: present
+
+  - name: Add {{ app_name }} repository
+    ansible.builtin.apt_repository:
+      repo: deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main
+      state: present
+      filename: microsoft-edge
+
+  - name: Install {{ app_name }}
+    ansible.builtin.apt:
+      name: microsoft-edge-stable
+      state: present
+  when: edge == True

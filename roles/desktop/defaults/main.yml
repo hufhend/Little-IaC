@@ -33,3 +33,4 @@ vlc: false
 intune: false
 slack: false
 telegram: false
+edge: false

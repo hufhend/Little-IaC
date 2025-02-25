@@ -10,7 +10,7 @@
     pkg: zoom
     state: absent
 
-- name: Install {{ app_name }} via snap
+- name: Install {{ app_name }}
   community.general.snap:
     name: zoom-client
     channel: latest/edge

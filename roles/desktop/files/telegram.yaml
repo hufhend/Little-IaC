@@ -1,0 +1,11 @@
+---
+# Pure instant messaging - simple, fast, secure
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "telegram"
+    app_name: "Telegram instant messaging"
+
+- name: Install {{ app_name }}
+  community.general.snap:
+    name: telegram-desktop
+  when: telegram == True

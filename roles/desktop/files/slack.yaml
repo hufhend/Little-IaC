@@ -1,0 +1,11 @@
+---
+# Slack is the operating system for work
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "slack"
+    app_name: "Slack workspace"
+
+- name: Install {{ app_name }}
+  community.general.snap:
+    name: slack
+  when: slack == True

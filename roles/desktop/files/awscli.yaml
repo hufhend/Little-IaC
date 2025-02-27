@@ -3,7 +3,7 @@
 - name: Package Variable Setting
   ansible.builtin.set_fact:
     app: "awscli"
-    app_name: "AWS Command Line Interface"
+    app_name: "AWS CLI"
 
 - name: Install {{ app_name }} on Ubuntu
   block:

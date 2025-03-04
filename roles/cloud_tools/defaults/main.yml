@@ -7,3 +7,4 @@ terraform: false
 helm: false
 kubens: false
 velero: false
+argocd: false

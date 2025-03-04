@@ -9,3 +9,4 @@ kubens: false
 velero: false
 argocd: false
 starship: false
+buildx: false

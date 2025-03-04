@@ -1,0 +1,43 @@
+# buildx is a Docker CLI plugin for extended build capabilities with BuildKit
+---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "buildx"
+    app_name: "Buildx plugin"
+
+- name: Install {{ app_name}}
+  block:
+  - name: Install {{ app_name }}
+    command: /usr/local/bin/binenv install {{ app }}
+    args:
+      creates: "/usr/local/bin/{{ app }}"
+
+  - name: Check if completion script exists
+    stat:
+      path: "/etc/bash_completion.d/{{ app }}"
+    register: completion_script_stat
+
+  - name: Generate completion script
+    command: "{{ app }} completion bash"
+    register: completion_script
+    changed_when: false
+    when: not completion_script_stat.stat.exists
+
+  - name: Save completion script
+    copy:
+      content: "{{ completion_script.stdout }}"
+      dest: "/etc/bash_completion.d/{{ app }}"
+      mode: "0644"
+    when: not completion_script_stat.stat.exists
+
+  - name: Check {{ app_name }} version
+    command: "/usr/local/bin/{{ app }} version"
+    register: "install_result"
+    changed_when: false
+    ignore_errors: true
+
+  - name: Show {{ app_name }} version
+    debug:
+      msg: "{{ install_result.stdout.split('\n') }}"
+
+  when: buildx and (binenv | default(false))   

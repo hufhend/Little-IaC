@@ -7,17 +7,6 @@
 
 - name: Install {{ app_name }} on Ubuntu
   block:
-    # - name: Update apt package index
-    #   apt:
-    #     update_cache: yes
-
-    # - name: Install required packages for {{ app_name }}
-    #   apt:
-    #     name:
-    #       - curl
-    #       - unzip
-    #     state: present
-
     - name: Download {{ app_name }} installer
       get_url:
         url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"

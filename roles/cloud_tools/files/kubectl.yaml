@@ -10,13 +10,6 @@
         keyring: /usr/share/keyrings/cloud.google.gpg
         state: present
 
-    # # just in case there's a conflict with Kubespray
-    # - name: Remove k8s repository
-    #   ansible.builtin.apt_repository:
-    #     repo: 'deb [signed-by=/usr/share/keyrings/k8s.gpg] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/ /'
-    #     state: absent
-    #     filename: kubernetes
-
     - name: Add kubectl repository
       ansible.builtin.apt_repository:
         repo: deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main

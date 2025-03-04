@@ -15,12 +15,12 @@
 
   - name: Add {{ app_name }} repository
     ansible.builtin.apt_repository:
-      repo: deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main
-      state: absent
+      repo: deb [arch=amd64] https://packages.microsoft.com/repos/edge/ stable main
+      state: present
       filename: microsoft-edge
 
   - name: Install {{ app_name }}
     ansible.builtin.apt:
       name: microsoft-edge-stable
-      state: absent
+      state: present
   when: edge == True

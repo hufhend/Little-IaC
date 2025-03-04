@@ -1,0 +1,22 @@
+# Terraform is an IaC tool
+---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "terraform"
+    app_name: "Terraform"
+
+- name: Install {{ app_name}}
+  block:
+  - name: Install {{ app_name }}
+    command: /usr/local/bin/binenv install terraform
+    args:
+      creates: /usr/local/bin/terraform
+
+  # - name: Ensure {{ app_name }} is available in PATH
+  #   lineinfile:
+  #     path: /etc/profile.d/binenv.sh
+  #     line: 'export PATH=$HOME/.binenv:$PATH'
+  #     create: yes
+  #     mode: '0644'
+
+  when: terraform == True and (binenv | default(false))

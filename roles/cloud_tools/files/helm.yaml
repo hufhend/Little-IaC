@@ -1,0 +1,13 @@
+# Helm is a package manager for Kubernetes
+---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "helm"
+    app_name: "Helm"
+
+- name: Install {{ app_name }}
+  command: /usr/local/bin/binenv install helm
+  args:
+    creates: /usr/local/bin/helm
+
+  when: helm and (binenv | default(false))

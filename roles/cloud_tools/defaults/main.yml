@@ -4,3 +4,4 @@ kubectl: false
 azcli: false
 awscli: false
 terraform: false
+helm: false

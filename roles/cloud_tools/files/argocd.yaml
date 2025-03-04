@@ -34,6 +34,7 @@
     command: "/usr/local/bin/{{ app }} version"
     register: "install_result"
     changed_when: false
+    become_user: "{{ ansible_user }}"
     ignore_errors: true
 
   - name: Show {{ app_name }} version

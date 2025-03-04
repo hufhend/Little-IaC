@@ -1,0 +1,13 @@
+# utility to switch between K8s namespaces
+---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "kubens"
+    app_name: "kubens"
+
+- name: Install {{ app_name }}
+  command: /usr/local/bin/binenv install kubens
+  args:
+    creates: /usr/local/bin/kubens
+
+  when: kubens and (binenv | default(false))

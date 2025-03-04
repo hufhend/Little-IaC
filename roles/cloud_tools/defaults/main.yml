@@ -5,3 +5,4 @@ azcli: false
 awscli: false
 terraform: false
 helm: false
+kubens: false

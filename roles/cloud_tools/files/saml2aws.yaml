@@ -1,0 +1,15 @@
+# Login and retrieve AWS temporary credentials using a SAML IDP
+---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "saml2aws"
+    app_name: "saml2aws tool"
+
+- name: Install {{ app_name}}
+  block:
+  - name: Install {{ app_name }}
+    command: /usr/local/bin/binenv install {{ app }}
+    args:
+      creates: "/usr/local/bin/{{ app }}"
+
+  when: saml2aws and (binenv | default(false))   

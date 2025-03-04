@@ -6,3 +6,4 @@ awscli: false
 terraform: false
 helm: false
 kubens: false
+velero: false

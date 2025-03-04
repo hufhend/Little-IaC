@@ -1,0 +1,13 @@
+# back up and restore K8s cluster
+---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "velero"
+    app_name: "Velero"
+
+- name: Install {{ app_name }}
+  command: /usr/local/bin/binenv install velero
+  args:
+    creates: /usr/local/bin/velero
+
+  when: velero and (binenv | default(false))

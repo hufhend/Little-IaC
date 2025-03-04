@@ -91,7 +91,8 @@
       
   - name: Install Azure CLI
     ansible.builtin.apt:
-      name: azure-cli
+      name: azure-cli=2.69*
       state: present
+      allow_downgrade: true
 
   when: azcli == True

@@ -25,6 +25,17 @@
       state: present
       allow_downgrade: true
 
+  - name: Check {{ app_name }} version
+    command: "/usr/bin/az version -o yamlc"
+    register: "install_result"
+    changed_when: false
+    become_user: "{{ ansible_user }}"
+    ignore_errors: true
+
+  - name: Show {{ app_name }} version
+    debug:
+      msg: "{{ install_result.stdout.split('\n') }}"      
+
   - name: Hold {{ app_name }} to prevent upgrades
     ansible.builtin.command:
       cmd: apt-mark hold azure-cli

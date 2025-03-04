@@ -1,0 +1,75 @@
+---
+- name: Set up cloud management utilities 
+  block:
+  # Kubernetes command-line tool
+  - name: Install kubectl for Kubernetes
+    block:
+    - name: Add Google GPG key
+      ansible.builtin.apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        keyring: /usr/share/keyrings/cloud.google.gpg
+        state: present
+
+    # # just in case there's a conflict with Kubespray
+    # - name: Remove k8s repository
+    #   ansible.builtin.apt_repository:
+    #     repo: 'deb [signed-by=/usr/share/keyrings/k8s.gpg] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/ /'
+    #     state: absent
+    #     filename: kubernetes
+
+    - name: Add kubectl repository
+      ansible.builtin.apt_repository:
+        repo: deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main
+        state: present
+        filename: google-cloud-sdk
+
+    - name: Install kubectl
+      ansible.builtin.apt:
+        name: kubectl
+        state: present
+        allow_downgrade: yes
+    when: (role == 'worker') or (kubectl == True)
+
+  - name: Enable kubectl bash completion
+    ansible.builtin.shell: |
+      kubectl completion bash | tee /etc/bash_completion.d/kubectl > /dev/null
+    args:
+      creates: /etc/bash_completion.d/kubectl
+
+  - name: Create link to kubectl
+    ansible.builtin.file:
+      src: /usr/local/bin/kubectl
+      dest: /usr/bin/kubectl
+      state: link
+    when: role == 'master' or role == 'combi'
+    ignore_errors: true
+
+  - name: Add alias for kubectl
+    ansible.builtin.lineinfile:
+      path: "{{ lookup('env', 'HOME') }}/.bashrc"
+      line: "alias k='/usr/bin/kubectl'"
+      create: yes
+
+  - name: Create a kube directory
+    ansible.builtin.file:
+      path: "{{ lookup('env', 'HOME') }}/.kube"
+      state: directory
+      owner: "{{ ansible_user }}"
+      group: "{{ ansible_user }}"
+      mode: '0750'
+
+  - name: Get local hostname
+    local_action: command hostname
+    register: local_hostname
+
+  - name: Copy kubeconfig file to remote server
+    ansible.builtin.copy:
+      src: "{{ lookup('env', 'HOME') }}/.kube/config"
+      dest: "{{ lookup('env', 'HOME') }}/.kube/config"
+      owner: "{{ ansible_user }}"
+      group: "{{ ansible_user }}"
+      mode: '0600'
+    ignore_errors: true
+    when: local_hostname.stdout != ansible_hostname
+
+  when: (role in ['combi', 'master', 'worker']) or (kubectl == True)

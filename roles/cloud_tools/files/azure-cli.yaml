@@ -1,0 +1,22 @@
+# Microsoft Azure CLI on Linux
+- name: Install Azure CLI on Linux
+  block:
+  - name: Add Microsoft GPG key
+    ansible.builtin.apt_key:
+      url: https://packages.microsoft.com/keys/microsoft.asc
+      keyring: /usr/share/keyrings/microsoft.gpg
+      state: present
+
+  - name: Add Azure CLI repository
+    ansible.builtin.apt_repository:
+      repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_distribution_release }} main"
+      state: present
+      filename: azure-cli      
+      
+  - name: Install Azure CLI
+    ansible.builtin.apt:
+      name: azure-cli=2.69*
+      state: present
+      allow_downgrade: true
+
+  when: azcli == True

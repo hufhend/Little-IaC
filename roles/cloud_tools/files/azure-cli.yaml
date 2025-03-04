@@ -25,4 +25,9 @@
       state: present
       allow_downgrade: true
 
+  - name: Hold {{ app_name }} package to prevent upgrades
+    ansible.builtin.command:
+      cmd: apt-mark hold azure-cli
+    changed_when: false
+
   when: azcli == True

@@ -10,3 +10,4 @@ velero: false
 argocd: false
 starship: false
 buildx: false
+kubectx: false

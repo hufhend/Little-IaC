@@ -1,8 +1,13 @@
 ---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "kubectl"
+    app_name: "kubectl"
+
 - name: Set up cloud management utilities 
   block:
   # Kubernetes command-line tool
-  - name: Install kubectl for Kubernetes
+  - name: Install {{ app_name }} for Kubernetes
     block:
     - name: Add Google GPG key
       ansible.builtin.apt_key:
@@ -10,26 +15,26 @@
         keyring: /usr/share/keyrings/cloud.google.gpg
         state: present
 
-    - name: Add kubectl repository
+    - name: Add {{ app_name }} repository
       ansible.builtin.apt_repository:
         repo: deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main
         state: present
         filename: google-cloud-sdk
 
-    - name: Install kubectl
+    - name: Install {{ app_name }}
       ansible.builtin.apt:
         name: kubectl
         state: present
         allow_downgrade: yes
     when: (role == 'worker') or (kubectl == True)
 
-  - name: Enable kubectl bash completion
+  - name: Enable {{ app_name }} bash completion
     ansible.builtin.shell: |
       kubectl completion bash | tee /etc/bash_completion.d/kubectl > /dev/null
     args:
       creates: /etc/bash_completion.d/kubectl
 
-  - name: Create link to kubectl
+  - name: Create link to {{ app_name }}
     ansible.builtin.file:
       src: /usr/local/bin/kubectl
       dest: /usr/bin/kubectl
@@ -37,7 +42,7 @@
     when: role == 'master' or role == 'combi'
     ignore_errors: true
 
-  - name: Add alias for kubectl
+  - name: Add alias for {{ app_name }}
     ansible.builtin.lineinfile:
       path: "{{ lookup('env', 'HOME') }}/.bashrc"
       line: "alias k='/usr/bin/kubectl'"

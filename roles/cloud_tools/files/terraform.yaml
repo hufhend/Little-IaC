@@ -8,15 +8,22 @@
 - name: Install {{ app_name}}
   block:
   - name: Install {{ app_name }}
-    command: /usr/local/bin/binenv install terraform
+    command: /usr/local/bin/binenv install {{ app }}
     args:
-      creates: /usr/local/bin/terraform
+      creates: "/usr/local/bin/{{ app }}"
 
-  # - name: Ensure {{ app_name }} is available in PATH
-  #   lineinfile:
-  #     path: /etc/profile.d/binenv.sh
-  #     line: 'export PATH=$HOME/.binenv:$PATH'
-  #     create: yes
-  #     mode: '0644'
+  - name: Install completion script
+    command: terraform -install-autocomplete
 
-  when: terraform == True and (binenv | default(false))
+  - name: Check {{ app_name }} version
+    command: "/usr/local/bin/{{ app }} version"
+    register: "install_result"
+    changed_when: false
+    become_user: "{{ ansible_user }}"
+    ignore_errors: true
+
+  - name: Show {{ app_name }} version
+    debug:
+      msg: "{{ install_result.stdout.split('\n') }}"
+
+  when: terraform and (binenv | default(false))   

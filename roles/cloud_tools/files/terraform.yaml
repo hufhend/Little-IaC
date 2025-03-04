@@ -14,6 +14,8 @@
 
   - name: Install completion script
     command: terraform -install-autocomplete
+    become_user: "{{ ansible_user }}"
+    ignore_errors: true
 
   - name: Check {{ app_name }} version
     command: "/usr/local/bin/{{ app }} version"

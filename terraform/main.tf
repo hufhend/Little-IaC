@@ -1,12 +1,15 @@
+// Define the AWS provider and region
 provider "aws" {
-  region = "eu-central-1"
+  region = var.region
 }
 
+// Create AWS EC2 instances
 resource "aws_instance" "example" {
-  ami           = "ami-07eef52105e8a2059" # Nahraď ID AMI podle své oblasti
-  instance_type = "t3.small"
+  count         = 4
+  ami           = var.ami
+  instance_type = var.instance_type
   tags = {
-    Name = "server-01"
+    Name = "server-${format("%02d", count.index + 1)}"
   }
   key_name = "my-key"
   user_data = <<-EOF
@@ -20,6 +23,7 @@ resource "aws_instance" "example" {
               EOF
 }
 
+// Load my public key
 resource "aws_key_pair" "deployer" {
   key_name   = "my-key"
   public_key = file("~/.ssh/id_rsa.pub")

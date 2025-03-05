@@ -1,0 +1,21 @@
+= Terraform AWS Instance Configuration
+
+== Popis
+Tento projekt konfiguruje instanci AWS pomocí Terraformu.
+
+== Soubory
+* `main.tf` - Hlavní konfigurační soubor Terraformu.
+
+== Použití
+1. Ujistěte se, že máte nainstalovaný Terraform.
+2. Nakonfigurujte své AWS přihlašovací údaje.
+3. Spusťte následující příkazy:
+
+[source,bash]
+----
+terraform init
+terraform apply
+----
+
+== SSH Klíč
+Tento projekt používá SSH klíč z `~/.ssh/id_rsa.pub` pro přístup k instanci.

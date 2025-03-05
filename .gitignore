@@ -4,3 +4,6 @@ host_vars
 !sample/group_vars
 !sample/host_vars
 inventory.yaml
+.terraform*
+terraform.tfstate*
+aks*

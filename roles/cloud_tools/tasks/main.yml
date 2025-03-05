@@ -23,6 +23,21 @@
       owner: "{{ user_ansible }}"
       group: "{{ user_ansible }}"
 
+  - name: Check if binenv exists
+    ansible.builtin.stat:
+      path: /usr/local/bin/binenv
+    register: binenv_stat
+    
+  - name: Upgrade all binenv distributions
+    block:
+    - name: Update software distributions
+      command: /usr/local/bin/binenv update
+
+    - name: Upgrade binenv distributions
+      command: /usr/local/bin/binenv upgrade
+
+    when: binenv_stat.stat.exists
+
   # All conditions need to be met at once
   when:
     - ansible_distribution == "Ubuntu"

@@ -1,0 +1,225 @@
+#   *******************************************
+#   Quick launch a couple of VMs in Amazon AWS
+#   begin     : Wed 29 Jan 2025
+#   copyright : (c) 2025 Václav Dvorský
+#   email     : hufhendr@gmail.com
+#   $Id: aws_ec2.launch.yaml, v1.02  06/03/2025
+#   *******************************************
+
+#   --------------------------------------------------------------------
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public Licence as published by
+#   the Free Software Foundation; either version 2 of the Licence, or
+#   (at your option) any later version.
+#   --------------------------------------------------------------------
+
+#   Usage:
+#   After setting up the aws cli, just edit the variable values, set the 
+#   number of VMs required and run without inventory
+#   $ ansible-playbook aws_ec2.launch.yaml
+
+#   Troubleshooting:
+#   Verify that aws cli is set up correctly
+#   $ aws sts get-caller-identity
+
+- name: Create EC2 and necessary AWS resources
+  hosts: localhost
+  gather_facts: no
+  vars:
+    # variables for tagging, always check
+    creator: hufhendr
+    app: Kuberetes
+    env: dev
+    unit: EBS
+    # cloud infrastructure resource names
+    name_vpc: MyVPC
+    name_subnet: MySubnet
+    name_igw: MyIGW
+    name_rt: MyRouteTable
+    name_sc: MySc
+    name_vm: Node
+     # variables of the VPC environment
+    region: eu-central-1
+    vpc_cidr_block: 10.0.0.0/16
+    subnet_cidr_block: 10.0.1.0/24
+    security_group_cidr_ingress: 0.0.0.0/0
+    security_group_cidr_egress: 0.0.0.0/0
+    security_group_ports:
+        - 80
+        - 443
+        - 22
+        - 6443
+    instance_count: 4
+    instance_type: t3.small 
+    # instance_type: t3.xlarge
+    ami_id: ami-07eef52105e8a2059 # Ubuntu 24.04 server
+    user_data: |
+      #!/bin/bash
+      mkdir -p /home/ubuntu/.ssh
+      echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDY1+tsKXfCkR6YRdPt7Jefz2UZmRToBtC1q6/8+pzsL6iB3zCeQoS/uRVhfrXEvPg90QY6FhMNWnlfrQlBl8u325fQNPVByJEXSJIKyJwpb/tGqStqvvpuyLwXpcko+AFVHty/kW6NoQ8GTPZ8+a8BzBJHUlwaiYFRdpi5voFRcWWYTCygtTMhR4O0Dv0yLJsTJ6L8nqCXkuUcYgAyPS635V5z4UTX5RyOlxT7JDaBZ9auBZ2T+lCE+5+NsR/STaPpnYs5a1hLyfLX6NVbPh5TS9ZFzTjlRAh9OvwvuZcT81JoeL+7k7GxhapxDDBDYJ/ASKsEwuX3N81I2/qU02y1EHfnKWslGeAEVUzBfjqJCae0fhNy6x0rjvlawSgLIqSTzh6/pjh4vdWuP+Hm95v4A7aapliz9AhebQBnWPLqoRSeIIl1Jy/Rk2O9UHmX30uQCsNZ9hHqnkdM5JvhuYlua5ilBx9yVR1dKf8rzo4+7omg3QGZ086TGAOyPbbQRTGsThm7c0bKuQBKyPVZ57q/Zyp0aPgcCcrXB8f091Do3lZBpi4S6jozGwxtYGAUjMH+sX1v709WM7oAlPZXcNUpIk39MGA/zi3s8sPQk/Hyp+w7g5A8mSJeTCibsxIego8VINsino1QFdRCWVuh48Mk4AooFvQacwNV++uYIBRzSw== hufhendr@ThinkPad" >> /home/ubuntu/.ssh/authorized_keys
+      chown -R ubuntu:ubuntu /home/ubuntu/.ssh
+      chmod 700 /home/ubuntu/.ssh
+      chmod 600 /home/ubuntu/.ssh/authorized_keys
+
+  tasks:
+    - name: Create VPC
+      amazon.aws.ec2_vpc_net:
+        name: "{{ name_vpc }}"
+        cidr_block: "{{ vpc_cidr_block }}"
+        region: "{{ region }}"
+        tags:
+          Application: "{{ app }}"
+          Creator: "{{ creator }}"
+          Environment: "{{ env }}"
+          Department: "{{ unit }}"
+      register: my_vpc
+
+    - name: Output VPC ID
+      debug:
+        msg: "VPC ID is {{ my_vpc.vpc.id }}"
+    
+    - name: Create subnet
+      amazon.aws.ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{ my_vpc.vpc.id }}"
+        cidr: "{{ subnet_cidr_block  }}"
+        region: "{{ region }}"
+        tags:
+          Name: "{{ name_subnet }}"
+          Application: "{{ app }}"
+          Creator: "{{ creator }}"
+          Environment: "{{ env }}"
+          Department: "{{ unit }}"
+      register: my_subnet
+
+    - name: Output Subnet ID
+      debug:
+        msg: "Subnet ID is {{ my_subnet.subnet.id }}"
+
+    - name: Create internet gateway
+      amazon.aws.ec2_vpc_igw:
+        vpc_id: "{{ my_vpc.vpc.id }}"
+        region: "{{ region }}"
+        tags:
+          Name: "{{ name_igw }}"
+          Application: "{{ app }}"
+          Creator: "{{ creator }}"
+          Environment: "{{ env }}"
+          Department: "{{ unit }}"
+      register: igw
+
+    - name: Output Internet Gateway ID
+      debug:
+        msg: "Internet Gateway ID is {{ igw.gateway_id }}"
+
+    - name: Create Route Table if not exists
+      # when: existing_rt.route_tables | length == 0
+      amazon.aws.ec2_vpc_route_table:
+        vpc_id: "{{ my_vpc.vpc.id }}"
+        state: present
+        routes:
+          - dest: 0.0.0.0/0
+            gateway_id: "{{ igw.gateway_id }}"
+        subnets:
+          - "{{ my_subnet.subnet.id }}"
+        region: "{{ region }}"
+        tags:
+          Name: "{{ name_rt }}"
+          Application: "{{ app }}"
+          Creator: "{{ creator }}"
+          Environment: "{{ env }}"
+          Department: "{{ unit }}"
+      register: route_table  
+
+    - name: Output Route Table ID
+      debug:
+        msg: "Route Table ID is {{ route_table.route_table.route_table_id }}"
+
+    - name: Create security group
+      amazon.aws.ec2_group:
+        name: "{{ name_sc }}"
+        description: "My security group"
+        vpc_id: "{{ my_vpc.vpc.id }}"
+        region: "{{ region }}"
+        rules:
+          - proto: tcp
+            ports: "{{ security_group_ports }}"
+            cidr_ip: "{{ security_group_cidr_ingress }}"
+        rules_egress:
+          - proto: all
+            cidr_ip: "{{ security_group_cidr_egress }}"
+        tags:
+          Name: "{{ name_sc }}"
+          Application: "{{ app }}"
+          Creator: "{{ creator }}"
+          Environment: "{{ env }}"
+          Department: "{{ unit }}"
+      register: security_group
+
+    - name: Output Security Group ID
+      debug:
+        msg: "Security Group ID is {{ security_group.group_id }}"
+
+    - name: Launch instances
+      amazon.aws.ec2_instance:
+        name: "{{ name_vm }}-{{ '%02d' | format(item) }}"
+        instance_type: "{{ instance_type }}"
+        region: "{{ region }}"
+        image_id: "{{ ami_id }}"
+        subnet_id: "{{ my_subnet.subnet.id }}"
+        wait: yes
+        security_group: "{{ security_group.group_id }}"
+        user_data: "{{ user_data }}"
+        # key_name: "main"
+        network_interfaces:
+          - assign_public_ip: true
+        state: running
+        tags:
+          Application: "{{ app }}"
+          Creator: "{{ creator }}"
+          Environment: "{{ env }}"
+          Department: "{{ unit }}"
+      register: ec2
+      loop: "{{ range(1, instance_count + 1) | list }}"
+
+    - name: Set instance facts for all instances
+      set_fact:
+        instance_details: >-
+          {{ (instance_details | default([])) + [{
+            'instance_id': item.instances[0].instance_id,
+            'public_ip': item.instances[0].public_ip_address,
+            'instance_type': item.instances[0].instance_type,
+            'cpu_cores': item.instances[0].cpu_options.core_count,
+            'os': item.instances[0].image_id,
+            'url': item.instances[0].public_dns_name,
+            'name': item.invocation.module_args.name
+          }] }}
+      loop: "{{ ec2.results }}"
+      loop_control:
+        label: "{{ item.instances[0].instance_id }}"
+
+    - name: Output all Instances Details
+      debug:
+        msg:
+          - "────────────────────────────────────────"
+          - "Instance Name    : {{ item.name }}"
+          - "Instance ID      : {{ item.instance_id }}"
+          - "Public IP        : {{ item.public_ip | default('N/A') }}"
+          - "Instance Type    : {{ item.instance_type }}"
+          - "CPU Cores        : {{ item.cpu_cores }}"
+          - "OS (AMI ID)      : {{ item.os }}"
+          - "────────────────────────────────────────"
+          - "ssh ubuntu@{{ item.url }}"
+      # debug:
+      #   var: ec2.results
+      loop: "{{ instance_details }}"
+      loop_control:
+        label: "{{ item.instance_id }}"
+
+
+#   VMs we have, options what next:
+#
+#   After starting VMs, it is possible to put them into permanent inventory 
+#   and roll them further, for example:
+#   $ ansible-playbook -l aws host-init.yaml
+#   $ ansible-playbook -l aws K8s_cluster.yaml 

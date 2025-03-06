@@ -1,17 +1,21 @@
 // Define the AWS provider and region
 provider "aws" {
   region = var.region
+  default_tags {
+    tags = {
+      App     = var.app
+      Creator = var.creator
+      Unit    = var.unit
+      Env     = var.env
+    }
+  }
 }
 
 // Create a VPC
 resource "aws_vpc" "main" {
   cidr_block = var.vpc_cidr_block
   tags = {
-    Name    = var.vpc_name
-    App     = var.app
-    Creator = var.creator
-    Unit    = var.unit
-    Env     = var.env
+    Name = var.vpc_name
   }
 }
 
@@ -22,11 +26,7 @@ resource "aws_subnet" "main" {
   availability_zone = "${var.region}a"
   map_public_ip_on_launch = true
   tags = {
-    Name    = var.subnet_name
-    App     = var.app
-    Creator = var.creator
-    Unit    = var.unit
-    Env     = var.env
+    Name = var.subnet_name
   }
 }
 
@@ -34,11 +34,7 @@ resource "aws_subnet" "main" {
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
   tags = {
-    Name    = var.igw_name
-    App     = var.app
-    Creator = var.creator
-    Unit    = var.unit
-    Env     = var.env
+    Name = var.igw_name
   }
 }
 
@@ -50,11 +46,7 @@ resource "aws_route_table" "main" {
     gateway_id = aws_internet_gateway.main.id
   }
   tags = {
-    Name    = var.route_table_name
-    App     = var.app
-    Creator = var.creator
-    Unit    = var.unit
-    Env     = var.env
+    Name = var.route_table_name
   }
 }
 
@@ -89,11 +81,7 @@ resource "aws_security_group" "main" {
     cidr_blocks = [var.security_group_cidr_egress]
   }
   tags = {
-    Name    = var.security_group_name
-    App     = var.app
-    Creator = var.creator
-    Unit    = var.unit
-    Env     = var.env
+    Name = var.security_group_name
   }
 }
 
@@ -106,11 +94,7 @@ resource "aws_instance" "example" {
   associate_public_ip_address = true
   vpc_security_group_ids = [aws_security_group.main.id]
   tags = {
-    Name    = "server-${format("%02d", count.index + 1)}"
-    App     = var.app
-    Creator = var.creator
-    Unit    = var.unit
-    Env     = var.env
+    Name = "server-${format("%02d", count.index + 1)}"
   }
   key_name = var.key_name
   user_data = <<-EOF
@@ -129,10 +113,6 @@ resource "aws_key_pair" "deployer" {
   key_name   = var.key_name
   public_key = file(var.public_key_path)
   tags = {
-    Name    = var.key_name
-    App     = var.app
-    Creator = var.creator
-    Unit    = var.unit
-    Env     = var.env
+    Name = var.key_name
   }
 }

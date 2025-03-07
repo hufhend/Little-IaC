@@ -61,3 +61,13 @@ resource "azurerm_kubernetes_cluster_node_pool" "additional" {
     Role    = "worker"
   }
 }
+
+output "credential" {
+  description = "Command to get AKS credentials"
+  value       = "az aks get-credentials --resource-group ${azurerm_resource_group.aks.name} --name ${azurerm_kubernetes_cluster.aks.name} --file ~/.kube/config_test"
+}
+
+output "kubeconfig" {
+  description = "Command to export KUBECONFIG"
+  value       = "export KUBECONFIG=~/.kube/config_test"
+}

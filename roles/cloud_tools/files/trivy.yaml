@@ -17,13 +17,12 @@
     ansible.builtin.apt_repository:
       repo: "deb [signed-by=/usr/share/keyrings/{{ app }}.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main"
       state: present
-      filename: trivy   
+      filename: trivy
       
   - name: Install {{ app_name }}
     ansible.builtin.apt:
       name: trivy
       state: present
-      # allow_downgrade: true
 
   - name: Check if completion script exists
     stat:
@@ -54,4 +53,4 @@
     debug:
       msg: "{{ install_result.stdout.split('\n') }}"
 
-  when: trivy and (binenv | default(false))   
+  when: trivy == True

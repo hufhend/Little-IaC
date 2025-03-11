@@ -28,11 +28,23 @@
         allow_downgrade: yes
     when: (role == 'worker') or (kubectl == True)
 
-  - name: Enable {{ app_name }} bash completion
-    ansible.builtin.shell: |
-      kubectl completion bash | tee /etc/bash_completion.d/kubectl > /dev/null
-    args:
-      creates: /etc/bash_completion.d/kubectl
+  - name: Check if completion script exists
+    stat:
+      path: "/etc/bash_completion.d/{{ app }}"
+    register: completion_script_stat
+
+  - name: Generate completion script
+    command: "{{ app }} completion bash"
+    register: completion_script
+    changed_when: false
+    when: not completion_script_stat.stat.exists
+
+  - name: Save completion script
+    copy:
+      content: "{{ completion_script.stdout }}"
+      dest: "/etc/bash_completion.d/{{ app }}"
+      mode: "0644"
+    when: not completion_script_stat.stat.exists
 
   - name: Create link to {{ app_name }}
     ansible.builtin.file:

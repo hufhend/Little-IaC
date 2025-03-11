@@ -21,6 +21,15 @@
     - name: Run {{ app_name }} installer
       command: "/tmp/aws/install --update"
 
+    - name: Add {{ app_name}} autocomplete
+      ansible.builtin.lineinfile:
+        path: "/home/{{ ansible_user }}/.bashrc"
+        line: "complete -C '/usr/local/bin/aws_completer' aws"
+        state: present
+        create: yes
+        mode: '0644'
+      become_user: "{{ ansible_user }}"      
+
     - name: Verify {{ app_name }} installation
       command: "aws --version"
       register: aws_cli_version

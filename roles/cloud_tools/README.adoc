@@ -1,0 +1,49 @@
+= Cloud Tools Role
+
+This Ansible role `cloud_tools` is designed to install and configure various tools for managing cloud infrastructure. The role is part of a larger set but can also be run independently.
+
+== What the role does
+
+- Sets variables needed for tool installation.
+- Adds GPG keys and repositories for various tools.
+- Installs tools like Terraform, AWS CLI, and others.
+- Adds command auto-completion for some tools.
+- Checks and displays the versions of installed tools.
+
+== Usage
+
+The role can be used independently in a playbook, for example:
+
+[source,yaml]
+----
+- name: Install cloud tools
+  hosts: all
+  become: true
+  roles:
+    - role: cloud_tools
+----
+
+== Variables
+
+- `app`: Application name (e.g., `terraform`)
+- `app_name`: Readable application name (e.g., `Terraform`)
+
+== Default Settings
+
+By default, all tools are disabled. To enable the installation of individual tools, you need to set the corresponding variables in `host_vars`. For example:
+
+[source,yaml]
+----
+# host_vars/your_host.yml
+terraform: true
+awscli: true
+----
+
+== Prerequisites
+
+- Ansible must be installed on the control node.
+- Target nodes must have internet access to download packages and keys.
+
+== Author
+
+This role was created and is maintained by the `Little-IaC` team.

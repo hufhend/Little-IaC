@@ -13,3 +13,4 @@ buildx: false
 kubectx: false
 saml2aws: false
 trivy: false
+k9s: false

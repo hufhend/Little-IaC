@@ -5,24 +5,36 @@
     app: "terraform"
     app_name: "Terraform"
 
-- name: Install {{ app_name}}
+- name: Install {{ app_name }}
   block:
+  - name: Add {{ app_name }} GPG key
+    ansible.builtin.apt_key:
+      url: https://apt.releases.hashicorp.com/gpg
+      keyring: /usr/share/keyrings/hashicorp-archive-keyring.gpg
+      state: present
+
+  - name: Add {{ app_name }} repository
+    ansible.builtin.apt_repository:
+      repo: deb [arch=amd64 signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main
+      state: present
+      filename: hashicorp
+
   - name: Install {{ app_name }}
-    command: /usr/local/bin/binenv install {{ app }}
-    args:
-      creates: "/usr/local/bin/{{ app }}"
+    ansible.builtin.apt:
+      name: terraform
+      state: present
 
   - name: Add {{ app_name}} autocomplete
     ansible.builtin.lineinfile:
       path: "/home/{{ ansible_user }}/.bashrc"
-      line: "complete -C /usr/local/bin/terraform terraform"
+      line: "complete -C /usr/bin/terraform terraform"
       state: present
       create: yes
       mode: '0644'
     become_user: "{{ ansible_user }}"
 
   - name: Check {{ app_name }} version
-    command: "/usr/local/bin/{{ app }} version"
+    command: "/usr/bin/{{ app }} version"
     register: "install_result"
     changed_when: false
     become_user: "{{ ansible_user }}"
@@ -32,4 +44,4 @@
     debug:
       msg: "{{ install_result.stdout.split('\n') }}"
 
-  when: terraform and (binenv | default(false))   
+  when: terraform == True

@@ -17,6 +17,7 @@
 - name: Set up a desktop operating system
   hosts: all
   become: true
+  becime_user: root
   roles:
     - role: system_upgrade
     - role: env_settings

@@ -59,4 +59,4 @@
       community.docker.docker_compose_v2:
         project_src: /home/{{ docker_user }}/{{ docker_home }}/gitea
       # register: output
-  when: gitea == true
+  when: docker_gitea == true

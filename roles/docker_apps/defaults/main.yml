@@ -6,13 +6,13 @@ role: computer
 backup_path: /home/{{ docker_user }}/backup/{{ docker_home }}
 
 # Deploy conternerized applications
-gitea: false
-pihole: false
-prometheus: false
-torproject: false
-openvpn: false
+docker_gitea: false
+docker_pihole: false
+docker_prometheus: false
+docker_torproject: false
+docker_openvpn: false
 vpn_url: vpn.example.com
-homeassistant: false
+docker_homeassistant: false
 
 # Variables for the Gitea app
 git_db_user: gitea

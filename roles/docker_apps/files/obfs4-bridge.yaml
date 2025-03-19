@@ -16,7 +16,7 @@
     dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
     force: true
   when: 
-    - torproject == true
+    - docker_torproject == true
     - not torproject_dir_check.stat.exists
 
 # Update the configuration at every run
@@ -30,4 +30,4 @@
     community.docker.docker_compose_v2:
       project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}       
   when: 
-    - torproject == true
+    - docker_torproject == true

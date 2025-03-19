@@ -19,4 +19,4 @@
       project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}    
 
   when: 
-    - homeassistant == true
+    - docker_homeassistant == true

@@ -117,7 +117,7 @@
       project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
   when: 
-    - pihole == true
+    - docker_pihole == true
     - not pihole_dir_check.stat.exists
 
 
@@ -142,9 +142,9 @@
       project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
   when: 
-    ansible_play_hosts.index(inventory_hostname) == 0 or
-    hostvars[ansible_play_hosts[ansible_play_hosts.index(inventory_hostname) - 1]].previous_tasks_ok | default(true) and
-    pihole == true and
+    # ansible_play_hosts.index(inventory_hostname) == 0 or
+    # hostvars[ansible_play_hosts[ansible_play_hosts.index(inventory_hostname) - 1]].previous_tasks_ok | default(true) and
+    docker_pihole == true and
     pihole_installed | default(false) != true
   
   vars:

@@ -24,7 +24,7 @@
       chdir: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
   when: 
-    - prometheus == true
+    - docker_prometheus == true
     - not prometheus_dir_check.stat.exists
 
 # Update the configuration at every run
@@ -59,4 +59,4 @@
       project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}    
 
   when: 
-    - prometheus == true
+    - docker_prometheus == true

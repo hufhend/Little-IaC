@@ -28,4 +28,4 @@
     - name: Create and start {{ app_name }}
       community.docker.docker_compose_v2:
         project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-  when: openvpn == true
+  when: docker_openvpn == true

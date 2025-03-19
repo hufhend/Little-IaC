@@ -1,1 +1,0 @@
-rsync -av --delete --exclude-from="./rsync.exclude" ../Little-IaC/ ../Little-IaC.public

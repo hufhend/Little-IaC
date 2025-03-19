@@ -1,5 +1,0 @@
-.git
-group_vars
-host_vars
-.gitignore
-*priv*

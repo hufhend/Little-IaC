@@ -27,7 +27,7 @@
     become: true
     become_user: root
 
-  - name:  Back everything up before any changes
+  - name: Back everything up before any changes
     command: rsync -ra --delete /home/{{ docker_user }}/{{ docker_home }}/ /home/{{ docker_user }}/backup/{{ docker_home }}
     become: true
     become_user: root

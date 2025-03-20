@@ -70,6 +70,7 @@
 
   - name: Get local hostname
     local_action: command hostname
+    become: no
     register: local_hostname
 
   - name: Copy kubeconfig file to remote server

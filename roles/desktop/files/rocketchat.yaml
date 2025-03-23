@@ -1,0 +1,11 @@
+---
+# The communications platform that puts data protection first
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "rocketchat"
+    app_name: "Rocket.Chat Desktop"
+
+- name: Install {{ app_name }}
+  community.general.snap:
+    name: rocketchat-desktop
+  when: rocketchat == True

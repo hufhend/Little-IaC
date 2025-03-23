@@ -13,12 +13,29 @@
       keyring: /usr/share/keyrings/microsoft.gpg
       state: present
 
+  # - name: Check if {{ app_name }} repository file exists
+  #   ansible.builtin.stat:
+  #     path: /etc/apt/sources.list.d/vscode.list
+  #   register: vscode_repo_file
+
   - name: Add {{ app_name }} repository
     ansible.builtin.apt_repository:
-      # repo: deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main
-      repo: deb [arch=amd64,arm64,armhf] https://packages.microsoft.com/repos/code stable main
+      repo: deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main
+      # repo: deb [arch=amd64,arm64,armhf] https://packages.microsoft.com/repos/code stable main
       state: present
       filename: vscode
+  #   when: not vscode_repo_file.stat.exists
+
+  # # workarround for vscode repository
+  # # changes the contents of the file itself during installation
+  # - name: Ensure {{ app_name }} repository is correctly set
+  #   ansible.builtin.lineinfile:
+  #     path: /etc/apt/sources.list.d/vscode.list
+  #     line: "deb [arch=amd64,arm64,armhf] https://packages.microsoft.com/repos/code stable main"
+  #     create: yes
+  #     state: present
+  #     regexp: '^deb .*packages.microsoft.com/repos/code.*$'
+  #   when: vscode_repo_file.stat.exists
 
   - name: Install {{ app_name }}
     ansible.builtin.apt:

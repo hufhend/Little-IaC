@@ -171,6 +171,10 @@ _Firewall is not a separately executable role, it's just an engine. You can find
 
 == Newly added features
 
+25 Mar 2025
+
+* Significant improvements to the `ilo_upload_cert.yaml` playbook, making it suitable for independent environments like Ansible Tower.
+
 22 Dec 2024
 
 * New Home Assistant service added, both for Kubernetes and for OrangePi in remote locations

@@ -22,13 +22,30 @@ Ansible is a simple and powerful tool for configuration management and task auto
 
 == Role Variables
 
-The role includes the following variables that can be customized as needed:
+[cols="1,2,1", options="header"]
+|===
+| Name | Description | Default value
 
-* `subscriptions`: Your Azure subscription ID
-* `customLocations`: Name of the custom location
-* `customLocationRG`: Name of the resource group for the custom location
-* `ClusterName`: Name of the Kubernetes cluster
-* `ResourceGroup`: Name of the resource group for the Kubernetes cluster
+| `subscriptions`
+| Your Azure subscription ID
+| none
+
+| `customLocations`
+| Name of the custom location
+| none
+
+| `customLocationRG`
+| Name of the resource group for the custom location
+| none
+
+| `ClusterName`
+| Name of the Kubernetes cluster
+| none
+
+| `ResourceGroup`
+| Name of the resource group for the Kubernetes cluster
+| none
+|===
 
 == Example Usage
 

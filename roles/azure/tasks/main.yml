@@ -1,0 +1,94 @@
+---
+#   **************************************
+#   Ansible Azure main role - Ubuntu 24.04
+#   begin     : Wed 26 Mar 2025
+#   copyright : (c) 2025 Václav Dvorský
+#   email     : hufhendr@gmail.com
+#   $Id: azure.yaml, v1.00 26/03/2025
+#   **************************************
+
+#   --------------------------------------------------------------------
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public Licence as published by
+#   the Free Software Foundation; either version 2 of the Licence, or
+#   (at your option) any later version.
+#   --------------------------------------------------------------------
+
+#   This role is used to manage resources in the Azure Arc cloud and is not 
+#   and probably will not be optimized for running in Ansible Tower.
+
+#   Usage:
+#   You must create your own set of variables and then:
+#   ansible-playbook azure.yml -e "@secrets/cluster_vars.yml"
+
+
+# Run command to fetch available Kubernetes versions
+- name: Run az aksarc get-versions
+  command: >
+    az aksarc get-versions --custom-location /subscriptions/{{ subscriptions }}/resourceGroups/{{ customLocationRG }}/providers/Microsoft.ExtendedLocation/customLocations/{{ customLocations }}
+  register: command_output
+
+# Parse the JSON output to extract Kubernetes versions
+- name: Parse JSON output
+  set_fact:
+    kubernetes_versions: >-
+      {{
+        (command_output.stdout | from_json).get('properties', {}).get('values', []) | 
+        map(attribute='patchVersions') | 
+        map('dict2items') | 
+        flatten | 
+        map(attribute='key') | 
+        list
+      }}
+
+# Display the available Kubernetes versions
+- name: Available K8s versions in {{ customLocations }}
+  debug:
+    msg: "Available Kubernetes versions: {{ kubernetes_versions }}"
+
+# Run command to fetch available Kubernetes upgrades for the cluster
+- name: Get K8s upgrade for {{ ClusterName }}
+  command: >
+    az aksarc get-upgrades --resource-group {{ ResourceGroup }} --name {{ ClusterName }}
+  register: upgrade_output
+
+# Parse the JSON output to extract Kubernetes upgrade versions
+- name: Parse upgrade JSON output
+  set_fact:
+    kubernetes_upgrades: >-
+      {{
+        (upgrade_output.stdout | from_json).get('controlPlaneProfile', {}).get('upgrades', []) | 
+        map(attribute='kubernetesVersion') | 
+        list
+      }}
+
+# Display the available Kubernetes upgrades for the cluster
+- name: Available Kubernetes upgrades
+  debug:
+    msg: "Available Kubernetes upgrades for {{ ClusterName }}: {{ kubernetes_upgrades }}"
+
+# Run command to fetch the current status of the cluster
+- name: Show cluster {{ ClusterName }} status
+  command: >
+    az aksarc show -g {{ ResourceGroup }} -n {{ ClusterName }} --query "{resourceGroup:resourceGroup,name:name, provisioningState:properties.provisioningState,currentState:properties.status.currentState}" --output json
+  register: status_output
+
+# Display the current status of the cluster
+- name: Display cluster status
+  debug:
+    msg:
+    - "Cluster {{ ClusterName }} status:"
+    - "{{ status_output.stdout.split('\\n') | join('
+
+      ') }}"
+
+# Display the upgrade command for the cluster
+- name: Create a cluster upgrade command
+  debug:
+    msg: az aksarc upgrade --resource-group {{ ResourceGroup }} --name {{ ClusterName }} --kubernetes-version {{ kubernetes_upgrades[-1] }}
+
+# # Upgrade the cluster to the latest Kubernetes version if not already upgraded
+# - name: Upgrade cluster {{ ClusterName }} to latest version
+#   command: >
+#     az aksarc upgrade --resource-group {{ ResourceGroup }} --name {{ ClusterName }} --kubernetes-version 1.29.2 --yes
+#   when: kubernetes_upgrades[-1] not in status_output.stdout

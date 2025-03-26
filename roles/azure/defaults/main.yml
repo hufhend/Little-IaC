@@ -1,0 +1,6 @@
+---
+subscriptions: "your-subscription-id"
+customLocations: "your-custom-location"
+customLocationRG: "your-custom-location-resource-group"
+ClusterName: "your-cluster-name"
+ResourceGroup: "your-cluster-resource-group"

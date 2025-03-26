@@ -1,0 +1,42 @@
+= Azure Role Documentation
+
+This role is part of the `Little-IaC` project and is designed to address specific tasks related to the Microsoft Azure environment. The role is intended to provide a simple and efficient solution for routine tasks that can be easily managed using the Ansible tool.
+
+== Introduction
+
+The role focuses on specific tasks and is not intended for extensive automation, such as Ansible Tower. It is primarily written using command modules and exists outside the main project. This means its use is suitable only for specific scenarios for which it was designed.
+
+== What is Azure ARC?
+
+Azure ARC is a service that enables the management and governance of servers, Kubernetes clusters, and other resources across various environments, including on-premises and multi-cloud. It provides a unified management interface and allows the use of Azure services outside of Azure. Using Azure ARC is particularly beneficial for organizations looking to centralize their infrastructure management and improve its security.
+
+== Why use Ansible?
+
+Ansible is a simple and powerful tool for configuration management and task automation. Its declarative nature makes it easy to define the desired state of infrastructure and applications. For routine tasks, such as managing Azure ARC or deploying applications, Ansible is an ideal choice as it reduces the risk of errors and increases efficiency.
+
+== Requirements
+
+* Ansible version 2.17 or higher
+* Azure CLI installed and configured
+* Access credentials for an Azure account with the necessary permissions
+
+== Role Variables
+
+The role includes the following variables that can be customized as needed:
+
+* `subscriptions`: Your Azure subscription ID
+* `customLocations`: Name of the custom location
+* `customLocationRG`: Name of the resource group for the custom location
+* `ClusterName`: Name of the Kubernetes cluster
+* `ResourceGroup`: Name of the resource group for the Kubernetes cluster
+
+== Example Usage
+
+[source,yaml]
+----
+- name: Resource management in Azure cloud
+  hosts: localhost
+  gather_facts: no  
+  roles:
+    - role: azure
+----

@@ -38,29 +38,18 @@
 
       ') }}"
 
+# Display the delete command for the cluster
+- name: Create a AKS delete command
+  debug:
+    msg: az aksarc delete --name {{ cluster_name }} --resource-group {{ resource_group }}
+
 - name: Delete AKS cluster
   block:
-
-  # Display the delete command for the cluster
-  - name: Create a AKS delete command
-    debug:
-      msg: az aksarc delete --name {{ cluster_name }} --resource-group {{ resource_group }}
-
   # Delete the cluster
   - name: Delete cluster {{ cluster_name }}
     command: >
       az aksarc delete --name {{ cluster_name }} --resource-group {{ resource_group }} --yes
     register: delete_output
-
-  # - name: Display delete output
-  #   debug:
-  #     msg: "{{ delete_output.stdout }}"
-  #   when: delete_output.stdout is defined
-
-  # - name: Validate JSON output
-  #   ansible.builtin.debug:
-  #     msg: "Invalid JSON in delete_output.stdout: {{ delete_output.stdout }}"
-  #   when: delete_output.stdout is not search('^{.*}$')
 
   - name: Parse JSON and extract result
     ansible.builtin.set_fact:
@@ -72,4 +61,4 @@
       msg: "Provisioning state is: {{ provisioning_state }}"
     when: provisioning_state is defined
 
-  when: delete == true
+  when: delete

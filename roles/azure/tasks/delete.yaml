@@ -1,0 +1,75 @@
+---
+#   **************************************
+#   Ansible AKS delete role - Ubuntu 24.04
+#   begin     : Wed 26 Mar 2025
+#   copyright : (c) 2025 Václav Dvorský
+#   email     : hufhendr@gmail.com
+#   $Id: delete.yaml, v1.00 27/03/2025
+#   **************************************
+
+#   --------------------------------------------------------------------
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public Licence as published by
+#   the Free Software Foundation; either version 2 of the Licence, or
+#   (at your option) any later version.
+#   --------------------------------------------------------------------
+
+#   This role is used to delete Azure Kubernetes Service resources in the 
+#   Azure Arc cloud and is not and probably will not be optimized for 
+#   running in Ansible Tower.
+
+#   Usage:
+#   You must create your own set of variables and then:
+#   ansible-playbook azure.yml -e "@secrets/cluster_vars.yml"
+
+
+# Run command to fetch the current status of the cluster
+- name: Verify {{ cluster_name }} status
+  command: >
+    az aksarc show -g {{ resource_group }} -n {{ cluster_name }} --query "{provisioningState:properties.provisioningState,currentState:properties.status.currentState}" --output json
+  register: status_output
+
+# Display the current status of the cluster
+- name: Display cluster status
+  debug:
+    msg:
+    - "Cluster {{ cluster_name }} status:"
+    - "{{ status_output.stdout.split('\\n') | join('
+
+      ') }}"
+
+- name: Delete AKS cluster
+  block:
+
+  # Display the delete command for the cluster
+  - name: Create a AKS delete command
+    debug:
+      msg: az aksarc delete --name {{ cluster_name }} --resource-group {{ resource_group }}
+
+  # Delete the cluster
+  - name: Delete cluster {{ cluster_name }}
+    command: >
+      az aksarc delete --name {{ cluster_name }} --resource-group {{ resource_group }} --yes
+    register: delete_output
+
+  # - name: Display delete output
+  #   debug:
+  #     msg: "{{ delete_output.stdout }}"
+  #   when: delete_output.stdout is defined
+
+  # - name: Validate JSON output
+  #   ansible.builtin.debug:
+  #     msg: "Invalid JSON in delete_output.stdout: {{ delete_output.stdout }}"
+  #   when: delete_output.stdout is not search('^{.*}$')
+
+  - name: Parse JSON and extract result
+    ansible.builtin.set_fact:
+      provisioning_state: "{{ (delete_output.stdout | from_json).properties.provisioningState }}"
+    when: delete_output.stdout is defined
+
+  - name: Show delete result
+    ansible.builtin.debug:
+      msg: "Provisioning state is: {{ provisioning_state }}"
+    when: provisioning_state is defined
+
+  when: delete == true

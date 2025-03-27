@@ -1,6 +1,16 @@
 ---
-subscriptions: "your-subscription-id"
-customLocations: "your-custom-location"
-customLocationRG: "your-custom-location-resource-group"
-ClusterName: "your-cluster-name"
-ResourceGroup: "your-cluster-resource-group"
+cluster_name: "your-cluster-name"
+resource_group: "your-cluster-resource-group"
+
+# environment variables
+subscription: "your-subscription-id"
+subscription_name: "your-subscription-name"
+custom_locations: "your-custom-location"
+custom_location_rg: "your-custom-location-resource-group"
+deploy_prefix: "your-deployment-prefix"
+template_file: "your-template-file"
+location: "your-location"
+
+# executive variables
+delete: false
+upgrade: false

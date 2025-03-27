@@ -26,23 +26,23 @@ Ansible is a simple and powerful tool for configuration management and task auto
 |===
 | Name | Description | Default value
 
-| `subscriptions`
+| `subscription`
 | Your Azure subscription ID
 | none
 
-| `customLocations`
+| `custom_locations`
 | Name of the custom location
 | none
 
-| `customLocationRG`
+| `custom_location_rg`
 | Name of the resource group for the custom location
 | none
 
-| `ClusterName`
+| `cluster_name`
 | Name of the Kubernetes cluster
 | none
 
-| `ResourceGroup`
+| `resource_group`
 | Name of the resource group for the Kubernetes cluster
 | none
 |===

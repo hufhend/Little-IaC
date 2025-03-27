@@ -1,0 +1,42 @@
+---
+#   **************************************
+#   Ansible AKS deploy role - Ubuntu 24.04
+#   begin     : Wed 26 Mar 2025
+#   copyright : (c) 2025 Václav Dvorský
+#   email     : hufhendr@gmail.com
+#   $Id: deploy.yaml, v1.00 27/03/2025
+#   **************************************
+
+#   --------------------------------------------------------------------
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public Licence as published by
+#   the Free Software Foundation; either version 2 of the Licence, or
+#   (at your option) any later version.
+#   --------------------------------------------------------------------
+
+#   This role is used to deploy Azure Kubernetes Service resources in the 
+#   Azure Arc cloud and is not and probably will not be optimized for 
+#   running in Ansible Tower.
+
+#   Usage:
+#   You must create your own set of variables and then:
+#   ansible-playbook azure.yml -e "@secrets/cluster_vars.yml"
+
+
+- name: deploy AKS cluster
+  block:
+
+  # Get current date and time
+  - name: Get current date and time
+    command: date +%Y-%m-%dT%H-%M-%S
+    register: current_datetime
+
+  # Display the deploy command for the cluster
+  - name: Create a cluster deploy command
+    debug:
+      msg: az deployment sub create -l {{ location }} -n {{ deploy_prefix }}-{{ cluster_name }}-{{ current_datetime.stdout }} --template-file {{ template_file }} --parameters parameters/{{ subscription_name }}/{{ cluster_name }}.bicepparam --no-wait --what-if
+
+  # Display the deploy command for the cluster
+  - name: Create a bash cluster deploy command
+    debug:
+      msg: az deployment sub create -l {{ location }} -n {{ deploy_prefix }}-{{ cluster_name }}-$(date +%Y-%m-%dT%H-%M-%S) --template-file {{ template_file }} --parameters parameters/{{ subscription_name }}/{{ cluster_name }}.bicepparam --no-wait --what-if

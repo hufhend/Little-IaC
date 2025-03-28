@@ -4,7 +4,7 @@
 #   begin     : Wed 26 Mar 2025
 #   copyright : (c) 2025 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: delete.yaml, v1.00 27/03/2025
+#   $Id: delete.yaml, v1.04 28/03/2025
 #   **************************************
 
 #   --------------------------------------------------------------------
@@ -45,6 +45,16 @@
 
 - name: Delete AKS cluster
   block:
+  # Treatment of a known bug:
+  # Can't fully delete AKS Arc cluster with PodDisruptionBudget (PDB) resources
+  - name: Delete PDB for Azure webhook
+    kubernetes.core.k8s:
+      state: absent
+      kind: PodDisruptionBudget
+      name: azure-wi-webhook-controller-manager
+      namespace: arc-workload-identity
+    ignore_errors: true
+
   # Delete the cluster
   - name: Delete cluster {{ cluster_name }}
     command: >

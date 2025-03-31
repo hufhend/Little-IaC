@@ -4,7 +4,7 @@
 #   begin     : Wed 26 Mar 2025
 #   copyright : (c) 2025 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: delete.yaml, v1.04 28/03/2025
+#   $Id: delete.yaml, v1.10 31/03/2025
 #   **************************************
 
 #   --------------------------------------------------------------------
@@ -45,6 +45,17 @@
 
 - name: Delete AKS cluster
   block:
+  # Delete the cluster extension
+  - name: Delete cluster wiextension
+    command: >
+      az k8s-extension delete --name wiextension --resource-group {{ resource_group }} --cluster-type connectedClusters --cluster-name  {{ cluster_name }} --yes
+    register: delete_wiextension_output
+  
+  - name: Show delete wiextension
+    debug:
+      msg: "Provisioning state is: {{ delete_wiextension_output.stdout }}"
+    when: delete_wiextension_output.stdout is defined
+
   # Treatment of a known bug:
   # Can't fully delete AKS Arc cluster with PodDisruptionBudget (PDB) resources
   - name: Delete PDB for Azure webhook
@@ -53,7 +64,7 @@
       kind: PodDisruptionBudget
       name: azure-wi-webhook-controller-manager
       namespace: arc-workload-identity
-    ignore_errors: true
+    # ignore_errors: true
 
   # Delete the cluster
   - name: Delete cluster {{ cluster_name }}

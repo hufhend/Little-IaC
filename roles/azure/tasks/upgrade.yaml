@@ -4,7 +4,7 @@
 #   begin     : Wed 26 Mar 2025
 #   copyright : (c) 2025 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: upgrade.yaml, v1.04 27/03/2025
+#   $Id: upgrade.yaml, v1.10 01/04/2025
 #   ***************************************
 
 #   --------------------------------------------------------------------
@@ -86,7 +86,7 @@
 # Display the upgrade command for the cluster
 - name: Create a cluster upgrade command
   debug:
-    msg: az aksarc upgrade --resource-group {{ resource_group }} --name {{ cluster_name }} --kubernetes-version {{ kubernetes_upgrades[-1] }}
+    msg: az aksarc upgrade --resource-group {{ resource_group }} --name {{ cluster_name }} --kubernetes-version {{ aks_version if (aks_version is defined and aks_version | length > 0) else kubernetes_upgrades[-1] }} --yes
   when: kubernetes_upgrades | length > 0
 
 - name: Executive part of the upgrade
@@ -94,7 +94,9 @@
   # Upgrade the cluster to the latest Kubernetes version if not already upgraded
   - name: Upgrade cluster {{ cluster_name }}
     command: >
-      az aksarc upgrade --resource-group {{ resource_group }} --name {{ cluster_name }} --kubernetes-version {{ kubernetes_upgrades[-1] }} --yes
+      az aksarc upgrade --resource-group {{ resource_group }} --name {{ cluster_name }} --kubernetes-version {{
+        aks_version if (aks_version is defined and aks_version | length > 0) else kubernetes_upgrades[-1]
+      }} --yes
     when:
     - kubernetes_upgrades | length > 0
     - kubernetes_upgrades[-1] not in status_output.stdout

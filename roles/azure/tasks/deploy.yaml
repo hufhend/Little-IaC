@@ -4,7 +4,7 @@
 #   begin     : Wed 26 Mar 2025
 #   copyright : (c) 2025 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: deploy.yaml, v1.00 27/03/2025
+#   $Id: deploy.yaml, v1.10 04/02/2025
 #   **************************************
 
 #   --------------------------------------------------------------------
@@ -20,13 +20,15 @@
 
 #   Usage:
 #   You must create your own set of variables and then:
-#   ansible-playbook azure.yml -e "@secrets/cluster_vars.yml"
+#   ansible-playbook azure.yml -e "@secrets/cluster_vars.yml" -t deploy
 
 
-- name: deploy AKS cluster
+- name: Deploy AKS cluster
+  tags: 
+  - deploy
+
   block:
-
-  # Get current date and time
+    # Get current date and time
   - name: Get current date and time
     command: date +%Y-%m-%dT%H-%M-%S
     register: current_datetime

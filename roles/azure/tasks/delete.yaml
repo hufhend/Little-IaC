@@ -4,7 +4,7 @@
 #   begin     : Wed 26 Mar 2025
 #   copyright : (c) 2025 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: delete.yaml, v1.10 31/03/2025
+#   $Id: delete.yaml, v1.14 01/04/2025
 #   **************************************
 
 #   --------------------------------------------------------------------
@@ -20,66 +20,61 @@
 
 #   Usage:
 #   You must create your own set of variables and then:
-#   ansible-playbook azure.yml -e "@secrets/cluster_vars.yml"
+#   ansible-playbook azure.yml -e "@secrets/cluster_vars.yml" -t delete
 
-
-# Run command to fetch the current status of the cluster
-- name: Verify {{ cluster_name }} status
-  command: >
-    az aksarc show -g {{ resource_group }} -n {{ cluster_name }} --query "{provisioningState:properties.provisioningState,currentState:properties.status.currentState}" --output json
-  register: status_output
-
-# Display the current status of the cluster
-- name: Display cluster status
-  debug:
-    msg:
-    - "Cluster {{ cluster_name }} status:"
-    - "{{ status_output.stdout.split('\\n') | join('
-
-      ') }}"
-
-# Display the delete command for the cluster
-- name: Create a AKS delete command
-  debug:
-    msg: az aksarc delete --name {{ cluster_name }} --resource-group {{ resource_group }}
 
 - name: Delete AKS cluster
-  block:
-  # Delete the cluster extension
-  - name: Delete cluster wiextension
-    command: >
-      az k8s-extension delete --name wiextension --resource-group {{ resource_group }} --cluster-type connectedClusters --cluster-name  {{ cluster_name }} --yes
-    register: delete_wiextension_output
+  tags: 
+  - delete
   
-  - name: Show delete wiextension
-    debug:
-      msg: "Provisioning state is: {{ delete_wiextension_output.stdout }}"
-    when: delete_wiextension_output.stdout is defined
-
-  # Treatment of a known bug:
-  # Can't fully delete AKS Arc cluster with PodDisruptionBudget (PDB) resources
-  - name: Delete PDB for Azure webhook
-    kubernetes.core.k8s:
-      state: absent
-      kind: PodDisruptionBudget
-      name: azure-wi-webhook-controller-manager
-      namespace: arc-workload-identity
-    # ignore_errors: true
-
-  # Delete the cluster
-  - name: Delete cluster {{ cluster_name }}
+  block:
+  # Run command to fetch the current status of the cluster
+  - name: Verify {{ cluster_name }} status
     command: >
-      az aksarc delete --name {{ cluster_name }} --resource-group {{ resource_group }} --yes
-    register: delete_output
+      az aksarc show -g {{ resource_group }} -n {{ cluster_name }} --query "{provisioningState:properties.provisioningState,currentState:properties.status.currentState}" --output json
+    register: status_output
 
-  - name: Parse JSON and extract result
-    ansible.builtin.set_fact:
-      provisioning_state: "{{ (delete_output.stdout | from_json).properties.provisioningState }}"
-    when: delete_output.stdout is defined
+  # Display the current status of the cluster
+  - name: Display cluster status
+    debug:
+      msg:
+      - "Cluster {{ cluster_name }} status:"
+      - "{{ status_output.stdout.split('\\n') | join('
 
-  - name: Show delete result
-    ansible.builtin.debug:
-      msg: "Provisioning state is: {{ provisioning_state }}"
-    when: provisioning_state is defined
+        ') }}"
 
-  when: delete
+  # Display the delete command for the cluster
+  - name: Create a AKS delete command
+    debug:
+      msg: az aksarc delete --name {{ cluster_name }} --resource-group {{ resource_group }}
+
+  - name: Delete AKS cluster
+    block:
+    # Treatment of a known bug:
+    # Can't fully delete AKS Arc cluster with PodDisruptionBudget (PDB) resources
+    - name: Delete PDB for Azure webhook
+      kubernetes.core.k8s:
+        state: absent
+        kind: PodDisruptionBudget
+        name: azure-wi-webhook-controller-manager
+        namespace: arc-workload-identity
+      # ignore_errors: true
+
+    # Delete the cluster extension
+    - name: Delete cluster wiextension
+      command: >
+        az k8s-extension delete --name wiextension --resource-group {{ resource_group }} --cluster-type connectedClusters --cluster-name  {{ cluster_name }} --yes
+      register: delete_wiextension_output
+
+    # Delete the cluster
+    - name: Delete cluster {{ cluster_name }}
+      command: >
+        az aksarc delete --name {{ cluster_name }} --resource-group {{ resource_group }} --yes
+      register: delete_output
+
+    - name: Show delete result
+      ansible.builtin.debug:
+        msg: "Provisioning state is: {{ delete_output.stdout }}"
+      # when: delete_output.stdout is defined
+
+    when: delete

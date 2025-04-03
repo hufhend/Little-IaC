@@ -4,7 +4,7 @@
 #   begin     : Wed 26 Mar 2025
 #   copyright : (c) 2025 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: azure.yaml, v1.00 26/03/2025
+#   $Id: azure.yaml, v1.10 02/04/2025
 #   **************************************
 
 #   --------------------------------------------------------------------
@@ -21,5 +21,20 @@
 #   You must create your own set of variables and then:
 #   ansible-playbook azure.yml -e "@secrets/cluster_vars.yml"
 
+- name: Call the deploy task
+  include_tasks: deploy.yaml
+  tags:
+  - deploy
+  when: "'deploy' in ansible_run_tags"
+
 - name: Call the upgrade task
   include_tasks: upgrade.yaml
+  tags:
+  - upgrade
+  when: "'upgrade' in ansible_run_tags"
+
+- name: Call the delete task
+  include_tasks: delete.yaml
+  tags:
+  - delete
+  when: "'delete' in ansible_run_tags"

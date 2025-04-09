@@ -2,3 +2,7 @@
 # default value for language setting
 language: english
 desktop: false
+
+timezone: Europe/Prague
+country: Czech
+lang: cs_CZ.UTF-8

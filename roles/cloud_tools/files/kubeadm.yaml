@@ -1,0 +1,62 @@
+---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "kubeadm"
+    app_name: "kubeadm"
+
+- name: Set up cloud management utilities
+  block:
+
+  # Kubeadm is a tool for Kubernetes cluster administrators
+  # Do not use it unless you know exactly what you are doing
+
+  - name: Install {{ app_name }} for Kubernetes
+    block:
+    - name: Add Kubernetes GPG key
+      ansible.builtin.apt_key:
+        url: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/Release.key"
+        keyring: /usr/share/keyrings/kubernetes.gpg
+        state: present
+
+    - name: Add {{ app_name }} repository
+      ansible.builtin.apt_repository:
+        repo: 'deb [signed-by=/usr/share/keyrings/kubernetes.gpg] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/ /'
+        state: present
+        filename: kubernetes
+
+    - name: Install {{ app_name }}
+      ansible.builtin.apt:
+        name: kubeadm
+        state: present
+        allow_downgrade: yes
+
+  - name: Check if completion script exists
+    stat:
+      path: "/etc/bash_completion.d/{{ app }}"
+    register: completion_script_stat
+
+  - name: Generate completion script
+    command: "{{ app }} completion bash"
+    register: completion_script
+    changed_when: false
+    when: not completion_script_stat.stat.exists
+
+  - name: Save completion script
+    copy:
+      content: "{{ completion_script.stdout }}"
+      dest: "/etc/bash_completion.d/{{ app }}"
+      mode: "0644"
+    when: not completion_script_stat.stat.exists
+
+  - name: Check {{ app_name }} version
+    command: "/usr/bin/{{ app }} version -o json"
+    register: "install_result"
+    changed_when: false
+    become_user: "{{ ansible_user }}"
+    ignore_errors: true
+
+  - name: Show {{ app_name }} version
+    debug:
+      msg: "{{ install_result.stdout | from_json }}"
+
+  when: kubeadm and (role not in ['combi', 'master', 'worker'])

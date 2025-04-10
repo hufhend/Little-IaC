@@ -40,4 +40,4 @@
     debug:
       msg: "{{ install_result.stdout.split('\n') }}"
 
-  when: starship and (binenv | default(false))   
+  when: starship and (binenv | default(false))

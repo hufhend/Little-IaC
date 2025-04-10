@@ -23,4 +23,4 @@
     debug:
       msg: "{{ install_result.stdout.split('\n') }}"
 
-  when: kubens and (binenv | default(false))   
+  when: kubens and (binenv | default(false))

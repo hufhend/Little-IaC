@@ -84,7 +84,7 @@
     when: local_hostname.stdout != ansible_hostname
 
   - name: Check {{ app_name }} version
-    command: "/usr/bin/{{ app }} version"
+    command: "/usr/bin/{{ app }} version -o json"
     register: "install_result"
     changed_when: false
     become_user: "{{ ansible_user }}"
@@ -92,6 +92,6 @@
 
   - name: Show {{ app_name }} version
     debug:
-      msg: "{{ install_result.stdout.split('\n') }}"    
+      msg: "{{ install_result.stdout | from_json }}"
 
   when: (role in ['combi', 'master', 'worker']) or (kubectl == True)

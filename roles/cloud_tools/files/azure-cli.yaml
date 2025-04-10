@@ -17,7 +17,7 @@
     ansible.builtin.apt_repository:
       repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_distribution_release }} main"
       state: present
-      filename: azure-cli      
+      filename: azure-cli
       
   - name: Install {{ app_name }}
     ansible.builtin.apt:
@@ -26,7 +26,7 @@
       allow_downgrade: true
 
   - name: Check {{ app_name }} version
-    command: "/usr/bin/az version -o yamlc"
+    command: "/usr/bin/az version -o json"
     register: "install_result"
     changed_when: false
     become_user: "{{ ansible_user }}"
@@ -34,7 +34,7 @@
 
   - name: Show {{ app_name }} version
     debug:
-      msg: "{{ install_result.stdout.split('\n') }}"      
+      msg: "{{ install_result.stdout | from_json }}"
 
   - name: Hold {{ app_name }} to prevent upgrades
     ansible.builtin.command:

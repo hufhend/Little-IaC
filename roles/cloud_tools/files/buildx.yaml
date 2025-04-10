@@ -40,4 +40,4 @@
     debug:
       msg: "{{ install_result.stdout.split('\n') }}"
 
-  when: buildx and (binenv | default(false))   
+  when: buildx and (binenv | default(false))

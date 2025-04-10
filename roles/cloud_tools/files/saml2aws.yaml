@@ -12,4 +12,4 @@
     args:
       creates: "/usr/local/bin/{{ app }}"
 
-  when: saml2aws and (binenv | default(false))   
+  when: saml2aws and (binenv | default(false))

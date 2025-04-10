@@ -41,4 +41,4 @@
     debug:
       msg: "{{ install_result.stdout.split('\n') |  map('regex_replace', '^\\t', '') | list }}"
 
-  when: velero and (binenv | default(false))   
+  when: velero and (binenv | default(false))

@@ -23,4 +23,4 @@
     debug:
       msg: "{{ install_result.stdout.split('\n') }}"
 
-  when: kubectx and (binenv | default(false))   
+  when: kubectx and (binenv | default(false))

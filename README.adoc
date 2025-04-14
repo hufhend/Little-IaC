@@ -9,7 +9,7 @@ Recently, I was intrigued by the idea that it is possible to use Ansible to mana
 to the services in Kubernetes. That is, to achieve such a degree of automation that we can replace a burnt 
 computer with another one and give it the same settings relatively quickly via Ansible.
 
-image::docs/semaphore.png[Playbooks in Semaphore]
+image::docs/semaphore.png[Playbooks in Semaphore,984,248]
 
 This small project builds on these principles and strongly integrates DevOps approaches of infrastructure 
 as code.

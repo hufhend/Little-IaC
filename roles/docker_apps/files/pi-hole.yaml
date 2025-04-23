@@ -123,8 +123,15 @@
 
 - name: Configuration {{ app_name }}
   block:
-  - name: Include config tasks
+  # Split the configuration into two parts
+  # Master and slave separately so they don't go at the same time
+  - name: Include slave config tasks
     ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
+    when: inventory_hostname in groups['slave']
+
+  - name: Include master config tasks
+    ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
+    when: inventory_hostname in groups['master']
 
   - name: Change ownership of bind directory
     ansible.builtin.file:
@@ -142,8 +149,6 @@
       project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
   when: 
-    # ansible_play_hosts.index(inventory_hostname) == 0 or
-    # hostvars[ansible_play_hosts[ansible_play_hosts.index(inventory_hostname) - 1]].previous_tasks_ok | default(true) and
     docker_pihole == true and
     pihole_installed | default(false) != true
   

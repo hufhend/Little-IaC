@@ -104,7 +104,7 @@
       group: root
       mode: '0600'
     become: true
-    become_user: root 
+    become_user: root
     notify: Apply netplan configuration
 
   - name: Set installed variable
@@ -116,10 +116,9 @@
     community.docker.docker_compose_v2:
       project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
-  when: 
-    - docker_pihole == true
-    - not pihole_dir_check.stat.exists
-
+  when:
+  - docker_pihole == true
+  - not pihole_dir_check.stat.exists
 
 - name: Configuration {{ app_name }}
   block:
@@ -127,6 +126,19 @@
   # Master and slave separately so they don't go at the same time
   - name: Include slave config tasks
     ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
+    when: inventory_hostname in groups['slave']
+
+  # Start the application 
+  - name: Create and start {{ app_name }}
+    community.docker.docker_compose_v2:
+      project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+
+  - name: Wait for DNS response
+    ansible.builtin.wait_for:
+      host: 127.0.0.1
+      port: 53
+      state: started
+      timeout: 120
     when: inventory_hostname in groups['slave']
 
   - name: Include master config tasks
@@ -148,9 +160,7 @@
     community.docker.docker_compose_v2:
       project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
-  when: 
-    docker_pihole == true and
-    pihole_installed | default(false) != true
-  
+  when: docker_pihole == true and pihole_installed | default(false) != true
+
   vars:
     previous_tasks_ok: "{{ ansible_failed_task is not defined }}"

@@ -32,7 +32,7 @@
     community.general.flatpak_remote:
       name: flathub
       state: present
-      method: system
+      flatpakrepo_url: https://dl.flathub.org/repo/flathub.flatpakrepo
 
   # This is where everything else is installed
   - name: Add other software

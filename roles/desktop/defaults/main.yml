@@ -36,3 +36,4 @@ telegram: false
 edge: false
 ansible: false
 rocketchat: false
+stremio: false

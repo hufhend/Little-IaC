@@ -1,0 +1,12 @@
+---
+# Freedom to Stream
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "stremio"
+    app_name: "Stremio"
+
+- name: Install {{ app_name }}
+  community.general.flatpak:
+    name: com.stremio.Stremio
+    state: present
+  when: stremio == True

@@ -1,0 +1,60 @@
+= Role: Deploy docker applications
+
+== Role Description
+This role is designed for deploying containerized applications using Docker on single-board computers like OrangePi. The role includes support for various applications, such as DNS servers, monitoring tools, VPN, Git servers, and more.
+
+== Features
+The role provides:
+
+* Deployment and configuration of applications like Pi-hole, Prometheus, OpenVPN, Gitea, Home Assistant, and others.
+* Automated backup and restoration of application configurations.
+* SSL certificate management using ACME Companion.
+* Customizable deployment through variables.
+
+== Requirements
+* Docker and Docker Compose installed on the target device.
+* SSH access to the target device.
+* Linux support on the single-board computer (e.g., Armbian).
+
+== Role Variables
+
+[cols="1,2,1",options="header"]
+|===
+| Variable Name | Description | Default Value
+
+| `docker_gitea` | Enable deployment of Gitea | `false`
+| `docker_pihole` | Enable deployment of Pi-hole | `false`
+| `docker_prometheus` | Enable deployment of Prometheus | `false`
+| `docker_torproject` | Enable deployment of Tor Obfs4 Bridge | `false`
+| `docker_openvpn` | Enable deployment of OpenVPN | `false`
+| `docker_homeassistant` | Enable deployment of Home Assistant | `false`
+| `docker_user` | Docker username | Current Ansible user
+| `docker_home` | Docker home directory | `docker`
+|===
+
+== Dependencies
+This role has no dependencies on other Ansible roles.
+
+== Example Usage
+Example playbook for using this role:
+
+[source,yaml]
+----
+- hosts: orangepi
+  become: true
+  become_user: orangepi
+  roles:
+    - role: docker_apps
+      vars:
+        docker_pihole: true
+        docker_prometheus: true
+        docker_openvpn: false
+        docker_user: "orangepi"
+        docker_home: "docker"
+----
+
+== License
+GNU General Public License
+
+== Author Information
+This role was created and is maintained by the `Little-IaC` team.

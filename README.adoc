@@ -20,7 +20,7 @@ WARNING: The intended use is on a new bare metal installation of Linux, deployme
 
 * First we clone the repository
 +
-`+git clone https://github.com/hufhend/ansible.git+`
+`+git clone git@github.com:hufhend/Little-IaC.git+`
 
 * All playbooks and roles are relative is the root directory _ansible_, we enter it.
 +
@@ -34,6 +34,8 @@ WARNING: The intended use is on a new bare metal installation of Linux, deployme
 +
 `+ansible-playbook -i inventory.yaml -l desktop setup.yaml+`
 
+If you end up with an error, it is most likely caused by a non-existent user for Ansible. Read on for a first launch.
+
 TIP: I recommend to try the functions in a non-production environment, for example via Vagrant.
 
 == First launch
@@ -42,6 +44,11 @@ Before the first launch, we need to assign a new computer and user to run Ansibl
 === Playbook host_init 
 After a clean Linux installation, we usually have one regular user with sudo privileges. This is usually enough for us to manage the system from the command line, but for Ansible we need additional settings.
 The host_init role sets the default user to run Ansible, uploads the ssh keys, adds it to sudoers, and sets the hostname.
+
+Before you run it, check and edit the user name for Ansible according to your preferences. The default is hufhendr and it is in the files:
+* inventory.yaml
+* group_vars/all/user_ansible.yaml
+* host-init.yaml
 
 ==== Usage
 

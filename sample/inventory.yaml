@@ -18,6 +18,9 @@ myhosts:
       ansible_host: node07
       mac_adr: 01:e8:d0:a8:66:8a
       wol_server: node01
+    desktop:
+      ansible_host: localhost
+      ip: 127.0.0.1
 
   vars:
     ansible_user: hufhendr

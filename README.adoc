@@ -24,7 +24,7 @@ WARNING: The intended use is on a new bare metal installation of Linux, deployme
 
 * All playbooks and roles are relative is the root directory _ansible_, we enter it.
 +
-`+cd ansible+`
+`+cd Little-IaC+`
 
 * Copy the sample variables, modify them as needed
 +
@@ -32,7 +32,7 @@ WARNING: The intended use is on a new bare metal installation of Linux, deployme
 
 * And simply run the first playbook 
 +
-`+ansible-playbook -i inventory.yaml -l node06 setup.yaml+`
+`+ansible-playbook -i inventory.yaml -l desktop setup.yaml+`
 
 TIP: I recommend to try the functions in a non-production environment, for example via Vagrant.
 
@@ -45,7 +45,7 @@ The host_init role sets the default user to run Ansible, uploads the ssh keys, a
 
 ==== Usage
 
-`+ansible-playbook -i inventory.yaml -l host07 host-init.yaml -kK+`
+`+ansible-playbook -i inventory.yaml -l desktop host-init.yaml -kK+`
 
 == Features of playbooks
 

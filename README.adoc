@@ -46,6 +46,7 @@ After a clean Linux installation, we usually have one regular user with sudo pri
 The host_init role sets the default user to run Ansible, uploads the ssh keys, adds it to sudoers, and sets the hostname.
 
 Before you run it, check and edit the user name for Ansible according to your preferences. The default is hufhendr and it is in the files:
+
 * inventory.yaml
 * group_vars/all/user_ansible.yaml
 * host-init.yaml

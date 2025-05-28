@@ -35,15 +35,21 @@ The playbook automatically checks if the certificate in Kubernetes is newer than
 - Access to the Kubernetes cluster and iLO server
 
 
-== Playbook for Running from Kubernetes Cluster
+== Running from K8s Cluster
 
 The repository also contains a playbook `ilo_upload_cert_k8s.yaml`, which is designed to be executed directly from within a Kubernetes cluster (e.g., as a Job or CronJob). This playbook works similarly to the standard one, but uses the in-cluster service account and API to access Kubernetes secrets securely.
 
 Usage is analogous: simply run the playbook in an environment with access to the Kubernetes API and the iLO server.
 
-=== Note on Variables for Cluster Playbook
+=== Note on Variables
 
 For `ilo_upload_cert_k8s.yaml`, all required variables (such as `ilo_username`, `ilo_password`, `ilo_url`, `k8s_secret_name`, `k8s_namespace`) must be provided externally, for example using `--extra-vars` or by another method suitable for your automation environment. These variables are not hardcoded in the playbook for security and flexibility reasons.
+
+[#youtube-demo]
+=== Deployment video
+
+video::youtube[RoMFKvBKRSU, options="autoplay,controls"]
+
 
 == Author
 Václav Dvorský, 2025

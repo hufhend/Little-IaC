@@ -1,4 +1,9 @@
-= Ansible Playbook: Uploading SSL Certificate to HPE iLO
+= Uploading SSL Certificate to HPE iLO
+Václav Dvorský <hufhendr@gmail.com>
+1.1, 28 May, 2025: Ansible readme
+:toc:
+:icons: font
+:url-quickref: https://github.com/hufhend/Little-IaC
 
 This playbook automates the upload of an SSL certificate from Kubernetes to HPE Integrated Lights-Out (iLO) using the Redfish API. The certificate  is fetched from a Kubernetes secret, processed, and uploaded to the iLO server if needed.
 
@@ -12,7 +17,7 @@ infrastructure (see the table below).
 
 The playbook automatically checks if the certificate in Kubernetes is newer than the one on iLO, or if the default certificate is present on iLO. If so, it uploads the new certificate.
 
-== Variables
+=== Variables
 
 [cols="1,2,3", options="header"]
 |===
@@ -24,7 +29,7 @@ The playbook automatically checks if the certificate in Kubernetes is newer than
 | k8s_namespace   | "cert-manager"    | Namespace where the secret is located
 |===
 
-== Requirements
+=== Requirements
 
 - Ansible with `kubernetes.core` and `community.crypto` collections
 - Access to the Kubernetes cluster and iLO server
@@ -36,7 +41,7 @@ The repository also contains a playbook `ilo_upload_cert_k8s.yaml`, which is des
 
 Usage is analogous: simply run the playbook in an environment with access to the Kubernetes API and the iLO server.
 
-== Note on Variables for Cluster Playbook
+=== Note on Variables for Cluster Playbook
 
 For `ilo_upload_cert_k8s.yaml`, all required variables (such as `ilo_username`, `ilo_password`, `ilo_url`, `k8s_secret_name`, `k8s_namespace`) must be provided externally, for example using `--extra-vars` or by another method suitable for your automation environment. These variables are not hardcoded in the playbook for security and flexibility reasons.
 

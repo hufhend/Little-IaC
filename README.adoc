@@ -45,11 +45,13 @@ Before the first launch, we need to assign a new computer and user to run Ansibl
 After a clean Linux installation, we usually have one regular user with sudo privileges. This is usually enough for us to manage the system from the command line, but for Ansible we need additional settings.
 The host_init role sets the default user to run Ansible, uploads the ssh keys, adds it to sudoers, and sets the hostname.
 
-Before you run it, check and edit the user name for Ansible according to your preferences. The default is hufhendr and it is in the files:
+Before you run it, check and edit the user name for Ansible according to your preferences. The default is _hufhendr_ and it is in the files:
 
 * inventory.yaml
 * group_vars/all/user_ansible.yaml
 * host-init.yaml
+
+The bare minimum of changes is to set your user in the file host-init.yaml
 
 ==== Usage
 

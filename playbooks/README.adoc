@@ -48,8 +48,7 @@ For `ilo_upload_cert_k8s.yaml`, all required variables (such as `ilo_username`, 
 [#youtube-demo]
 === Deployment video
 
-video::youtube[RoMFKvBKRSU, options="autoplay,controls"]
-
+video::RoMFKvBKRSU[youtube, options="autoplay,loop"]
 
 == Author
 Václav Dvorský, 2025

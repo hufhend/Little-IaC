@@ -1,0 +1,165 @@
+#   ************************************************
+#   Upload SSL Certificate to hp iLO via Ansible 
+#   begin     : Fri 11 Oct 2024
+#   copyright : (c) 2024 Václav Dvorský
+#   email     : hufhendr@gmail.com
+#   $Id: ilo_upload_cert_k8s.yaml, v2.40  28/05/2024
+#   ************************************************
+
+#   --------------------------------------------------------------------
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public Licence as published by
+#   the Free Software Foundation; either version 2 of the Licence, or
+#   (at your option) any later version.
+#   --------------------------------------------------------------------
+
+#   Usage:
+#   This playbook is designed to run from a K8s cluster
+
+#   What it does:
+#   The main function of the script is to fetch the Let's Encrypt SSL 
+#   certificate from Kubernetes, transform it in RAM and upload it via API 
+#   to HPE Integrated Lights-Out.
+
+- hosts: localhost
+  tasks:
+
+  # Pick up the secret with the certificate and key from Kubernetes
+  # There it is downloaded via cert-manager
+  - name: Get Kubernetes secret
+    kubernetes.core.k8s_info:
+      api_version: v1
+      kind: Secret
+      name: "{{ k8s_secret_name }}"
+      namespace: "{{ k8s_namespace }}"
+      host: https://kubernetes.default.svc
+      api_key: "{{ lookup('file', '/var/run/secrets/kubernetes.io/serviceaccount/token') }}"
+      ssl_ca_cert: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+      validate_certs: no
+    register: secret_info
+
+  # Part of decoding the certificate and key
+  - name: Extract TLS certificate from secret
+    ansible.builtin.set_fact:
+      cert_content_base64: "{{ secret_info.resources[0].data['tls.crt'] }}"
+
+  - name: Decode TLS certificate from base64
+    ansible.builtin.set_fact:
+      cert_content: "{{ cert_content_base64 | b64decode }}"
+
+  - name: Extract private key from secret
+    ansible.builtin.set_fact:
+      key_content_base64: "{{ secret_info.resources[0].data['tls.key'] }}"
+
+  - name: Decode private key from base64
+    ansible.builtin.set_fact:
+      key_content: "{{ key_content_base64 | b64decode }}"
+
+  # Analyzing and displaying key SSL certificate information
+  - name: Analyze TLS certificate using x509 info
+    community.crypto.x509_certificate_info:
+      content: "{{ cert_content }}"
+    register: k8s_cert
+
+  # Displaying the certificate information 
+  - name: Show certificate details
+    debug:
+      msg:
+      - "Issuer: {{ k8s_cert.issuer.organizationName }} ({{ k8s_cert.issuer.countryName }})"
+      - "Common Name: {{ k8s_cert.subject.commonName }}"
+      - "Valid From:  {{ (k8s_cert.not_before | regex_replace('Z$', '') | to_datetime('%Y%m%d%H%M%S')).strftime('%d.%m.%Y %H:%M:%S') }} UTC"
+      - "Valid Until: {{ (k8s_cert.not_after | regex_replace('Z$', '') | to_datetime('%Y%m%d%H%M%S')).strftime('%d.%m.%Y %H:%M:%S') }} UTC"
+      - "Expired: {{ k8s_cert.expired }}"
+      - "Key Usage: {{ k8s_cert.key_usage | join(', ') }}"
+      - "Extended Key Usage: {{ k8s_cert.extended_key_usage | join(', ') }}"
+      - "Public Key Size: {{ k8s_cert.public_key_data.size }} bits"
+      - "SHA256 Fingerprint: {{ k8s_cert.fingerprints.sha256 }}"
+
+  # Combining the certificate and key into a format for the iLO Redfish API
+  - name: Combine certificate and private key
+    ansible.builtin.set_fact:
+      combined_cert_key: "{{ cert_content | regex_replace('\\n', '\\\\n') }}\\n{{ key_content | regex_replace('\\n', '\\\\n') }}"
+
+  # Fetching the certificate from the iLO server
+  - name: Get a cert from the iLO server
+    community.crypto.get_certificate:
+      host: "{{ ilo_url }}"
+      port: 443
+      asn1_base64: true
+    run_once: true
+    register: ilo_cert
+
+  # Evaluating whether it is a default certificate
+  - name: Check if certificate is default
+    ansible.builtin.set_fact:
+      is_default_cert: "{{ ilo_cert.issuer.O is defined and 'Hewlett Packard Enterprise' in ilo_cert.issuer.O }}"
+
+  # Debugging the results
+  - name: Display certificate issuer and decision
+    ansible.builtin.debug:
+      msg:
+      - "Certificate Issuer: {{ ilo_cert.issuer.O | default('Unknown') }}"
+      - "Is Default Certificate: {{ is_default_cert }}"
+
+  # Convert the dates to integers for comparison
+  - name: Convert dates to integers
+    ansible.builtin.set_fact:
+      ilo_cert_date: "{{ ilo_cert.not_after | regex_replace('Z$', '') | int }}"
+      k8s_cert_date: "{{ k8s_cert.not_after | regex_replace('Z$', '') | int }}"
+
+  # Compare the expiration dates of the certificates
+  # It is used only for displaying on the screen
+  - name: Compare certificate dates
+    vars:
+      msg: |
+        {% set ilo_readable = (ilo_cert_date | string | to_datetime('%Y%m%d%H%M%S')).strftime('%d.%m.%Y %H:%M:%S') %}
+        {% set k8s_readable = (k8s_cert_date | string | to_datetime('%Y%m%d%H%M%S')).strftime('%d.%m.%Y %H:%M:%S') %}
+        {% if ilo_cert_date > k8s_cert_date %}
+        iLO certificate is newer
+        - Expiry: {{ ilo_readable }} UTC
+        - Compared to Kubernetes certificate: {{ k8s_readable }} UTC
+        {% elif ilo_cert_date < k8s_cert_date %}
+        Kubernetes certificate is newer
+        - Expiry: {{ k8s_readable }} UTC
+        - Compared to iLO certificate: {{ ilo_readable }} UTC
+        {% else %}
+        Both certificates expire at the same time
+        Expiry: {{ ilo_readable }} UTC
+        {% endif %}
+    debug:
+      msg: "{{ msg.split('\n') }}"
+
+  # Part of uploading a new certificate to the iLO server
+  - block:
+    - name: Get iLO session token
+      ansible.builtin.uri:
+        url: "https://{{ ilo_url }}/redfish/v1/Sessions"
+        method: POST
+        body_format: json
+        headers:
+          Content-Type: "application/json"
+        body: |
+          {
+            "UserName": "{{ ilo_username }}",
+            "Password": "{{ ilo_password }}"
+          }
+        validate_certs: no
+        status_code: [ 200, 201 ]
+      register: session_response
+
+    # Uploading a Let's Encrypt SSL certificate to HPE Integrated Lights-Out
+    - name: Upload SSL certificate to iLO
+      ansible.builtin.uri:
+        url: "https://{{ ilo_url }}/redfish/v1/Managers/1/SecurityService/HttpsCert/Actions/HpeHttpsCert.ImportCertificate"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          X-Auth-Token: "{{ session_response.x_auth_token }}"
+        body_format: json
+        body: |
+          {
+            "Certificate": "{{ combined_cert_key }}"
+          }
+        validate_certs: no
+
+    when: ilo_cert_date < k8s_cert_date or is_default_cert

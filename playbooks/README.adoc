@@ -1,0 +1,44 @@
+= Ansible Playbook: Uploading SSL Certificate to HPE iLO
+
+This playbook automates the upload of an SSL certificate from Kubernetes to HPE Integrated Lights-Out (iLO) using the Redfish API. The certificate  is fetched from a Kubernetes secret, processed, and uploaded to the iLO server if needed.
+
+== Usage
+
+1. Edit the variables in the `ilo_upload_cert.yaml` file according to your 
+infrastructure (see the table below).
+2. Run the playbook with the command:
+
+    ansible-playbook ilo_upload_cert.yaml
+
+The playbook automatically checks if the certificate in Kubernetes is newer than the one on iLO, or if the default certificate is present on iLO. If so, it uploads the new certificate.
+
+== Variables
+
+[cols="1,2,3", options="header"]
+|===
+| Variable name   | Default value     | Description
+| ilo_username    | "username"        | Username for iLO login
+| ilo_password    | "password"        | Password for iLO login
+| ilo_url         | "ilo.example.cz"  | Address of the iLO server
+| k8s_secret_name | "ilo-tls-secret"  | Name of the Kubernetes secret with the certificate
+| k8s_namespace   | "cert-manager"    | Namespace where the secret is located
+|===
+
+== Requirements
+
+- Ansible with `kubernetes.core` and `community.crypto` collections
+- Access to the Kubernetes cluster and iLO server
+
+
+== Playbook for Running from Kubernetes Cluster
+
+The repository also contains a playbook `ilo_upload_cert_k8s.yaml`, which is designed to be executed directly from within a Kubernetes cluster (e.g., as a Job or CronJob). This playbook works similarly to the standard one, but uses the in-cluster service account and API to access Kubernetes secrets securely.
+
+Usage is analogous: simply run the playbook in an environment with access to the Kubernetes API and the iLO server.
+
+== Note on Variables for Cluster Playbook
+
+For `ilo_upload_cert_k8s.yaml`, all required variables (such as `ilo_username`, `ilo_password`, `ilo_url`, `k8s_secret_name`, `k8s_namespace`) must be provided externally, for example using `--extra-vars` or by another method suitable for your automation environment. These variables are not hardcoded in the playbook for security and flexibility reasons.
+
+== Author
+Václav Dvorský, 2025

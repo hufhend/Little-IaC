@@ -141,6 +141,9 @@
       timeout: 120
     when: inventory_hostname in groups['slave']
 
+  - name: Simple connectivity verification
+    ansible.builtin.command: ping -c 1 google.com
+
   - name: Include master config tasks
     ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
     when: inventory_hostname in groups['master']

@@ -44,7 +44,7 @@ Example playbook for using this role:
   become: true
   become_user: orangepi
   roles:
-    - role: docker_apps
+    - role: docker-apps
       vars:
         docker_pihole: true
         docker_prometheus: true

@@ -4,7 +4,7 @@
 #   begin     : Fri 29 Mar 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: orangepi.yaml, v1.00 30/03/2024
+#   $Id: orangepi.yaml, v1.02 14/06/2025
 #   *******************************************
 
 #   --------------------------------------------------------------------
@@ -18,14 +18,14 @@
   hosts: all
   become: true
   roles:
-    - role: system_upgrade
-    - role: env_settings
-    - role: docker
-    - role: orangepi
-    - role: crontab
-    - role: firewall
-    - role: docker_apps
-      become: true
-      become_user: "{{ docker_user }}"
+  - role: system_upgrade
+  - role: env_settings
+  - role: docker
+  - role: orangepi
+  - role: crontab
+  - role: firewall
+  - role: docker-apps
+    become: true
+    become_user: "{{ docker_user }}"
   vars:
     ansible_user: hufhendr

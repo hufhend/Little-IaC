@@ -1,2 +1,0 @@
-- name: Ansible Molecule
-  uses: gofrolist/molecule-action@v2.7.63

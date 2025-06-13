@@ -1,0 +1,20 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: ubuntu-24.04
+    image: ubuntu:24.04
+    pre_build_image: true
+provisioner:
+  name: ansible
+  inventory:
+    group_vars:
+      all:
+        example_var: "test_value"
+  playbooks:
+    converge: ../../../../playbook.yaml
+verifier:
+  name: testinfra
+  directory: ../tests/

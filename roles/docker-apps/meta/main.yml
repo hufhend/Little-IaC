@@ -1,7 +1,7 @@
 galaxy_info:
   author: Václav Dvorský
-  description: OpenShift Administrator
-  company: Aricoma
+  role_name: docker-apps
+  namespace: littleiac
 
   license: GPL-2.0-or-later
   min_ansible_version: "2.16"

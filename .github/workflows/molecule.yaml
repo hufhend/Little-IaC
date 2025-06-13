@@ -2,16 +2,16 @@ name: Ansible Molecule Tests
 
 on:
   push:
-    branches: [ "main" ]  # Spustí se při push do main
-  pull_request:           # Spustí se při jakémkoli PR
-    branches: [ "main" ]
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        scenario: ["default"]  
+        scenario: ["default"]
 
     steps:
       - name: Checkout code

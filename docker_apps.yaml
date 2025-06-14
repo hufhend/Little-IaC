@@ -4,7 +4,7 @@
 #   begin     : Thu 27 Jun 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : Vaclav.Dvorsky@aricoma.com
-#   $Id: docker-apps.yaml, v1.10 14/06/2025
+#   $Id: docker_apps.yaml, v1.10 14/06/2025
 #   ***************************************
 
 #   --------------------------------------------------------------------
@@ -19,6 +19,6 @@
   become: true
   become_user: "{{ docker_user }}"
   roles:
-  - role: docker-apps
+  - role: docker_apps
     # become: true
     # become_user: "{{ docker_user }}"

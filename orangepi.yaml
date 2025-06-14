@@ -24,7 +24,7 @@
   - role: orangepi
   - role: crontab
   - role: firewall
-  - role: docker-apps
+  - role: docker_apps
     become: true
     become_user: "{{ docker_user }}"
   vars:

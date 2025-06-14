@@ -35,5 +35,5 @@ jobs:
 
     - name: Run Molecule tests
       run: |
-        cd roles/docker-apps
+        cd roles/desktop
         molecule test --scenario-name ${{ matrix.scenario }}

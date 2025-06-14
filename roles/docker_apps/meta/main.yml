@@ -1,6 +1,6 @@
 galaxy_info:
   author: Václav Dvorský
-  role_name: docker-apps
+  role_name: docker_apps
   namespace: littleiac
 
   license: GPL-2.0-or-later

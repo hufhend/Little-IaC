@@ -10,3 +10,5 @@ dependency:
   name: galaxy
   options:
     role-name-check: 0
+provisioner:
+  name: ansible

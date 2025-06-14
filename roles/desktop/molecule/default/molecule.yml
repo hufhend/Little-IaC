@@ -13,3 +13,6 @@ dependency:
     role-name-check: 0
 provisioner:
   name: ansible
+  config_options:
+    defaults:
+      remote_tmp: /tmp/.ansible/tmp

@@ -8,7 +8,6 @@ platforms:
 provisioner:
   name: ansible
   options:
-    roles_path:
-    - ../../
+    roles_path: "../../"
 dependency:
   name: galaxy

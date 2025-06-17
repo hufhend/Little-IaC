@@ -7,7 +7,5 @@ platforms:
   pre_build_image: true
 provisioner:
   name: ansible
-  options:
-    roles_path: "../../"
 dependency:
   name: galaxy

@@ -2,17 +2,10 @@
 driver:
   name: docker
 platforms:
-  - name: instance
-    image: "ubuntu:latest"
-    command: /sbin/init
-    privileged: true
-    pre_build_image: true
-dependency:
-  name: galaxy
-  options:
-    role-name-check: 0
+- name: instance
+  image: "geerlingguy/docker-ubuntu2404-ansible"
+  pre_build_image: true
 provisioner:
   name: ansible
-  config_options:
-    defaults:
-      remote_tmp: /tmp/.ansible/tmp
+dependency:
+  name: galaxy

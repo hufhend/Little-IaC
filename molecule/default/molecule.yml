@@ -3,8 +3,7 @@ driver:
   name: docker
 platforms:
 - name: instance
-  image: "geerlingguy/docker-ubuntu2404-ansible"
-  pre_build_image: true
+  image: ubuntu:latest
 provisioner:
   name: ansible
 dependency:

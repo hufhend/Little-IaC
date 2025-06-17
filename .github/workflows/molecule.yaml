@@ -35,5 +35,4 @@ jobs:
 
     - name: Run Molecule tests
       run: |
-        cd roles/desktop
-        molecule test --scenario-name ${{ matrix.scenario }}
+        molecule test --scenario-name default --role-name desktop

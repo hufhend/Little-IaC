@@ -1,0 +1,17 @@
+---
+- name: Update apt cache
+  hosts: all
+  become: true
+  tasks:
+  - name: Update apt cache
+    ansible.builtin.apt:
+      update_cache: yes
+
+- name: Converge
+  hosts: all
+  roles:
+  - role: ../../roles/desktop
+  vars:
+    desktop: true
+    ansible_user: root
+    user_ansible: root

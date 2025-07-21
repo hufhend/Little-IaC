@@ -85,7 +85,30 @@
       name: keepalived.service
       state: reloaded
     when: not keepalived|default(false)
+  
+  # OrangePi can also have enough memory, if they do, we will put it on zram
+  - block:
+      - name: Get total RAM in kB
+        ansible.builtin.shell: grep MemTotal /proc/meminfo | awk '{ print $2 }'
+        register: ram_kb
+
+      - name: Set fact for RAM size in MB
+        set_fact:
+          ram_mb: "{{ ram_kb.stdout | int // 1024 }}"
+
+      - name: Set ramlog size to 128M if RAM >= 3GB
+        ansible.builtin.lineinfile:
+          path: /etc/default/armbian-ramlog
+          regexp: '^SIZE='
+          line: 'SIZE=128M'
+          backup: yes
+        when: ram_mb | int >= 3072
+
+      - name: Inform about unchanged ramlog size
+        debug:
+          msg: "RAM is only {{ ram_mb }} MB, SIZE in /etc/default/armbian-ramlog remains unchanged."
+        when: ram_mb | int < 3072
+    when: orange | default(false)
 
   when: role in ['combi', 'master', 'worker']
-
 

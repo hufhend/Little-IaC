@@ -11,8 +11,8 @@
       path: /var/log/pods
       state: absent
 
-  - name: Create link to new pods
-    ansible.builtin.file:
-      src: /var/log.hdd/pods
-      dest: /var/log/pods
-      state: link
+  # - name: Create link to new pods
+  #   ansible.builtin.file:
+  #     src: /var/log.hdd/pods
+  #     dest: /var/log/pods
+  #     state: link

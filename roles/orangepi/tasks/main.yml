@@ -44,14 +44,14 @@
   # - name: Include tasks sysstat services
   #   include_tasks: "{{ role_path }}/tasks/sysstat.yaml"
 
-  - name: Check if pods directory exists
-    ansible.builtin.stat:
-      path: /var/log/pods
-    register: pods_dir_check
+  # - name: Check if pods directory exists
+  #   ansible.builtin.stat:
+  #     path: /var/log/pods
+  #   register: pods_dir_check
 
-  - name: Include tasks pods logging
-    include_tasks: "{{ role_path }}/tasks/pods.yaml"    
-    when: pods_dir_check.stat.exists
+  # - name: Include tasks pods logging
+  #   include_tasks: "{{ role_path }}/tasks/pods.yaml"    
+  #   when: pods_dir_check.stat.exists
 
   - name: Install Git packages
     ansible.builtin.apt:

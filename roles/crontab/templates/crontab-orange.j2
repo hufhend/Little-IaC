@@ -10,7 +10,7 @@
 
 # Shut down the K8s node and restart
 29 06  {{ mntd }}  *   *     /usr/bin/kubectl drain --ignore-daemonsets --delete-emptydir-data --force --grace-period=50 {{ inventory_hostname }}
-30 06  {{ mntd }}  *   *     sudo /usr/sbin/init 6
+30 06  {{ mntd }}  *   *     sudo /usr/sbin/reboot
 40 06  {{ mntd }}  *   *     /usr/bin/kubectl uncordon {{ inventory_hostname }}
 {% endif %}
 {% if orange == true and role not in ['combi', 'master', 'worker'] %}
@@ -19,5 +19,5 @@
 {{ mntm }} 03   *  *  mon    /home/{{ ansible_user }}/scr/docker_update.sh
 
 # Restart OrangePi
-30 06  {{ mntd }}  *   *     sudo /usr/sbin/init 6
+30 06  {{ mntd }}  *   *     sudo /usr/sbin/reboot
 {% endif %}

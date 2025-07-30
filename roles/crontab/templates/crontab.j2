@@ -22,7 +22,7 @@
 
 # Shut down the K8s node and restart
 29 07  {{ mntd }}  *   *     /usr/bin/kubectl drain --ignore-daemonsets --delete-emptydir-data --force --grace-period=50 {{ inventory_hostname }}
-30 07  {{ mntd }}  *   *     sudo /usr/sbin/init 6
+30 07  {{ mntd }}  *   *     sudo /usr/sbin/reboot
 45 07  {{ mntd }}  *   *     /usr/bin/kubectl uncordon {{ inventory_hostname }}
 {% endif %}
 

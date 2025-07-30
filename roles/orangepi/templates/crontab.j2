@@ -8,7 +8,7 @@
 {{ mntm }}  03   *  *   *     sudo apt -f install && sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y && sudo apt autoremove -y
 
 # Restart OrangePi
-30  06  {{ mntd }}  *   *     sudo /usr/sbin/init 6
+30  06  {{ mntd }}  *   *     sudo /usr/sbin/reboot
 
 # Update Docker apps
 {{ mntm }}  05   *  *  mon    /home/{{ ansible_user }}/scr/docker_update.sh

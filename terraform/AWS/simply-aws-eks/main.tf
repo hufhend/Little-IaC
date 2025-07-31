@@ -18,6 +18,11 @@ data "aws_availability_zones" "available" {
   }
 }
 
+data "aws_route53_zone" "main" {
+  name         = var.domain_name
+  private_zone = false
+}
+
 locals {
   name = "ex-${basename(path.cwd)}"
   azs  = slice(data.aws_availability_zones.available.names, 0, 3)
@@ -79,3 +84,15 @@ module "vpc" {
     "kubernetes.io/role/internal-elb" = 1
   }
 }
+
+resource "aws_route53_record" "eks_api" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "api.${var.domain_eks}.${var.env}.${var.domain_name}"
+  type    = "CNAME"
+  ttl     = 300
+  records = [replace(module.eks.cluster_endpoint, "https://", "")]
+}
+
+# resource "aws_route53_zone" "subzone_aws" {
+#   name = "${var.domain_name}"
+# }

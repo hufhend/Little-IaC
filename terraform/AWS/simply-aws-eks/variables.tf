@@ -2,7 +2,19 @@
 variable "kubernetes_version" {
   description = "Kubernetes version"
   type        = string
-  default     = "1.32"
+  default     = "1.33"
+}
+
+variable "domain_name" {
+  description = "Route53 main domain"
+  type        = string
+  default     = "aws.akira.cz"
+}
+
+variable "domain_eks" {
+  description = "EKS prefix for domain name"
+  type        = string
+  default     = "eks"
 }
 
 variable "region" {

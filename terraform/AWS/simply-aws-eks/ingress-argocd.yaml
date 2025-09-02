@@ -1,0 +1,29 @@
+# An example Ingress that makes use of the controller:
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: argocd
+    namespace: argocd
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      # alb.ingress.kubernetes.io/scheme: internet-facing
+      # alb.ingress.kubernetes.io/target-type: ip
+  spec:
+    ingressClassName: alb
+    rules:
+      - host: argocd.eks.dev.aws.akira.cz
+        http:
+          paths:
+            - pathType: Prefix
+              backend:
+                service:
+                  name: argocd-server
+                  port:
+                    name: https
+              path: /
+    # # This section is only required if TLS is to be enabled for the Ingress
+    tls:
+      - hosts:
+        - argocd.eks.dev.aws.akira.cz
+        secretName: argocd-tls

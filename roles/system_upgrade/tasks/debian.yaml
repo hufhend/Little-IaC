@@ -1,20 +1,19 @@
 ---
-- name: Check repositories
+- name: Fix broken dependencies
   ansible.builtin.command: apt --fix-broken install --yes
 
 - name: Repair and configure packages
-  ansible.builtin.command: sudo dpkg --configure -a
+  ansible.builtin.command: dpkg --configure -a
 
-- name: Update repositories
+- name: Update apt cache
   ansible.builtin.apt:
-    state: fixed
-    update_cache: true
+    update_cache: yes
+    cache_valid_time: 3600
 
-- name: System upgrade
+- name: Upgrade all packages to latest versions
   ansible.builtin.apt:
-    name: "*"
-    state: latest
-    autoremove: true
+    upgrade: dist
+    autoremove: yes
 
 - name: Install useful packages
   ansible.builtin.apt:

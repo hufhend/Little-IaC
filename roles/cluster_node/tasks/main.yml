@@ -1,4 +1,9 @@
 ---
+- name: Install smart cluster packages
+  ansible.builtin.apt:
+    pkg:
+    - cryptsetup
+
 - name: Set up Ubuntu as a node in a Kubernetes cluster
   block:
   # Human over cluster, Kubernetes can handle it
@@ -59,32 +64,33 @@
       enabled: true
     when: server != True
 
-  # high availability via keepalived
-  - name: Install keepalived service
-    ansible.builtin.apt:
-      name: keepalived
-      state: present
+  - block:
+      # high availability via keepalived
+      - name: Install keepalived service
+        ansible.builtin.apt:
+          name: keepalived
+          state: present
 
-  - name: Add keepalived config
-    ansible.builtin.template:
-      src: templates/keepalived.j2
-      dest: "/etc/keepalived/keepalived.conf"
-      owner: root
-      group: root
-      mode: '0644'
+      - name: Add keepalived config
+        ansible.builtin.template:
+          src: templates/keepalived.j2
+          dest: "/etc/keepalived/keepalived.conf"
+          owner: root
+          group: root
+          mode: '0644'
 
-  - name: Disable service keepalived
-    ansible.builtin.systemd:
-      name: keepalived
-      enabled: false
-    when: not keepalived|default(false)
-    ignore_errors: true
+      - name: Enable service keepalived
+        ansible.builtin.systemd:
+          name: keepalived
+          enabled: true
+          state: started
+        ignore_errors: true
 
-  - name: Reload keepalived
-    ansible.builtin.systemd:
-      name: keepalived.service
-      state: reloaded
-    when: not keepalived|default(false)
+      - name: Reload keepalived
+        ansible.builtin.systemd:
+          name: keepalived.service
+          state: reloaded
+    when: keepalived != false
   
   # OrangePi can also have enough memory, if they do, we will put it on zram
   - block:
@@ -108,7 +114,6 @@
         debug:
           msg: "RAM is only {{ ram_mb }} MB, SIZE in /etc/default/armbian-ramlog remains unchanged."
         when: ram_mb | int < 3072
-    when: orange | default(false)
+    when: orangepi is defined and orangepi == true
 
   when: role in ['combi', 'master', 'worker']
-

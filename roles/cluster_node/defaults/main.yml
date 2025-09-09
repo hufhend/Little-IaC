@@ -19,8 +19,8 @@ ing_auth_pass: 1234
 ingress_ip: 192.168.88.254 
 # Set priority, lower will be next in order
 ing_priority: 150
-# Keepalived service is disabled by default
-keepalived: false
+# The keepalived service is enabled by default
+keepalived: choose
 
 # Usually a cluster node is not a destop or server
 desktop: false

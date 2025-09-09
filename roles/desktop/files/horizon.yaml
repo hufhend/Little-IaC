@@ -1,0 +1,33 @@
+---
+# This isn't nice at all, but they don't provide a repository.
+- name: Install VMware Horizon Client
+  vars:
+    horizon_client_url: "https://download3.omnissa.com/software/CART26FQ2_LIN64_DEBPKG_2506/Omnissa-Horizon-Client-2506-8.16.0-16536624989.x64.deb"
+    horizon_client_deb: "/tmp/VMware-Horizon-Client.deb"
+
+  block:
+    - name: Download VMware Horizon Client
+      ansible.builtin.get_url:
+        url: "{{ horizon_client_url }}"
+        dest: "{{ horizon_client_deb }}"
+        mode: '0644'
+
+    - name: Install VMware Horizon Client
+      ansible.builtin.apt:
+        deb: "{{ horizon_client_deb }}"
+        state: present
+      register: install_result
+      ignore_errors: yes
+
+    - name: Fix dependencies if needed
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: dist
+      when: install_result is failed
+
+    - name: Retry install if initial install failed
+      ansible.builtin.apt:
+        deb: "{{ horizon_client_deb }}"
+        state: present
+      when: install_result is failed
+  when: horizon == True

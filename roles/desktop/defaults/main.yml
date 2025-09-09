@@ -37,3 +37,4 @@ edge: false
 ansible: false
 rocketchat: false
 stremio: false
+horizon: false

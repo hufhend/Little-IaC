@@ -1,18 +1,21 @@
 ---
 # This isn't nice at all, but they don't provide a repository.
-- name: Install VMware Horizon Client
-  vars:
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "horizon"
+    app_name: "VMware Horizon Client"
     horizon_client_url: "https://download3.omnissa.com/software/CART26FQ2_LIN64_DEBPKG_2506/Omnissa-Horizon-Client-2506-8.16.0-16536624989.x64.deb"
     horizon_client_deb: "/tmp/VMware-Horizon-Client.deb"
 
+- name: Install {{ app_name }}
   block:
-    - name: Download VMware Horizon Client
+    - name: Download {{ app_name }}
       ansible.builtin.get_url:
         url: "{{ horizon_client_url }}"
         dest: "{{ horizon_client_deb }}"
         mode: '0644'
 
-    - name: Install VMware Horizon Client
+    - name: Install {{ app_name }}
       ansible.builtin.apt:
         deb: "{{ horizon_client_deb }}"
         state: present

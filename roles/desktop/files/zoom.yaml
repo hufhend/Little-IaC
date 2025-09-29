@@ -1,17 +1,45 @@
 ---
 # Zoom video conferencing
+# This isn't nice at all, but they don't provide a repository
 - name: Package Variable Setting
   ansible.builtin.set_fact:
     app: "zoom"
     app_name: "Zoom Meetings"
+    zoom_deb_url: "https://zoom.us/client/latest/zoom_amd64.deb"
+    zoom_deb_path: "/tmp/zoom_amd64.deb"
 
-- name: Uninstall {{ app_name }} deb package
-  ansible.builtin.apt:
-    pkg: zoom
+- name: Unistall {{ app_name }} snap
+  community.general.snap:
+    name: zoom-client
     state: absent
 
 - name: Install {{ app_name }}
-  community.general.snap:
-    name: zoom-client
-    channel: latest/edge
+  block:
+    - name: Download {{ app_name }}
+      ansible.builtin.get_url:
+        url: "{{ zoom_deb_url }}"
+        dest: "{{ zoom_deb_path }}"
+        mode: '0644'
+
+    - name: Install {{ app_name }}
+      ansible.builtin.apt:
+        deb: "{{ zoom_deb_path }}"
+        state: present
+      register: install_result
+      ignore_errors: yes
+
+    - name: Fix dependencies if needed
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: dist
+      when: install_result is failed
+
+    - name: Retry install if initial install failed
+      ansible.builtin.apt:
+        deb: "{{ zoom_deb_path }}"
+        state: present
+      when: install_result is failed
   when: zoom == True
+
+# The change from snap installation was necessary because Zoom snap did not work 
+# properly during automatic installation.

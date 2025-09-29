@@ -12,10 +12,11 @@
     name: prometheus
     description: Prometheus repo
     baseurl: https://packagecloud.io/prometheus-rpm/release/el/$releasever/$basearch
-    gpgcheck: no
+    gpgcheck: yes
     enabled: yes
-    gpgkey: https://packagecloud.io/prometheus-rpm/release/gpgkey
-            https://raw.githubusercontent.com/lest/prometheus-rpm/master/RPM-GPG-KEY-prometheus-rpm
+    gpgkey: 
+      - https://packagecloud.io/prometheus-rpm/release/gpgkey
+      - https://raw.githubusercontent.com/lest/prometheus-rpm/master/RPM-GPG-KEY-prometheus-rpm
 
 # # FAILED! => {"changed": false, "msg": "dnf repolist parse failure: parsed another repo id before next status"}
 # - name: Ensure the crb repository is enabled
@@ -45,14 +46,14 @@
     - ansible_distribution == "Rocky"
     - ansible_distribution_major_version == "9"
 
-# - name: Install epel packages to RedHat
-#   ansible.builtin.dnf:
-#     name:
-#       - epel-release-latest-9.noarch.rpm
-#     state: latest
-#   when: 
-#     - ansible_distribution == "RedHat" 
-#     - ansible_distribution_major_version == "9"
+- name: Install epel packages to RedHat
+  ansible.builtin.dnf:
+    name:
+      - https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
+    state: latest
+  when: 
+    - ansible_distribution == "RedHat" 
+    - ansible_distribution_major_version == "10"
 
 - name: Enable CodeReady Builder repository
   rhsm_repository:
@@ -78,7 +79,8 @@
       - langpacks-en
       - langpacks-cs
       - glibc-all-langpacks
-      - node_exporter
+      - bash-completion
+      # - node_exporter
     state: latest
   
 - name: Start the fail2ban service

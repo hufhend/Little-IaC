@@ -46,7 +46,7 @@
     - ansible_distribution == "Rocky"
     - ansible_distribution_major_version == "9"
 
-- name: Install epel packages to RedHat
+- name: Install EPEL packages to RedHat
   ansible.builtin.dnf:
     name:
       - https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
@@ -86,5 +86,11 @@
 - name: Start the fail2ban service
   ansible.builtin.systemd:
     name: fail2ban
+    state: started
+    enabled: true
+
+- name: Start the sysstat service
+  ansible.builtin.systemd:
+    name: sysstat
     state: started
     enabled: true

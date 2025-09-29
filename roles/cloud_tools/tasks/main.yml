@@ -39,6 +39,6 @@
     when: binenv_stat.stat.exists
 
   # All conditions need to be met at once
-  when:
-    - ansible_distribution == "Ubuntu"
-    - ansible_distribution_release == "jammy" or ansible_distribution_release == "noble"
+  # when:
+  #   - ansible_distribution == "Ubuntu"
+  #   - ansible_distribution_release == "jammy" or ansible_distribution_release == "noble"

@@ -1,0 +1,57 @@
+---
+# Install OpenShift CLI
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "oc"
+    app_name: "OpenShift CLI"
+    app_dir: "/usr/local/bin"
+
+- name: Install {{ app_name }}
+  block:
+  - name: Download OpenShift CLI archive
+    ansible.builtin.get_url:
+      url: https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
+      dest: /tmp/oc.tar.gz
+      mode: '0644'
+
+  - name: Extract {{ app_name }} archive
+    ansible.builtin.unarchive:
+      src: /tmp/oc.tar.gz
+      dest: /tmp/
+      remote_src: yes
+
+  - name: Move {{ app }} binary to {{ app_dir }}
+    ansible.builtin.copy:
+      src: /tmp/oc
+      dest: "{{ app_dir }}/oc"
+      mode: '0755'
+      remote_src: yes
+
+  - name: Check if completion script exists
+    stat:
+      path: "/etc/bash_completion.d/{{ app }}"
+    register: completion_script_stat
+
+  - name: Generate completion script
+    command: "{{ app_dir }}/{{ app }} completion bash"
+    register: completion_script
+    changed_when: false
+    when: not completion_script_stat.stat.exists
+
+  - name: Save completion script
+    copy:
+      content: "{{ completion_script.stdout }}"
+      dest: "/etc/bash_completion.d/{{ app }}"
+      mode: "0644"
+    when: not completion_script_stat.stat.exists
+
+  - name: Verify {{ app_name }} version
+    ansible.builtin.command: "{{ app_dir }}/oc version"
+    register: oc_version_output
+    changed_when: false
+
+  - name: Show {{ app_name }} version
+    ansible.builtin.debug:
+      msg: "{{ oc_version_output.stdout }}"
+
+  when: oc and (binenv | default(false))

@@ -14,7 +14,8 @@ kubectx: false
 saml2aws: false
 trivy: false
 k9s: false
+oc: false
 
 # only if you're sure what you're doing
 kubeadm: false
-k8s_version: "1.31"
+k8s_version: "1.32"

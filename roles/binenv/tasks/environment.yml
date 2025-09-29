@@ -4,8 +4,9 @@
     regexp: '^BINENV_GLOBAL='
     line: BINENV_GLOBAL=true
 
-- name: Installs completion in /etc/bash.bashrc
+- name: Installs completion for binenv
   ansible.builtin.lineinfile:
-    path: /etc/bash.bashrc
+    path: /etc/bash_completion.d/binenv
     regexp: 'binenv completion bash'
     line: "source <(binenv completion bash)"
+    create: true

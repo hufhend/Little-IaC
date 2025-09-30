@@ -1,6 +1,37 @@
 ---
 - name: Installation and setup of cloud management utilities
   block:
+  - name: Install cloud tools packages
+    ansible.builtin.package:
+      name:
+        - gh
+        - git
+        - make
+        - sshpass
+        - tcpdump
+        - telnet
+        - wget
+        - yq
+      state: latest
+
+  - name: Install cloud tools packages for RedHat
+    ansible.builtin.dnf:
+      name:
+        # - ansible
+        - git-subtree
+        - trivy
+      state: latest
+    when: ansible_distribution == "RedHat" or ansible_distribution == "CentOS" or ansible_distribution == "Rocky"
+
+  - name: Install cloud tools packages for Ubuntu
+    ansible.builtin.apt:
+      name:
+        - cephadm
+        - ncat
+        - nmap
+      state: latest
+    when: ansible_distribution == "Ubuntu"
+
   - name: Create a install directory
     ansible.builtin.file:
       path: /home/{{ user_ansible }}/install
@@ -37,8 +68,3 @@
       command: /usr/local/bin/binenv upgrade
 
     when: binenv_stat.stat.exists
-
-  # All conditions need to be met at once
-  # when:
-  #   - ansible_distribution == "Ubuntu"
-  #   - ansible_distribution_release == "jammy" or ansible_distribution_release == "noble"

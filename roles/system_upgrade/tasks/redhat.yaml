@@ -46,6 +46,11 @@
     - ansible_distribution == "Rocky"
     - ansible_distribution_major_version == "9"
 
+- name: Import EPEL GPG key
+  ansible.builtin.rpm_key:
+    state: present
+    key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10
+    
 - name: Install EPEL packages to RedHat
   ansible.builtin.dnf:
     name:
@@ -54,6 +59,17 @@
   when: 
     - ansible_distribution == "RedHat" 
     - ansible_distribution_major_version == "10"
+
+# - name: Enable RHSM repository management
+#   ansible.builtin.command: subscription-manager config --rhsm.manage_repos=1
+
+# - name: Enable Ansible Core repository
+#   rhsm_repository:
+#     name: ansible-core-for-rhel-10-x86_64-rpms
+#     state: enabled
+#   when:
+#     - ansible_distribution == "RedHat" 
+#     - ansible_distribution_major_version == "10"
 
 - name: Enable CodeReady Builder repository
   rhsm_repository:

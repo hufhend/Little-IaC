@@ -41,5 +41,6 @@
   - name: Show {{ app_name }} version
     debug:
       msg: "{{ install_result.stdout | from_json }}"
+    ignore_errors: true
 
   when: argocd and (binenv | default(false))

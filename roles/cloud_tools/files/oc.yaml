@@ -54,4 +54,4 @@
     ansible.builtin.debug:
       msg: "{{ oc_version_output.stdout }}"
 
-  when: oc and (binenv | default(false))
+  when: oc == True

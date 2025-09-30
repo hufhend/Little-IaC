@@ -26,7 +26,23 @@
         name: kubectl
         state: present
         allow_downgrade: yes
-    when: (role == 'worker') or (kubectl == True)
+    when: ((role == 'worker') or (kubectl == True)) and (ansible_distribution == "Ubuntu") and (ansible_distribution_release == "jammy" or ansible_distribution_release == "noble")
+
+  - name: Install {{ app_name}}
+    block:
+    - name: Install {{ app_name }} for RedHat
+      command: "{{ app_dir }}/binenv install {{ app }}"
+    when: 
+      - ansible_distribution == "RedHat"
+      - binenv | default(false)
+
+  - name: Create link to {{ app_name }}
+    ansible.builtin.file:
+      src: /usr/local/bin/kubectl
+      dest: /usr/bin/kubectl
+      state: link
+    when: role == 'master' or role == 'combi' or ansible_distribution == "RedHat"
+    ignore_errors: true
 
   - name: Check if completion script exists
     stat:
@@ -45,14 +61,6 @@
       dest: "/etc/bash_completion.d/{{ app }}"
       mode: "0644"
     when: not completion_script_stat.stat.exists
-
-  - name: Create link to {{ app_name }}
-    ansible.builtin.file:
-      src: /usr/local/bin/kubectl
-      dest: /usr/bin/kubectl
-      state: link
-    when: role == 'master' or role == 'combi'
-    ignore_errors: true
 
   - name: Add alias for {{ app_name }}
     ansible.builtin.lineinfile:

@@ -15,6 +15,7 @@ saml2aws: false
 trivy: false
 k9s: false
 oc: false
+age: false
 
 # only if you're sure what you're doing
 kubeadm: false

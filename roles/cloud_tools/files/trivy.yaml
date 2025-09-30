@@ -53,4 +53,6 @@
     debug:
       msg: "{{ install_result.stdout.split('\n') }}"
 
-  when: trivy == True
+  when: 
+    - trivy == True
+    - ansible_distribution == "Ubuntu"

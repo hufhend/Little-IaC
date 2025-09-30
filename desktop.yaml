@@ -25,5 +25,5 @@
     - role: firewall
     - role: desktop
     - role: crontab
-    - role: cloud_tools
     - role: binenv
+    - role: cloud_tools

@@ -1,83 +1,119 @@
 ---
+- name: Clean DNF cache and lock files
+  ansible.builtin.command:
+    cmd: dnf clean all
+
+- name: Remove YUM/DNF cache metadata
+  ansible.builtin.file:
+    path: /var/cache/dnf
+    state: absent
+  
+- name: Remove DNF lock files
+  ansible.builtin.file:
+    path: /var/run/dnf.pid
+    state: absent
+  
+- name: Stop dnf-makecache timer
+  ansible.builtin.systemd:
+    name: dnf-makecache.timer
+    state: stopped
+  
+- name: Stop dnf-makecache service
+  ansible.builtin.systemd:
+    name: dnf-makecache.service
+    state: stopped
+  
 - name: Check repositories
   ansible.builtin.command: dnf makecache
-
+  
 - name: Update repositories
   ansible.builtin.dnf:
     name: "*"
     state: latest
 
-- name: Add Prometheus repository
-  ansible.builtin.yum_repository:
-    name: prometheus
-    description: Prometheus repo
-    baseurl: https://packagecloud.io/prometheus-rpm/release/el/$releasever/$basearch
-    gpgcheck: yes
-    enabled: yes
-    gpgkey: 
-      - https://packagecloud.io/prometheus-rpm/release/gpgkey
-      - https://raw.githubusercontent.com/lest/prometheus-rpm/master/RPM-GPG-KEY-prometheus-rpm
+- name: Start dnf-makecache service
+  ansible.builtin.systemd:
+    name: dnf-makecache.service
+    state: started
 
-# # FAILED! => {"changed": false, "msg": "dnf repolist parse failure: parsed another repo id before next status"}
-# - name: Ensure the crb repository is enabled
-#   community.general.dnf_config_manager:
-#     name: crb
-#     state: enabled
-#   when:
-#     - ansible_distribution == "Rocky"
-#     - ansible_distribution_major_version == "9"
+- name: Start dnf-makecache timer
+  ansible.builtin.systemd:
+    name: dnf-makecache.timer
+    state: started
 
-- name: Install epel packages
-  ansible.builtin.dnf:
-    name:
-      - epel-release
-      # - epel-next-release
-    state: latest
+# - name: Add Prometheus repository
+#   ansible.builtin.yum_repository:
+#     name: prometheus
+#     description: Prometheus repo
+#     baseurl: https://packagecloud.io/prometheus-rpm/release/el/$releasever/$basearch
+#     gpgcheck: yes
+#     enabled: yes
+#     gpgkey: 
+#       - https://packagecloud.io/prometheus-rpm/release/gpgkey
+#       - https://raw.githubusercontent.com/lest/prometheus-rpm/master/RPM-GPG-KEY-prometheus-rpm
+
+
+- name: Enable EPEL repository for RedHat 9
+  block:
+    - name: Enable subscription-manager
+      ansible.builtin.command:
+        cmd: subscription-manager config --rhsm.manage_repos=1
+
+    - name: Get architecture
+      ansible.builtin.command: uname -m
+      register: architecture
+
+    - name: Enable CodeReady Builder repository
+      rhsm_repository:
+        name: codeready-builder-for-rhel-9-{{ architecture.stdout }}-rpms
+        state: enabled
+
+    - name: Import EPEL GPG key
+      ansible.builtin.rpm_key:
+        state: present
+        key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9
+        
+    - name: Install EPEL to RedHat
+      ansible.builtin.dnf:
+        name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+        state: latest
+
+    - name: Refresh the repo cache
+      ansible.builtin.dnf:
+        update_cache: yes
+
+    - name: Verify EPEL repo is enabled
+      ansible.builtin.command:
+        cmd: yum repolist enabled | grep epel
+      register: epel_repo_check
+      changed_when: false
+
+    - name: Debug EPEL repo check result
+      ansible.builtin.debug:
+        var: epel_repo_check.stdout
+  when:
+    - ansible_distribution == "RedHat"
+    - ansible_distribution_major_version == "9"
+
+
+- name: Install EPEL packages for CentOS 9 and Rocky 9
+  block:
+    - name: Install EPEL packages to CentOS and Rocky
+      ansible.builtin.dnf:
+        name:
+          - epel-release
+          # - epel-next-release
+        state: latest
+
+    - name: Install subscription-manager
+      ansible.builtin.dnf:
+        name:
+          - subscription-manager
+        state: latest
   when: 
     - ansible_distribution == "CentOS" or ansible_distribution == "Rocky"
     - ansible_distribution_major_version == "9"
 
-- name: Install subscription-manager
-  ansible.builtin.dnf:
-    name:
-      - subscription-manager
-    state: latest
-  when: 
-    - ansible_distribution == "Rocky"
-    - ansible_distribution_major_version == "9"
-
-- name: Import EPEL GPG key
-  ansible.builtin.rpm_key:
-    state: present
-    key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-10
-    
-- name: Install EPEL packages to RedHat
-  ansible.builtin.dnf:
-    name:
-      - https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.noarch.rpm
-    state: latest
-  when: 
-    - ansible_distribution == "RedHat" 
-    - ansible_distribution_major_version == "10"
-
-# - name: Enable RHSM repository management
-#   ansible.builtin.command: subscription-manager config --rhsm.manage_repos=1
-
-# - name: Enable Ansible Core repository
-#   rhsm_repository:
-#     name: ansible-core-for-rhel-10-x86_64-rpms
-#     state: enabled
-#   when:
-#     - ansible_distribution == "RedHat" 
-#     - ansible_distribution_major_version == "10"
-
-- name: Enable CodeReady Builder repository
-  rhsm_repository:
-    name: codeready-builder-for-rhel-9-x86_64-rpms
-    state: enabled
-  when:
-    - ansible_distribution == "RedHat" 
-    - ansible_distribution_major_version == "9"
 
 - name: Install useful packages
   ansible.builtin.dnf:

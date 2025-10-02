@@ -101,5 +101,6 @@
   - name: Show {{ app_name }} version
     debug:
       msg: "{{ install_result.stdout | from_json }}"
+    ignore_errors: true
 
   when: (role in ['combi', 'master', 'worker']) or (kubectl == True)

@@ -1,0 +1,73 @@
+---
+- name: Install Docker - containers for applications
+  block:
+  - name: Uninstall any conflicting packages
+    ansible.builtin.dnf:
+      pkg:
+        - docker
+        - docker-client
+        - docker-client-latest
+        - docker-common
+        - docker-latest
+        - docker-latest-logrotate
+        - docker-logrotate
+        - docker-engine
+        - podman
+        - runc
+      state: absent
+      update_cache: true
+
+  - name: Install dnf-plugins-core package
+    ansible.builtin.dnf:
+      name: dnf-plugins-core
+      state: present
+
+  - name: Add Docker CE repository using yum_repository
+    ansible.builtin.yum_repository:
+      name: docker-ce
+      description: Docker CE Stable
+      baseurl: https://download.docker.com/linux/rhel/{{ ansible_distribution_major_version }}/x86_64/stable
+      gpgcheck: yes
+      gpgkey: https://download.docker.com/linux/rhel/gpg
+      enabled: yes
+      state: present
+
+  - name: Install Docker
+    ansible.builtin.dnf:
+      pkg:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+        - docker-compose-plugin
+        - docker-buildx-plugin
+      state: latest
+      update_cache: true
+
+  - name: Enable Docker service
+    ansible.builtin.systemd:
+      name: docker
+      enabled: yes
+      state: started
+
+  - name: Check if user is in docker group
+    ansible.builtin.command: id -nG {{ ansible_user }}
+    register: user_groups
+    changed_when: false
+
+  - name: Add current user to docker group
+    ansible.builtin.user:
+      name: "{{ docker_user }}"
+      groups: docker
+      append: yes
+
+  # Restart only on first pass
+  - name: Reboot the system
+    ansible.builtin.reboot:
+      msg: "Reboot initiated by Ansible for Docker installation"
+      reboot_timeout: 600
+    when: "'docker' not in user_groups.stdout.split()"
+
+  when: 
+    - role not in ['combi', 'master', 'worker']
+    - ansible_os_family | lower == "redhat"
+    - ansible_distribution_major_version == 9

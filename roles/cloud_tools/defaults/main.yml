@@ -16,6 +16,7 @@ trivy: false
 k9s: false
 oc: false
 age: false
+sops: false
 
 # only if you're sure what you're doing
 kubeadm: false

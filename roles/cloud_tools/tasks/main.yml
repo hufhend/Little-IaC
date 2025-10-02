@@ -17,8 +17,9 @@
   - name: Install cloud tools packages for RedHat
     ansible.builtin.dnf:
       name:
-        # - ansible
+        - ansible-core
         - git-subtree
+        - go
         - trivy
       state: latest
     when: ansible_distribution == "RedHat" or ansible_distribution == "CentOS" or ansible_distribution == "Rocky"

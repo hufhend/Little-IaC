@@ -8,7 +8,7 @@
 
 - name: Install {{ app_name }}
   block:
-  - name: Install {{ app }}
+  - name: Install {{ app_name }}
     command: "{{ app_dir }}/binenv install {{ app }}"
     args:
       creates: "{{ app_dir }}/{{ app }}"  
@@ -18,14 +18,14 @@
     args:
       creates: "{{ app_dir }}/{{ app }}-keygen"  
 
-  - name: Check {{ app }} version
+  - name: Check {{ app_name }} version
     command: "{{ app_dir }}/{{ app }} --version"
     register: "install_result"
     changed_when: false
     become_user: "{{ ansible_user }}"
     ignore_errors: true
 
-  - name: Show {{ app }} version
+  - name: Show {{ app_name }} version
     debug:
       msg: "{{ install_result.stdout }}"
     ignore_errors: true

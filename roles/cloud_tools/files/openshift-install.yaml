@@ -6,18 +6,19 @@
     app_name: "OpenShift installer"
     app_dir: "/usr/local/bin"
     install_dir: "/home/{{ user_ansible }}/install"
+    version: "4.19.13"
 
 - name: Install {{ app_name }}
   block:
   - name: Download openshift-install archive
     ansible.builtin.get_url:
-      url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-install-linux.tar.gz
-      dest: "{{ install_dir }}/openshift-install-linux.tar.gz"
+      url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-install-linux-{{ version }}.tar.gz
+      dest: "{{ install_dir }}/openshift-install-linux-{{ version }}.tar.gz"
       mode: '0644'
 
   - name: Extract {{ app_name }} archive
     ansible.builtin.unarchive:
-      src: "{{ install_dir }}/openshift-install-linux.tar.gz"
+      src: "{{ install_dir }}/openshift-install-linux-{{ version }}.tar.gz"
       dest: "{{ install_dir }}"
       remote_src: yes
 

@@ -70,4 +70,4 @@
   when: 
     - role not in ['combi', 'master', 'worker']
     - ansible_os_family | lower == "redhat"
-    - ansible_distribution_major_version == 9
+    - ansible_distribution_major_version == "9"

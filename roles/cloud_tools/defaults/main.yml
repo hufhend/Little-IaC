@@ -18,6 +18,7 @@ oc: false
 age: false
 sops: false
 ocpinstall: false
+ocmirror: false
 
 # only if you're sure what you're doing
 kubeadm: false

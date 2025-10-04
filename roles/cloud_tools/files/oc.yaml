@@ -5,28 +5,68 @@
     app: "oc"
     app_name: "OpenShift CLI"
     app_dir: "/usr/local/bin"
+    install_dir: "/home/{{ user_ansible }}/install"
+    version: "4.19.13"
 
+# Download and verification steps
+- name: Download {{ app_name }} checksum
+  ansible.builtin.get_url:
+    url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/sha256sum.txt
+    dest: "{{ install_dir }}/sha256sum.txt"
+    mode: '0644'
+    force: yes
+
+- name: Download SHA256 signature file
+  ansible.builtin.get_url:
+    url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/sha256sum.txt.gpg
+    dest: "{{ install_dir }}/sha256sum.txt.gpg"
+    mode: '0644'
+    force: yes
+
+- name: Download GPG public key
+  ansible.builtin.command:
+    cmd: gpg --recv-keys 199E2F91FD431D51
+
+- name: Verify GPG signature 
+  ansible.builtin.command:
+    cmd: gpg --verify {{ install_dir }}/sha256sum.txt.gpg
+  register: gpg_verify_result
+  failed_when: gpg_verify_result.rc != 0    
+
+- name: Download {{ app_name}} archive
+  ansible.builtin.get_url:
+    url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-client-linux-{{ version }}.tar.gz
+    dest: "{{ install_dir }}/openshift-client-linux-{{ version }}.tar.gz"
+    mode: '0644'
+
+- name: Verify checksum of {{ app_name }} 
+  ansible.builtin.command:
+    cmd: sha256sum -c {{ install_dir }}/sha256sum.txt --ignore-missing
+    chdir: "{{ install_dir }}"
+  register: checksum_result
+  failed_when: "'FAILED' in checksum_result.stdout"
+
+- name: Show checksum verification
+  ansible.builtin.debug:
+    msg: "{{ checksum_result.stdout_lines | select('search', 'openshift-client-linux' ) | list }}"
+
+# Manual installation of a binary application
 - name: Install {{ app_name }}
   block:
-  - name: Download OpenShift CLI archive
-    ansible.builtin.get_url:
-      url: https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
-      dest: /tmp/oc.tar.gz
-      mode: '0644'
-
   - name: Extract {{ app_name }} archive
     ansible.builtin.unarchive:
-      src: /tmp/oc.tar.gz
-      dest: /tmp/
+      src: "{{ install_dir }}/openshift-client-linux-{{ version }}.tar.gz"
+      dest: "{{ install_dir }}"
       remote_src: yes
 
-  - name: Move {{ app }} binary to {{ app_dir }}
+  - name: Move {{ app }} to local bin
     ansible.builtin.copy:
-      src: /tmp/oc
+      src: "{{ install_dir }}/oc"
       dest: "{{ app_dir }}/oc"
       mode: '0755'
       remote_src: yes
 
+  # Completion script tasks
   - name: Check if completion script exists
     stat:
       path: "/etc/bash_completion.d/{{ app }}"
@@ -45,8 +85,9 @@
       mode: "0644"
     when: not completion_script_stat.stat.exists
 
+  # Show installed version
   - name: Verify {{ app_name }} version
-    ansible.builtin.command: "{{ app_dir }}/oc version"
+    ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
     register: oc_version_output
     changed_when: false
 

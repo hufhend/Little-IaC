@@ -14,12 +14,13 @@
         - yq
       state: latest
 
-  - name: Install cloud tools packages for RedHat
+  - name: Install cloud tools for RedHat
     ansible.builtin.dnf:
       name:
         - ansible-core
         - git-subtree
         - go
+        - nmap-ncat
         - trivy
       state: latest
     when: ansible_distribution == "RedHat" or ansible_distribution == "CentOS" or ansible_distribution == "Rocky"

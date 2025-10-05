@@ -1,0 +1,44 @@
+# Tracking container vulnerabilities with Clair Control
+# Analyze your docker image with Clair, directly from your registry or local images
+---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "clairctl"
+    app_name: "Clairctl"
+    app_dir: "/usr/local/bin"
+
+# Download and verification steps
+- name: Detect platform
+  ansible.builtin.set_fact:
+    platform: "{{ ansible_system | lower }}"
+
+- name: Detect architecture
+  ansible.builtin.set_fact:
+    arch: "{{ 'amd64' if '64' in ansible_architecture else '386' }}"
+
+- name: Show detected platform
+  ansible.builtin.debug:
+    msg:
+      - "Platform: {{ platform }}"
+      - "Architecture: {{ arch }}"
+
+# Manual installation of a binary application
+- name: Install {{ app_name }}
+  block:
+    - name: Download {{ app_name }} binary
+      ansible.builtin.get_url:
+        url: "https://s3.amazonaws.com/clairctl/latest/clairctl-{{ platform }}-{{ arch }}"
+        dest: "{{ app_dir }}/{{ app }}"
+        mode: '0755'
+
+    # Show installed version
+    - name: Verify {{ app_name }} version
+      ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+      register: oc_version_output
+      changed_when: false
+
+    - name: Show {{ app_name }} version
+      ansible.builtin.debug:
+        var: oc_version_output.stdout
+
+  when: clairctl == True

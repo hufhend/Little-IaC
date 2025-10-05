@@ -20,6 +20,7 @@ sops: false
 ocpinstall: false
 ocmirror: false
 kustomize: false
+clairctl: false
 
 # only if you're sure what you're doing
 kubeadm: false

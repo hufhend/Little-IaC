@@ -50,6 +50,31 @@
   ansible.builtin.debug:
     msg: "{{ checksum_result.stdout_lines | select('search', 'openshift-client-linux' ) | list }}"
 
+- name: Download OpenShift release
+  ansible.builtin.get_url:
+    url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/release.txt
+    dest: "{{ install_dir }}/release.txt"
+    mode: '0644'
+
+- name: Read downloaded content
+  ansible.builtin.slurp:
+    src: "{{ install_dir }}/release.txt"
+  register: openshift_file_content
+
+- name: Convert file content to string
+  set_fact:
+    openshift_text: "{{ openshift_file_content.content | b64decode }}"
+
+- name: Extract version number
+  set_fact:
+    openshift_version: "{{ (openshift_text | regex_findall('Version:\\s*(\\d+\\.\\d+\\.\\d+)') | first) | default('unknown') }}"
+
+- name: Show OpenShift version
+  ansible.builtin.debug:
+    msg:
+      - "Latest OpenShift client version is: {{ openshift_version }}"
+      - "The currently installed version is: {{ version }}"
+
 # Manual installation of a binary application
 - name: Install {{ app_name }}
   block:

@@ -84,7 +84,7 @@
 
     - name: Verify EPEL repo is enabled
       ansible.builtin.command:
-        cmd: yum repolist enabled | grep epel
+        cmd: yum repolist enabled | grep "epel"
       register: epel_repo_check
       changed_when: false
 

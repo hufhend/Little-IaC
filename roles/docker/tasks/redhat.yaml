@@ -22,7 +22,7 @@
       name: dnf-plugins-core
       state: present
 
-  - name: Add Docker CE repository using yum_repository
+  - name: Add Docker CE repository
     ansible.builtin.yum_repository:
       name: docker-ce
       description: Docker CE Stable

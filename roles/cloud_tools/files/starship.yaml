@@ -41,4 +41,37 @@
     debug:
       msg: "{{ install_result.stdout.split('\n') }}"
 
+  # Enable starship in bashrc for user and skeleton
+  - name: Add {{ app_name }} config to .bashrc
+    ansible.builtin.lineinfile:
+      path: /home/{{ user_ansible }}/.bashrc
+      line: 'export STARSHIP_CONFIG=~/.config/starship.toml'
+      insertafter: EOF
+      create: yes
+      state: present
+
+  - name: Add {{ app_name }} init to .bashrc
+    ansible.builtin.lineinfile:
+      path: /home/{{ user_ansible }}/.bashrc
+      line: 'eval "$(starship init bash)"'
+      insertafter: EOF
+      create: yes
+      state: present
+
+  - name: Add {{ app_name }} config to skeleton
+    ansible.builtin.lineinfile:
+      path: /etc/skel/.bashrc
+      line: 'export STARSHIP_CONFIG=~/.config/starship.toml'
+      insertafter: EOF
+      create: yes
+      state: present
+
+  - name: Add {{ app_name }} init to skeleton
+    ansible.builtin.lineinfile:
+      path: /etc/skel/.bashrc
+      line: 'eval "$(starship init bash)"'
+      insertafter: EOF
+      create: yes
+      state: present
+
   when: starship and (binenv | default(false))

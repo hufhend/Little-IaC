@@ -1,0 +1,69 @@
+# KSOPS is a flexible kustomize plugin for SOPS encrypted resources
+---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "ksops"
+    app_name: "Ksops"
+    version: "latest"
+
+# Download and verification steps
+- name: Install {{ app_name }}
+  block:
+    - name: Install {{ app_name }}
+      set_fact:
+        arch_map:
+          i386: i386
+          i686: i386
+          x86_64: x86_64
+          aarch64: arm64
+          arm64: arm64
+
+    - name: Detect architecture
+      set_fact:
+        arch: "{{ arch_map.get(ansible_architecture, 'unknown') }}"
+
+    - name: Detect platform
+      ansible.builtin.set_fact:
+        platform: "{{ ansible_system | lower }}"
+
+    - name: Show detected platform
+      ansible.builtin.debug:
+        msg:
+        - "Platform: {{ platform }}"
+        - "Architecture: {{ arch }}"
+
+    - name: Download {{ app_name }} archive
+      ansible.builtin.get_url:
+        url: " https://github.com/viaduct-ai/kustomize-sops/releases/{{ version }}/download/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
+        dest: "{{ install_dir }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
+        mode: '0755'
+
+    # Manual installation of a binary application
+    - name: Extract {{ app }} binary  
+      ansible.builtin.unarchive:
+        src: "{{ install_dir }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
+        dest: "{{ install_dir }}"
+        remote_src: yes
+
+    - name: Move {{ app }} to local bin
+      ansible.builtin.copy:
+        src: "{{ install_dir }}/{{ app }}"
+        dest: "{{ app_dir }}/{{ app }}"
+        mode: '0755'
+        owner: root
+        group: root
+        remote_src: yes
+      register: mv_result
+  
+    - name: Success message
+      debug:
+        msg: "Successfully installed ksops"
+      when: not mv_result.failed
+
+    - name: Fail if moving ksops fails
+      fail:
+        msg: "Failed to move ksops to {{ app_dir }}. Maybe you should run this playbook as root."
+      when: mv_result.failed
+  when: 
+    - ksops == True
+    - ansible_distribution == "RedHat"

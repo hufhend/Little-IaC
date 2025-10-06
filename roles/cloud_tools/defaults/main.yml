@@ -21,7 +21,13 @@ ocpinstall: false
 ocmirror: false
 kustomize: false
 clairctl: false
+cephadm: false
+ksops: false
 
 # only if you're sure what you're doing
 kubeadm: false
 k8s_version: "1.32"
+
+# common variables
+app_dir: "/usr/local/bin"
+install_dir: "/home/{{ user_ansible }}/install"

@@ -27,11 +27,11 @@
   ansible.builtin.command:
     cmd: gpg --recv-keys 199E2F91FD431D51
 
-- name: Verify GPG signature 
+- name: Verify GPG signature
   ansible.builtin.command:
     cmd: gpg --verify {{ install_dir }}/sha256sum.txt.gpg
   register: gpg_verify_result
-  failed_when: gpg_verify_result.rc != 0    
+  failed_when: gpg_verify_result.rc != 0
 
 - name: Download openshift-install archive
   ansible.builtin.get_url:
@@ -39,7 +39,7 @@
     dest: "{{ install_dir }}/openshift-install-linux-{{ version }}.tar.gz"
     mode: '0644'
 
-- name: Verify checksum of {{ app_name }} 
+- name: Verify checksum of {{ app_name }}
   ansible.builtin.command:
     cmd: sha256sum -c {{ install_dir }}/sha256sum.txt --ignore-missing
     chdir: "{{ install_dir }}"
@@ -88,11 +88,11 @@
   # Show installed version
   - name: Verify {{ app_name }} version
     ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
-    register: oc_version_output
+    register: install_result
     changed_when: false
 
   - name: Show {{ app_name }} version
     ansible.builtin.debug:
-      msg: "{{ oc_version_output.stdout }}"
+      msg: "{{ install_result.stdout }}"
 
   when: ocpinstall == True

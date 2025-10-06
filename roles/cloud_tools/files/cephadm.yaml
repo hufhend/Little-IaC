@@ -1,0 +1,30 @@
+# Bootstrap Ceph daemons with systemd and containerscephadm
+---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "cephadm"
+    app_name: "Cephadm"
+    version: "19.2.3"
+
+# Manual installation of a binary application
+- name: Install {{ app_name }}
+  block:
+  - name: Download {{ app_name }} binary
+    ansible.builtin.get_url:
+      url: "https://download.ceph.com/rpm-{{ version }}/el9/noarch/cephadm"
+      dest: "{{ app_dir }}/{{ app }}"
+      mode: '0755'
+
+  # Show installed version
+  - name: Verify {{ app_name }} version
+    ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+    register: install_result
+    changed_when: false
+
+  - name: Show {{ app_name }} version
+    ansible.builtin.debug:
+      var: install_result.stdout
+
+  when: 
+    - cephadm == True
+    - ansible_distribution == "RedHat"

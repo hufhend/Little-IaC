@@ -19,26 +19,26 @@
 - name: Show detected platform
   ansible.builtin.debug:
     msg:
-      - "Platform: {{ platform }}"
-      - "Architecture: {{ arch }}"
+    - "Platform: {{ platform }}"
+    - "Architecture: {{ arch }}"
 
 # Manual installation of a binary application
 - name: Install {{ app_name }}
   block:
-    - name: Download {{ app_name }} binary
-      ansible.builtin.get_url:
-        url: "https://s3.amazonaws.com/clairctl/latest/clairctl-{{ platform }}-{{ arch }}"
-        dest: "{{ app_dir }}/{{ app }}"
-        mode: '0755'
+  - name: Download {{ app_name }} binary
+    ansible.builtin.get_url:
+      url: "https://s3.amazonaws.com/clairctl/latest/clairctl-{{ platform }}-{{ arch }}"
+      dest: "{{ app_dir }}/{{ app }}"
+      mode: '0755'
 
-    # Show installed version
-    - name: Verify {{ app_name }} version
-      ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
-      register: oc_version_output
-      changed_when: false
+  # Show installed version
+  - name: Verify {{ app_name }} version
+    ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+    register: install_result
+    changed_when: false
 
-    - name: Show {{ app_name }} version
-      ansible.builtin.debug:
-        var: oc_version_output.stdout
+  - name: Show {{ app_name }} version
+    ansible.builtin.debug:
+      var: install_result.stdout
 
   when: clairctl == True

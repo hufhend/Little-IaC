@@ -7,64 +7,71 @@
   ansible.builtin.set_fact:
     app: "oc-mirror"
     app_name: "OpenShift mirror"
-    app_dir: "/usr/local/bin"
-    install_dir: "/home/{{ user_ansible }}/install"
-    version: "latest"
+    version: "4.19.12"
+    oc_install_dir: "/home/{{ user_ansible }}/install/oc"
 
-# Download and verification steps
-- name: Download {{ app_name }} checksum
-  ansible.builtin.get_url:
-    url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/sha256sum.txt
-    dest: "{{ install_dir }}/sha256sum.txt"
-    mode: '0644'
-    force: yes
-
-- name: Download SHA256 signature file
-  ansible.builtin.get_url:
-    url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/sha256sum.txt.gpg
-    dest: "{{ install_dir }}/sha256sum.txt.gpg"
-    mode: '0644'
-    force: yes
-
-- name: Download GPG public key
-  ansible.builtin.command:
-    cmd: gpg --recv-keys 199E2F91FD431D51
-
-- name: Verify GPG signature
-  ansible.builtin.command:
-    cmd: gpg --verify {{ install_dir }}/sha256sum.txt.gpg
-  register: gpg_verify_result
-  failed_when: gpg_verify_result.rc != 0
-
-- name: Download {{ app_name }}
-  ansible.builtin.get_url:
-    url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/oc-mirror.tar.gz
-    dest: "{{ install_dir }}/oc-mirror.tar.gz"
-    mode: '0644'
-
-- name: Verify checksum of {{ app_name }}
-  ansible.builtin.command:
-    cmd: sha256sum -c {{ install_dir }}/sha256sum.txt --ignore-missing
-    chdir: "{{ install_dir }}"
-  register: checksum_result
-  failed_when: "'FAILED' in checksum_result.stdout"
-
-- name: Show checksum verification
-  ansible.builtin.debug:
-    msg: "{{ checksum_result.stdout_lines | select('search', app) | list }}"
-
-# Manual installation of a binary application
 - name: Install {{ app_name }}
   block:
+
+  # Download and verification steps
+  - name: Create a install directory
+    ansible.builtin.file:
+      path: "{{ oc_install_dir }}"
+      state: directory
+      owner: "{{ ansible_user }}"
+      mode: '0755'
+
+  - name: Download {{ app_name }} checksum
+    ansible.builtin.get_url:
+      url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/{{ version }}/sha256sum.txt
+      dest: "{{ oc_install_dir }}/sha256sum.txt"
+      mode: '0644'
+      force: yes
+
+  - name: Download SHA256 signature file
+    ansible.builtin.get_url:
+      url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/{{ version }}/sha256sum.txt.gpg
+      dest: "{{ oc_install_dir }}/sha256sum.txt.gpg"
+      mode: '0644'
+      force: yes
+
+  - name: Download GPG public key
+    ansible.builtin.command:
+      cmd: gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys 199E2F91FD431D51
+
+  - name: Verify GPG signature
+    ansible.builtin.command:
+      cmd: gpg --verify {{ oc_install_dir }}/sha256sum.txt.gpg
+    register: gpg_verify_result
+    failed_when: gpg_verify_result.rc != 0
+
+  - name: Download {{ app_name }}
+    ansible.builtin.get_url:
+      url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/{{ version }}/oc-mirror.tar.gz
+      dest: "{{ oc_install_dir }}/oc-mirror.tar.gz"
+      mode: '0644'
+
+  - name: Verify checksum of {{ app_name }}
+    ansible.builtin.command:
+      cmd: sha256sum -c {{ oc_install_dir }}/sha256sum.txt --ignore-missing
+      chdir: "{{ oc_install_dir }}"
+    register: checksum_result
+    failed_when: "'FAILED' in checksum_result.stdout"
+
+  - name: Show checksum verification
+    ansible.builtin.debug:
+      msg: "{{ checksum_result.stdout_lines | select('search', app) | list }}"
+
+  # Manual installation
   - name: Extract {{ app_name }} archive
     ansible.builtin.unarchive:
-      src: "{{ install_dir }}/oc-mirror.tar.gz"
-      dest: "{{ install_dir }}"
+      src: "{{ oc_install_dir }}/oc-mirror.tar.gz"
+      dest: "{{ oc_install_dir }}"
       remote_src: yes
 
   - name: Move {{ app }} to local bin
     ansible.builtin.copy:
-      src: "{{ install_dir }}/oc-mirror"
+      src: "{{ oc_install_dir }}/oc-mirror"
       dest: "{{ app_dir }}/oc-mirror"
       mode: '0755'
       remote_src: yes
@@ -98,4 +105,6 @@
     ansible.builtin.debug:
       msg: "{{ install_result.stdout }}"
 
-  when: ocmirror == True
+  when: 
+    - ocmirror == True
+    - ansible_architecture == "x86_64"

@@ -6,9 +6,16 @@
     app_name: "Ksops"
     version: "latest"
 
-# Download and verification steps
 - name: Install {{ app_name }}
   block:
+    # Download and verification steps
+    - name: Create a install directory
+      ansible.builtin.file:
+        path: "{{ ksops_install_dir }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        mode: '0755'
+
     - name: Install {{ app_name }}
       set_fact:
         arch_map:
@@ -35,19 +42,19 @@
     - name: Download {{ app_name }} archive
       ansible.builtin.get_url:
         url: " https://github.com/viaduct-ai/kustomize-sops/releases/{{ version }}/download/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
-        dest: "{{ install_dir }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
+        dest: "{{ ksops_install_dir }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
         mode: '0755'
 
-    # Manual installation of a binary application
+    # Manual installation
     - name: Extract {{ app }} binary  
       ansible.builtin.unarchive:
-        src: "{{ install_dir }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
-        dest: "{{ install_dir }}"
+        src: "{{ ksops_install_dir }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
+        dest: "{{ ksops_install_dir }}"
         remote_src: yes
 
     - name: Move {{ app }} to local bin
       ansible.builtin.copy:
-        src: "{{ install_dir }}/{{ app }}"
+        src: "{{ ksops_install_dir }}/{{ app }}"
         dest: "{{ app_dir }}/{{ app }}"
         mode: '0755'
         owner: root

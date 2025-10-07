@@ -20,6 +20,7 @@
         - ansible-core
         - git-subtree
         - go
+        - java-latest-openjdk
         - nmap-ncat
         - trivy
       state: latest

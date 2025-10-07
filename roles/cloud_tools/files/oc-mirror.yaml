@@ -7,13 +7,11 @@
   ansible.builtin.set_fact:
     app: "oc-mirror"
     app_name: "OpenShift mirror"
-    version: "4.19.12"
-    oc_install_dir: "/home/{{ user_ansible }}/install/oc"
+    version: "4.19.13"
 
 - name: Install {{ app_name }}
   block:
-
-  # Download and verification steps
+  # Download and integrity verification
   - name: Create a install directory
     ansible.builtin.file:
       path: "{{ oc_install_dir }}"

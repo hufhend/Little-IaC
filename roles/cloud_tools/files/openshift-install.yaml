@@ -4,7 +4,7 @@
   ansible.builtin.set_fact:
     app: "openshift-install"
     app_name: "OpenShift installer"
-    version: "4.19.13"
+    version: "4.19.14"
 
 - name: Install {{ app_name }}
   block:
@@ -51,7 +51,13 @@
       cmd: sha256sum -c {{ oc_install_dir }}/sha256sum.txt --ignore-missing
       chdir: "{{ oc_install_dir }}"
     register: checksum_result
-    failed_when: "'FAILED' in checksum_result.stdout"
+    failed_when: false
+    changed_when: false
+
+  - name: Fail and cleanup if checksum failed
+    ansible.builtin.fail:
+      msg: "Checksum verification failed! Please clean up {{ oc_install_dir }} and try again."
+    when: "'FAILED' in checksum_result.stdout"
 
   - name: Show checksum verification
     ansible.builtin.debug:

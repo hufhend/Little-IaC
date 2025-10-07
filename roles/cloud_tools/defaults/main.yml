@@ -23,6 +23,7 @@ kustomize: false
 clairctl: false
 cephadm: false
 ksops: false
+noobaa: false
 
 # only if you're sure what you're doing
 kubeadm: false
@@ -33,3 +34,4 @@ app_dir: "/usr/local/bin"
 install_dir: "/home/{{ user_ansible }}/install"
 oc_install_dir: "/home/{{ user_ansible }}/install/oc"
 ksops_install_dir: "/home/{{ user_ansible }}/install/ksops"
+noobaa_install_dir: "/home/{{ user_ansible }}/install/noobaa"

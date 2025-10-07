@@ -1,0 +1,118 @@
+# The noobaa command line tool is built from the noobaa-operator repository.
+---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "noobaa-operator"
+    app_name: "NooBaa Operator CLI"
+
+- name: Install {{ app_name }}
+  block:
+    # Download and verification steps
+    - name: Create a install directory
+      ansible.builtin.file:
+        path: "{{ noobaa_install_dir }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        mode: '0755'
+
+    - name: Detect platform
+      ansible.builtin.set_fact:
+        platform: "{{ ansible_system | lower }}"
+
+    - name: Detect architecture
+      ansible.builtin.set_fact:
+        arch: "{{ 'amd64' if '64' in ansible_architecture else 'arm64' }}"
+
+    - name: Get latest version from GitHub
+      ansible.builtin.uri:
+        url: "https://api.github.com/repos/noobaa/noobaa-operator/releases/latest"
+        return_content: yes
+      register: github_release
+      changed_when: false
+
+    - name: Set latest version
+      ansible.builtin.set_fact:
+        version: "{{ github_release.json.name }}"
+
+    - name: Show detected platform
+      ansible.builtin.debug:
+        msg:
+        - "Platform: {{ platform }}"
+        - "Version: {{ version }}"
+
+    - name: Download {{ app_name }} checksum
+      ansible.builtin.get_url:
+        url: "https://github.com/noobaa/noobaa-operator/releases/download/{{ version }}/noobaa-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz.sha256"
+        dest: "{{ noobaa_install_dir }}"
+        mode: '0644'
+        force: yes
+
+    - name: Verify checksum of {{ app_name }}
+      ansible.builtin.command:
+        cmd: sha256sum -c {{ noobaa_install_dir }}/noobaa-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz.sha256
+        chdir: "{{ noobaa_install_dir }}"
+      register: checksum_result
+
+    # Manual installation
+    - name: Download {{ app_name }} archive
+      ansible.builtin.get_url:
+        url: "https://github.com/noobaa/noobaa-operator/releases/download/{{ version }}/noobaa-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz"
+        dest: "{{ noobaa_install_dir }}"
+        mode: '0755'
+
+    - name: Extract {{ app }} binary  
+      ansible.builtin.unarchive:
+        src: "{{ noobaa_install_dir }}/noobaa-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz"
+        dest: "{{ noobaa_install_dir }}"
+        remote_src: yes
+
+    - name: Move {{ app }} to local bin
+      ansible.builtin.copy:
+        src: "{{ noobaa_install_dir }}/{{ app }}"
+        dest: "{{ app_dir }}/{{ app }}"
+        mode: '0755'
+        remote_src: yes
+
+    # Completion script tasks
+    - name: Check if completion script exists
+      stat:
+        path: "/etc/bash_completion.d/{{ app }}"
+      register: completion_script_stat
+
+    - block:
+      - name: Generate completion script
+        command: "{{ app_dir }}/{{ app }} completion"
+        register: completion_script
+        changed_when: false
+
+      - name: Save completion script
+        copy:
+          content: "{{ completion_script.stdout }}"
+          dest: "/etc/bash_completion.d/{{ app }}"
+          mode: "0644"
+      when: not completion_script_stat.stat.exists
+
+    # Show installed version
+    - name: Verify {{ app_name }} version
+      ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+      register: install_result
+      changed_when: false
+
+    - name: Parse CLI version
+      ansible.builtin.set_fact:
+        cli_version: "{{ install_result.stderr | regex_search('CLI version: (\\S+)', '\\1') | first | regex_replace('[\"\\\\n]', '') }}"
+
+    - name: Parse operator image version
+      ansible.builtin.set_fact:
+        operator_version: "{{ install_result.stderr | regex_search('operator-image: noobaa/noobaa-operator:(\\S+)', '\\1') | first | regex_replace('[\"\\\\n]', '') }}"
+
+    - name: Show {{ app_name }} version
+      ansible.builtin.debug:
+        msg:
+          - "CLI version: {{ cli_version }}"
+          - "Operator version: {{ operator_version }}"
+
+  when: 
+    - noobaa == True
+    - ansible_system in ["Linux", "Darwin"]
+    - ansible_architecture in ["x86_64", "amd64"]

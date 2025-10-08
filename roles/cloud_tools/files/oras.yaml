@@ -7,6 +7,48 @@
     version: "1.3.0"
     install_dir: "/home/{{ user_ansible }}/install/oras"
 
+# Verify installed version
+- name: Verify {{ app_name }} version
+  ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+  register: install_result
+  changed_when: false
+  ignore_errors: true
+
+- name: Extract and clean version
+  ansible.builtin.set_fact:
+    installed_version: "{{ (install_result.stdout | regex_search('^Version:\\s+(\\S+)', '\\1', multiline=True)) | first }}"
+  ignore_errors: true
+
+- name: Get latest version from GitHub
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/{{ app }}-project/{{ app }}/releases/latest"
+    return_content: yes
+  register: github_release
+  changed_when: false
+
+- name: Set latest version
+  ansible.builtin.set_fact:
+    latest_version: "{{ github_release.json.name | regex_replace('^v', '') }}"
+
+- name: Show {{ app_name }} version
+  ansible.builtin.debug:
+    msg:
+    - "Latest OCI registry CLI version is: {{ latest_version }}"
+    - "The currently installed version is: {{ version }}"
+  when: installed_version is not defined
+
+- name: Show {{ app_name }} version
+  ansible.builtin.debug:
+    msg:
+    - "OCI Registry as Storage version is: {{ installed_version }}"
+    - "The currently installed version is: {{ version }}"
+  when: installed_version is defined
+
+- name: Compare versions
+  ansible.builtin.debug:
+    msg: "A new version {{ latest_version }} is available! Consider updating."
+  when: latest_version is version(version, '>') 
+  
 - name: Install {{ app_name }}
   block:
     # Download and verification steps
@@ -33,34 +75,12 @@
       ansible.builtin.set_fact:
         arch: "{{ arch_map.get(ansible_architecture, 'unknown') }}"
 
-    - name: Get latest version from GitHub
-      ansible.builtin.uri:
-        url: "https://api.github.com/repos/{{ app }}-project/{{ app }}/releases/latest"
-        return_content: yes
-      register: github_release
-      changed_when: false
-
-    - name: Set latest version
-      ansible.builtin.set_fact:
-        latest_version: "{{ github_release.json.name | regex_replace('^v', '') }}"
-
     # - name: Show detected platform
     #   ansible.builtin.debug:
     #     msg:
     #     - "Platform: {{ platform }}"
     #     - "Version: {{ latest_version }}"
-
-    - name: Show {{ app_name }} version
-      ansible.builtin.debug:
-        msg:
-        - "Latest OCI registry CLI version is: {{ latest_version }}"
-        - "The currently installed version is: {{ version }}"
-
-    - name: Compare versions
-      ansible.builtin.debug:
-        msg: "A new version {{ latest_version }} is available! Consider updating."
-      when: latest_version is version(version, '>') 
-      
+     
     - name: Define download URL
       ansible.builtin.set_fact:
         download_url: "https://github.com/{{ app }}-project/{{ app }}/releases/download/v{{ version }}"
@@ -157,3 +177,4 @@
     - oras == True
     - ansible_system in ["Linux", "Darwin"]
     - ansible_architecture in ["x86_64", "amd64"]
+    - installed_version is not defined or installed_version != version

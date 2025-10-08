@@ -1,0 +1,128 @@
+---
+# Install OpenShift CLI
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "operator-sdk"
+    app_name: "Operator SDK CLI"
+    version: "v1.41.1"
+    install_dir: "/home/{{ user_ansible }}/install/operator-sdk"
+
+- name: Install {{ app_name }}
+  block:
+  - name: Create a install directory
+    ansible.builtin.file:
+      path: "{{ install_dir }}"
+      state: directory
+      owner: "{{ ansible_user }}"
+      mode: '0755'
+
+  - name: Define download URL
+    ansible.builtin.set_fact:
+      download_url: "https://github.com/operator-framework/operator-sdk/releases/download/{{ version }}"
+
+  # Download and integrity verification
+  - name: Download {{ app_name }} checksum
+    ansible.builtin.get_url:
+      url: "{{ download_url }}/checksums.txt"
+      dest: "{{ install_dir }}/checksums.txt"
+      mode: '0644'
+      force: yes
+
+  - name: Download SHA256 signature file
+    ansible.builtin.get_url:
+      url: "{{ download_url }}/checksums.txt.asc"
+      dest: "{{ install_dir }}/checksums.txt.asc"
+      mode: '0644'
+      force: yes
+
+  - name: Download GPG public key
+    ansible.builtin.command:
+      cmd: gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys 052996E2A20B5C7E
+
+  - name: Verify GPG signature
+    ansible.builtin.command:
+      cmd: gpg --verify {{ install_dir }}/checksums.txt.asc
+    register: gpg_verify_result
+    failed_when: gpg_verify_result.rc != 0
+
+  - name: Detect platform
+    ansible.builtin.set_fact:
+      platform: "{{ ansible_system | lower }}"
+
+  - name: Detect architecture
+    ansible.builtin.set_fact:
+      arch: "{{ 'amd64' if '64' in ansible_architecture else 'arm64' }}"
+
+  # - name: Show detected platform
+  #   ansible.builtin.debug:
+  #     msg:
+  #     - "Platform: {{ platform }}"
+  #     - "Architecture: {{ arch }}"
+
+  - name: Download {{ app_name}} binary
+    ansible.builtin.get_url:
+      url: "{{ download_url }}/{{ app }}_{{ platform }}_{{ arch }}"
+      dest: "{{ install_dir }}/{{ app }}_{{ platform }}_{{ arch }}"
+      mode: '0644'
+
+  - name: Verify checksum of {{ app_name }}
+    ansible.builtin.command:
+      cmd: sha256sum -c {{ install_dir }}/checksums.txt --ignore-missing
+      chdir: "{{ install_dir }}"
+    register: checksum_result
+    failed_when: false
+    changed_when: false
+
+  - name: Fail and cleanup if checksum failed
+    ansible.builtin.fail:
+      msg: "Checksum verification failed! Please clean up {{ install_dir }} and try again."
+    when: "'FAILED' in checksum_result.stdout"
+
+  - name: Show checksum verification
+    ansible.builtin.debug:
+      msg: "{{ checksum_result.stdout_lines | select('search', app ) | list }}"
+
+  # Manual installation 
+  - name: Move {{ app }} to local bin
+    ansible.builtin.copy:
+      src: "{{ install_dir }}/{{ app }}_{{ platform }}_{{ arch }}"
+      dest: "{{ app_dir }}/{{ app }}"
+      mode: '0755'
+      remote_src: yes
+
+  # Completion script tasks
+  - name: Check if completion script exists
+    stat:
+      path: "/etc/bash_completion.d/{{ app }}"
+    register: completion_script_stat
+
+  - block:
+    - name: Generate completion script
+      command: "{{ app_dir }}/{{ app }} completion bash"
+      register: completion_script
+      changed_when: false
+
+    - name: Save completion script
+      copy:
+        content: "{{ completion_script.stdout }}"
+        dest: "/etc/bash_completion.d/{{ app }}"
+        mode: "0644"
+    when: not completion_script_stat.stat.exists
+
+  # Show installed version
+  - name: Verify {{ app_name }} version
+    ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+    register: install_result
+    changed_when: false
+
+  - name: Extract and clean version
+    ansible.builtin.set_fact:
+      operator_sdk_version: "{{ (install_result.stdout | regex_search('version: \"([v0-9\\.]+)\"', '\\1')) | first }}"
+
+  - name: Show {{ app_name }} version
+    ansible.builtin.debug:
+      msg: "{{ app_name }} version is {{ operator_sdk_version }}"
+
+  when: 
+    - operatorsdk == True
+    - ansible_architecture == "x86_64"

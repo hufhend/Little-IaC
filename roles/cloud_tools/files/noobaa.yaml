@@ -2,15 +2,16 @@
 ---
 - name: Package Variable Setting
   ansible.builtin.set_fact:
-    app: "noobaa-operator"
+    app: "noobaa"
     app_name: "NooBaa Operator CLI"
+    install_dir: "/home/{{ user_ansible }}/install/noobaa"
 
 - name: Install {{ app_name }}
   block:
     # Download and verification steps
     - name: Create a install directory
       ansible.builtin.file:
-        path: "{{ noobaa_install_dir }}"
+        path: "{{ install_dir }}"
         state: directory
         owner: "{{ ansible_user }}"
         mode: '0755'
@@ -25,7 +26,7 @@
 
     - name: Get latest version from GitHub
       ansible.builtin.uri:
-        url: "https://api.github.com/repos/noobaa/noobaa-operator/releases/latest"
+        url: "https://api.github.com/repos/{{ app }}/{{ app }}-operator/releases/latest"
         return_content: yes
       register: github_release
       changed_when: false
@@ -40,35 +41,39 @@
         - "Platform: {{ platform }}"
         - "Version: {{ version }}"
 
+    - name: Define download URL
+      ansible.builtin.set_fact:
+        download_url: "https://github.com/{{ app }}/{{ app }}-operator/releases/download/{{ version }}"
+
     - name: Download {{ app_name }} checksum
       ansible.builtin.get_url:
-        url: "https://github.com/noobaa/noobaa-operator/releases/download/{{ version }}/noobaa-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz.sha256"
-        dest: "{{ noobaa_install_dir }}"
+        url: "{{ download_url }}/{{ app }}-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz.sha256"
+        dest: "{{ install_dir }}"
         mode: '0644'
         force: yes
 
+    - name: Download {{ app_name }} archive
+      ansible.builtin.get_url:
+        url: "{{ download_url }}/{{ app }}-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz"
+        dest: "{{ install_dir }}"
+        mode: '0755'
+
     - name: Verify checksum of {{ app_name }}
       ansible.builtin.command:
-        cmd: sha256sum -c {{ noobaa_install_dir }}/noobaa-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz.sha256
-        chdir: "{{ noobaa_install_dir }}"
+        cmd: sha256sum -c {{ install_dir }}/{{ app }}-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz.sha256
+        chdir: "{{ install_dir }}"
       register: checksum_result
 
     # Manual installation
-    - name: Download {{ app_name }} archive
-      ansible.builtin.get_url:
-        url: "https://github.com/noobaa/noobaa-operator/releases/download/{{ version }}/noobaa-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz"
-        dest: "{{ noobaa_install_dir }}"
-        mode: '0755'
-
     - name: Extract {{ app }} binary  
       ansible.builtin.unarchive:
-        src: "{{ noobaa_install_dir }}/noobaa-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz"
-        dest: "{{ noobaa_install_dir }}"
+        src: "{{ install_dir }}/{{ app }}-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz"
+        dest: "{{ install_dir }}"
         remote_src: yes
 
     - name: Move {{ app }} to local bin
       ansible.builtin.copy:
-        src: "{{ noobaa_install_dir }}/{{ app }}"
+        src: "{{ install_dir }}/{{ app }}-operator"
         dest: "{{ app_dir }}/{{ app }}"
         mode: '0755'
         remote_src: yes

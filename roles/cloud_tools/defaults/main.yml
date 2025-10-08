@@ -25,6 +25,7 @@ cephadm: false
 ksops: false
 noobaa: false
 operatorsdk: false
+oras: false
 
 # only if you're sure what you're doing
 kubeadm: false

@@ -1,0 +1,159 @@
+# OCI Registry as Storage
+---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "oras"
+    app_name: "OCI registry client"
+    version: "1.3.0"
+    install_dir: "/home/{{ user_ansible }}/install/oras"
+
+- name: Install {{ app_name }}
+  block:
+    # Download and verification steps
+    - name: Create a install directory
+      ansible.builtin.file:
+        path: "{{ install_dir }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        mode: '0755'
+
+    - name: Detect platform
+      ansible.builtin.set_fact:
+        platform: "{{ ansible_system | lower }}"
+
+    - name: Define architecture map
+      ansible.builtin.set_fact:
+        arch_map:
+          x86_64: amd64
+          amd64: amd64
+          aarch64: arm64
+          arm64: arm64
+
+    - name: Detect architecture
+      ansible.builtin.set_fact:
+        arch: "{{ arch_map.get(ansible_architecture, 'unknown') }}"
+
+    - name: Get latest version from GitHub
+      ansible.builtin.uri:
+        url: "https://api.github.com/repos/{{ app }}-project/{{ app }}/releases/latest"
+        return_content: yes
+      register: github_release
+      changed_when: false
+
+    - name: Set latest version
+      ansible.builtin.set_fact:
+        latest_version: "{{ github_release.json.name | regex_replace('^v', '') }}"
+
+    # - name: Show detected platform
+    #   ansible.builtin.debug:
+    #     msg:
+    #     - "Platform: {{ platform }}"
+    #     - "Version: {{ latest_version }}"
+
+    - name: Show {{ app_name }} version
+      ansible.builtin.debug:
+        msg:
+        - "Latest OCI registry CLI version is: {{ latest_version }}"
+        - "The currently installed version is: {{ version }}"
+
+    - name: Compare versions
+      ansible.builtin.debug:
+        msg: "A new version {{ latest_version }} is available! Consider updating."
+      when: latest_version is version(version, '>') 
+      
+    - name: Define download URL
+      ansible.builtin.set_fact:
+        download_url: "https://github.com/{{ app }}-project/{{ app }}/releases/download/v{{ version }}"
+
+    - name: Download {{ app_name }} checksum
+      ansible.builtin.get_url:
+        url: "{{ download_url }}/{{ app }}_{{ version }}_checksums.txt"
+        dest: "{{ install_dir }}"
+        mode: '0644'
+        force: yes
+
+    - name: Download SHA256 signature file
+      ansible.builtin.get_url:
+        url: "{{ download_url }}/{{ app }}_{{ version }}_checksums.txt.asc"
+        dest: "{{ install_dir }}/{{ app }}_{{ version }}_checksums.txt.asc"
+        mode: '0644'
+        force: yes
+
+    - name: Download GPG public key file
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/oras-project/oras/refs/heads/main/KEYS
+        dest: "{{ install_dir }}/oras_keys.pub"
+
+    - name: Import GPG key from file
+      ansible.builtin.command:
+        cmd: gpg --import {{ install_dir }}/oras_keys.pub
+
+    - name: Verify GPG signature
+      ansible.builtin.command:
+        cmd: gpg --verify {{ install_dir }}/{{ app }}_{{ version }}_checksums.txt.asc
+      register: gpg_verify_result
+      failed_when: gpg_verify_result.rc != 0
+
+    - name: Download {{ app_name }} archive
+      ansible.builtin.get_url:
+        url: "{{ download_url }}/{{ app }}_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
+        dest: "{{ install_dir }}"
+        mode: '0755'
+
+    - name: Verify checksum of {{ app_name }}
+      ansible.builtin.command:
+        cmd: sha256sum -c {{ install_dir }}/{{ app }}_{{ version }}_checksums.txt --ignore-missing
+        chdir: "{{ install_dir }}"
+      register: checksum_result
+
+    # Manual installation
+    - name: Extract {{ app }} binary  
+      ansible.builtin.unarchive:
+        src: "{{ install_dir }}/{{ app }}_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
+        dest: "{{ install_dir }}"
+        remote_src: yes
+
+    - name: Move {{ app }} to local bin
+      ansible.builtin.copy:
+        src: "{{ install_dir }}/{{ app }}"
+        dest: "{{ app_dir }}/{{ app }}"
+        mode: '0755'
+        remote_src: yes
+
+    # Completion script tasks
+    - name: Check if completion script exists
+      stat:
+        path: "/etc/bash_completion.d/{{ app }}"
+      register: completion_script_stat
+
+    - block:
+      - name: Generate completion script
+        command: "{{ app_dir }}/{{ app }} completion bash"
+        register: completion_script
+        changed_when: false
+
+      - name: Save completion script
+        copy:
+          content: "{{ completion_script.stdout }}"
+          dest: "/etc/bash_completion.d/{{ app }}"
+          mode: "0644"
+      when: not completion_script_stat.stat.exists
+
+    # Show installed version
+    - name: Verify {{ app_name }} version
+      ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+      register: install_result
+      changed_when: false
+
+    - name: Extract and clean version
+      ansible.builtin.set_fact:
+        oras_version: "{{ (install_result.stdout | regex_search('^Version:\\s+(\\S+)', '\\1', multiline=True)) | first }}"
+
+    - name: Show {{ app_name }} version
+      ansible.builtin.debug:
+        msg: "{{ app_name }} version is {{ oras_version }}"
+
+  when: 
+    - oras == True
+    - ansible_system in ["Linux", "Darwin"]
+    - ansible_architecture in ["x86_64", "amd64"]

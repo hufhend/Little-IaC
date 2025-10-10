@@ -8,6 +8,7 @@
     app: "oc-mirror"
     app_name: "OpenShift mirror"
     version: "4.19.14"
+    oc_install_dir: "/home/{{ user_ansible }}/install/oc"
 
 - name: Install {{ app_name }}
   block:

@@ -34,6 +34,5 @@ k8s_version: "1.32"
 # common variables
 app_dir: "/usr/local/bin"
 install_dir: "/home/{{ user_ansible }}/install"
-oc_install_dir: "/home/{{ user_ansible }}/install/oc"
 ksops_install_dir: "/home/{{ user_ansible }}/install/ksops"
 

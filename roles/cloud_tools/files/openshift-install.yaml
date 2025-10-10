@@ -5,6 +5,7 @@
     app: "openshift-install"
     app_name: "OpenShift installer"
     version: "4.19.14"
+    oc_install_dir: "/home/{{ user_ansible }}/install/oc"
 
 - name: Install {{ app_name }}
   block:
@@ -107,5 +108,5 @@
       msg: "{{ install_result.stdout }}"
 
   when:
-    - oc == True
+    - ocpinstall == True
     - ansible_architecture == "x86_64"

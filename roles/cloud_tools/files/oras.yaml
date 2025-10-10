@@ -8,16 +8,21 @@
     install_dir: "/home/{{ user_ansible }}/install/oras"
 
 # Verify installed version
-- name: Verify {{ app_name }} version
-  ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
-  register: install_result
-  changed_when: false
-  ignore_errors: true
+- name: Check if {{ app_name }} is installed
+  stat:
+    path: "{{ app_dir }}/{{ app }}"
+  register: app_installed
 
-- name: Extract and clean version
-  ansible.builtin.set_fact:
-    installed_version: "{{ (install_result.stdout | regex_search('^Version:\\s+(\\S+)', '\\1', multiline=True)) | first }}"
-  ignore_errors: true
+- block:
+    - name: Verify {{ app_name }} version
+      ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+      register: install_result
+      changed_when: false
+
+    - name: Extract and clean version
+      set_fact:
+        installed_version: "{{ (install_result.stdout | regex_search('^Version:\\s+(\\S+)', '\\1', multiline=True)) | first }}"
+  when: app_installed.stat.exists
 
 - name: Get latest version from GitHub
   ansible.builtin.uri:
@@ -75,12 +80,6 @@
       ansible.builtin.set_fact:
         arch: "{{ arch_map.get(ansible_architecture, 'unknown') }}"
 
-    # - name: Show detected platform
-    #   ansible.builtin.debug:
-    #     msg:
-    #     - "Platform: {{ platform }}"
-    #     - "Version: {{ latest_version }}"
-     
     - name: Define download URL
       ansible.builtin.set_fact:
         download_url: "https://github.com/{{ app }}-project/{{ app }}/releases/download/v{{ version }}"
@@ -141,23 +140,16 @@
         remote_src: yes
 
     # Completion script tasks
-    - name: Check if completion script exists
-      stat:
-        path: "/etc/bash_completion.d/{{ app }}"
-      register: completion_script_stat
+    - name: Generate completion script
+      command: "{{ app_dir }}/{{ app }} completion bash"
+      register: completion_script
+      changed_when: false
 
-    - block:
-      - name: Generate completion script
-        command: "{{ app_dir }}/{{ app }} completion bash"
-        register: completion_script
-        changed_when: false
-
-      - name: Save completion script
-        copy:
-          content: "{{ completion_script.stdout }}"
-          dest: "/etc/bash_completion.d/{{ app }}"
-          mode: "0644"
-      when: not completion_script_stat.stat.exists
+    - name: Save completion script
+      copy:
+        content: "{{ completion_script.stdout }}"
+        dest: "/etc/bash_completion.d/{{ app }}"
+        mode: "0644"
 
     # Show installed version
     - name: Verify {{ app_name }} version
@@ -173,7 +165,12 @@
       ansible.builtin.debug:
         msg: "{{ app_name }} version is {{ oras_version }}"
 
-  when: 
+    - name: Clean up installation files
+      ansible.builtin.file:
+        path: "{{ install_dir }}"
+        state: absent
+
+  when:
     - oras == True
     - ansible_system in ["Linux", "Darwin"]
     - ansible_architecture in ["x86_64", "amd64"]

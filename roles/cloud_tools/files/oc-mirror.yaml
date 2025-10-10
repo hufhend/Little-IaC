@@ -7,30 +7,92 @@
   ansible.builtin.set_fact:
     app: "oc-mirror"
     app_name: "OpenShift mirror"
-    version: "4.19.14"
-    oc_install_dir: "/home/{{ user_ansible }}/install/oc"
+    version: "4.19.13"
+    install_dir: "/home/{{ user_ansible }}/install/oc"
+
+# Verify installed version
+- name: Check if {{ app_name }} is installed
+  stat:
+    path: "{{ app_dir }}/{{ app }}"
+  register: app_installed
+
+- block:
+    - name: Verify {{ app_name }} version
+      ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+      register: install_result
+      changed_when: false
+
+    - name: Extract and clean version
+      set_fact:
+        installed_version: "{{ install_result.stdout | regex_search('GitVersion:\"([0-9]+\\.[0-9]+\\.[0-9]+)-', '\\1', multiline=True) | first }}"
+
+  when: app_installed.stat.exists
+
+# View the latest stable version
+- name: Detect platform
+  ansible.builtin.set_fact:
+    platform: "{{ ansible_system | lower }}"
+
+- name: Detect architecture
+  ansible.builtin.set_fact:
+    arch: "{{ ansible_architecture }}"
+    
+- name: Define download URL
+  ansible.builtin.set_fact:
+    download_url: "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp"
+
+- name: Download {{ app_name }} release
+  ansible.builtin.get_url:
+    url: "{{ download_url }}/stable/release.txt"
+    dest: /tmp/release.txt
+    mode: '0644'
+
+- name: Read downloaded content
+  ansible.builtin.slurp:
+    src: /tmp/release.txt
+  register: openshift_file_content
+
+- name: Convert file content to string
+  set_fact:
+    openshift_text: "{{ openshift_file_content.content | b64decode }}"
+
+- name: Extract version number
+  set_fact:
+    latest_version: "{{ (openshift_text | regex_findall('Version:\\s*(\\d+\\.\\d+\\.\\d+)') | first) | default('unknown') }}"
+
+- name: Show {{ app_name }} version
+  ansible.builtin.debug:
+    msg:
+    - "The installed version was detected: {{ installed_version }}"
+    - "The currently installed version is: {{ version }}"
+  when: app_installed.stat.exists
+
+- name: Compare versions
+  ansible.builtin.debug:
+    msg: "A new version {{ latest_version }} is available! Consider updating."
+  when: latest_version is version(version, '>') 
 
 - name: Install {{ app_name }}
   block:
   # Download and integrity verification
   - name: Create a install directory
     ansible.builtin.file:
-      path: "{{ oc_install_dir }}"
+      path: "{{ install_dir }}"
       state: directory
       owner: "{{ ansible_user }}"
       mode: '0755'
 
   - name: Download {{ app_name }} checksum
     ansible.builtin.get_url:
-      url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/{{ version }}/sha256sum.txt
-      dest: "{{ oc_install_dir }}/sha256sum.txt"
+      url: "{{ download_url }}/{{ version }}/sha256sum.txt"
+      dest: "{{ install_dir }}/sha256sum.txt"
       mode: '0644'
       force: yes
 
   - name: Download SHA256 signature file
     ansible.builtin.get_url:
-      url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/{{ version }}/sha256sum.txt.gpg
-      dest: "{{ oc_install_dir }}/sha256sum.txt.gpg"
+      url: "{{ download_url }}/{{ version }}/sha256sum.txt.gpg"
+      dest: "{{ install_dir }}/sha256sum.txt.gpg"
       mode: '0644'
       force: yes
 
@@ -40,65 +102,58 @@
 
   - name: Verify GPG signature
     ansible.builtin.command:
-      cmd: gpg --verify {{ oc_install_dir }}/sha256sum.txt.gpg
+      cmd: gpg --verify {{ install_dir }}/sha256sum.txt.gpg
     register: gpg_verify_result
     failed_when: gpg_verify_result.rc != 0
 
   - name: Download {{ app_name }}
     ansible.builtin.get_url:
-      url: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/{{ version }}/oc-mirror.tar.gz
-      dest: "{{ oc_install_dir }}/oc-mirror.tar.gz"
+      url: "{{ download_url }}/{{ version }}/oc-mirror.tar.gz"
+      dest: "{{ install_dir }}/oc-mirror.tar.gz"
       mode: '0644'
 
   - name: Verify checksum of {{ app_name }}
     ansible.builtin.command:
-      cmd: sha256sum -c {{ oc_install_dir }}/sha256sum.txt --ignore-missing
-      chdir: "{{ oc_install_dir }}"
+      cmd: sha256sum -c {{ install_dir }}/sha256sum.txt --ignore-missing
+      chdir: "{{ install_dir }}"
     register: checksum_result
     failed_when: false
     changed_when: false
 
   - name: Fail and cleanup if checksum failed
     ansible.builtin.fail:
-      msg: "Checksum verification failed! Please clean up {{ oc_install_dir }} and try again."
+      msg: "Checksum verification failed! Please clean up {{ install_dir }} and try again."
     when: "'FAILED' in checksum_result.stdout"
 
-  - name: Show checksum verification
-    ansible.builtin.debug:
-      msg: "{{ checksum_result.stdout_lines | select('search', app) | list }}"
+  # - name: Show checksum verification
+  #   ansible.builtin.debug:
+  #     msg: "{{ checksum_result.stdout_lines | select('search', app) | list }}"
 
   # Manual installation
   - name: Extract {{ app_name }} archive
     ansible.builtin.unarchive:
-      src: "{{ oc_install_dir }}/oc-mirror.tar.gz"
-      dest: "{{ oc_install_dir }}"
+      src: "{{ install_dir }}/oc-mirror.tar.gz"
+      dest: "{{ install_dir }}"
       remote_src: yes
 
   - name: Move {{ app }} to local bin
     ansible.builtin.copy:
-      src: "{{ oc_install_dir }}/oc-mirror"
+      src: "{{ install_dir }}/oc-mirror"
       dest: "{{ app_dir }}/oc-mirror"
       mode: '0755'
       remote_src: yes
 
-  # Completion script tasks
-  - name: Check if completion script exists
-    stat:
-      path: "/etc/bash_completion.d/{{ app }}"
-    register: completion_script_stat
+  # Completion script
+  - name: Generate completion script
+    command: "{{ app_dir }}/{{ app }} completion bash"
+    register: completion_script
+    changed_when: false
 
-  - block:
-    - name: Generate completion script
-      command: "{{ app_dir }}/{{ app }} completion bash"
-      register: completion_script
-      changed_when: false
-
-    - name: Save completion script
-      copy:
-        content: "{{ completion_script.stdout }}"
-        dest: "/etc/bash_completion.d/{{ app }}"
-        mode: "0644"
-    when: not completion_script_stat.stat.exists
+  - name: Save completion script
+    copy:
+      content: "{{ completion_script.stdout }}"
+      dest: "/etc/bash_completion.d/{{ app }}"
+      mode: "0644"
 
   # Show installed version
   - name: Verify {{ app_name }} version
@@ -106,10 +161,21 @@
     register: install_result
     changed_when: false
 
+  - name: Extract and clean version
+    set_fact:
+      new_version: "{{ install_result.stdout | regex_search('GitVersion:\"([0-9]+\\.[0-9]+\\.[0-9]+)-', '\\1', multiline=True) | first }}"
+
   - name: Show {{ app_name }} version
     ansible.builtin.debug:
-      msg: "{{ install_result.stdout }}"
+      msg: "{{ app_name }} version is {{ new_version }}"
+
+  # Finally, let's clean up.
+  - name: Clean up installation files
+    ansible.builtin.file:
+      path: "{{ install_dir }}"
+      state: absent
 
   when: 
     - ocmirror == True
     - ansible_architecture == "x86_64"
+    - not app_installed.stat.exists

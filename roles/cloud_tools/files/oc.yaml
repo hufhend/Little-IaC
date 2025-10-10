@@ -4,7 +4,7 @@
   ansible.builtin.set_fact:
     app: "oc"
     app_name: "OpenShift CLI"
-    version: "4.19.14"
+    version: "4.19.13"
     install_dir: "/home/{{ user_ansible }}/install/oc"
 
 # Verify installed version
@@ -164,11 +164,17 @@
 
   - name: Extract and clean version
     set_fact:
-      oc_version: "{{ install_result.stdout | regex_search('Client Version: ([\\d.]+)', '\\1', multiline=True) | first }}"
+      new_version: "{{ install_result.stdout | regex_search('Client Version: ([\\d.]+)', '\\1', multiline=True) | first }}"
       
   - name: Show {{ app_name }} version
     ansible.builtin.debug:
-      msg: "{{ app_name }} version is {{ oc_version }}"
+      msg: "{{ app_name }} version is {{ new_version }}"
+
+  # Finally, let's clean up.
+  - name: Clean up installation files
+    ansible.builtin.file:
+      path: "{{ install_dir }}"
+      state: absent
 
   when: 
     - oc == True

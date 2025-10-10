@@ -4,7 +4,75 @@
   ansible.builtin.set_fact:
     app: "noobaa"
     app_name: "NooBaa Operator CLI"
+    version: "5.19.0"
     install_dir: "/home/{{ user_ansible }}/install/noobaa"
+
+# Verify installed version
+- name: Check if {{ app_name }} is installed
+  stat:
+    path: "{{ app_dir }}/{{ app }}"
+  register: app_installed
+
+- block:
+    - name: Verify {{ app_name }} version
+      ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+      register: install_result
+      changed_when: false
+
+    - name: Extract and clean version
+      set_fact:
+        installed_version: "{{ install_result.stderr | regex_search('CLI version: (\\S+)', '\\1') | first | regex_replace('[\"\\\\n]', '') }}"
+  when: app_installed.stat.exists
+
+# View the latest stable version
+- name: Detect platform
+  ansible.builtin.set_fact:
+    platform: "{{ ansible_system | lower }}"
+
+- name: Define architecture map
+  ansible.builtin.set_fact:
+    arch_map:
+      x86_64: amd64
+      amd64: amd64
+      aarch64: arm64
+      arm64: arm64
+
+- name: Detect architecture
+  ansible.builtin.set_fact:
+    arch: "{{ arch_map.get(ansible_architecture, 'unknown') }}"
+
+- name: Get latest version from GitHub
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/{{ app }}/{{ app }}-operator/releases/latest"
+    return_content: yes
+  register: github_release
+  changed_when: false
+
+- name: Set latest version
+  ansible.builtin.set_fact:
+    latest_version: "{{ github_release.json.name | regex_replace('^v', '') }}"
+
+# - name: Show detected platform
+#   ansible.builtin.debug:
+#     msg:
+#     - "Platform: {{ platform }}"
+#     - "Version: {{ version }}"
+
+- name: Define download URL
+  ansible.builtin.set_fact:
+    download_url: "https://github.com/{{ app }}/{{ app }}-operator/releases/download/v{{ version }}"
+
+- name: Show {{ app_name }} version
+  ansible.builtin.debug:
+    msg:
+    - "The installed version was detected: {{ installed_version }}"
+    - "The currently installed version is: {{ version }}"
+  when: app_installed.stat.exists
+
+- name: Compare versions
+  ansible.builtin.debug:
+    msg: "A new version {{ latest_version }} is available! Consider updating."
+  when: latest_version is version(version, '>') 
 
 - name: Install {{ app_name }}
   block:
@@ -16,58 +84,29 @@
         owner: "{{ ansible_user }}"
         mode: '0755'
 
-    - name: Detect platform
-      ansible.builtin.set_fact:
-        platform: "{{ ansible_system | lower }}"
-
-    - name: Detect architecture
-      ansible.builtin.set_fact:
-        arch: "{{ 'amd64' if '64' in ansible_architecture else 'arm64' }}"
-
-    - name: Get latest version from GitHub
-      ansible.builtin.uri:
-        url: "https://api.github.com/repos/{{ app }}/{{ app }}-operator/releases/latest"
-        return_content: yes
-      register: github_release
-      changed_when: false
-
-    - name: Set latest version
-      ansible.builtin.set_fact:
-        version: "{{ github_release.json.name }}"
-
-    - name: Show detected platform
-      ansible.builtin.debug:
-        msg:
-        - "Platform: {{ platform }}"
-        - "Version: {{ version }}"
-
-    - name: Define download URL
-      ansible.builtin.set_fact:
-        download_url: "https://github.com/{{ app }}/{{ app }}-operator/releases/download/{{ version }}"
-
     - name: Download {{ app_name }} checksum
       ansible.builtin.get_url:
-        url: "{{ download_url }}/{{ app }}-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz.sha256"
+        url: "{{ download_url }}/{{ app }}-operator-v{{ version }}-{{ platform }}-{{ arch }}.tar.gz.sha256"
         dest: "{{ install_dir }}"
         mode: '0644'
         force: yes
 
     - name: Download {{ app_name }} archive
       ansible.builtin.get_url:
-        url: "{{ download_url }}/{{ app }}-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz"
+        url: "{{ download_url }}/{{ app }}-operator-v{{ version }}-{{ platform }}-{{ arch }}.tar.gz"
         dest: "{{ install_dir }}"
         mode: '0755'
 
     - name: Verify checksum of {{ app_name }}
       ansible.builtin.command:
-        cmd: sha256sum -c {{ install_dir }}/{{ app }}-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz.sha256
+        cmd: sha256sum -c {{ install_dir }}/{{ app }}-operator-v{{ version }}-{{ platform }}-{{ arch }}.tar.gz.sha256
         chdir: "{{ install_dir }}"
       register: checksum_result
 
     # Manual installation
     - name: Extract {{ app }} binary  
       ansible.builtin.unarchive:
-        src: "{{ install_dir }}/{{ app }}-operator-{{ version }}-{{ platform }}-{{ arch }}.tar.gz"
+        src: "{{ install_dir }}/{{ app }}-operator-v{{ version }}-{{ platform }}-{{ arch }}.tar.gz"
         dest: "{{ install_dir }}"
         remote_src: yes
 
@@ -79,23 +118,16 @@
         remote_src: yes
 
     # Completion script tasks
-    - name: Check if completion script exists
-      stat:
-        path: "/etc/bash_completion.d/{{ app }}"
-      register: completion_script_stat
+    - name: Generate completion script
+      command: "{{ app_dir }}/{{ app }} completion"
+      register: completion_script
+      changed_when: false
 
-    - block:
-      - name: Generate completion script
-        command: "{{ app_dir }}/{{ app }} completion"
-        register: completion_script
-        changed_when: false
-
-      - name: Save completion script
-        copy:
-          content: "{{ completion_script.stdout }}"
-          dest: "/etc/bash_completion.d/{{ app }}"
-          mode: "0644"
-      when: not completion_script_stat.stat.exists
+    - name: Save completion script
+      copy:
+        content: "{{ completion_script.stdout }}"
+        dest: "/etc/bash_completion.d/{{ app }}"
+        mode: "0644"
 
     # Show installed version
     - name: Verify {{ app_name }} version
@@ -117,7 +149,14 @@
           - "CLI version: {{ cli_version }}"
           - "Operator version: {{ operator_version }}"
 
+    # Finally, let's clean up.
+    - name: Clean up installation files
+      ansible.builtin.file:
+        path: "{{ install_dir }}"
+        state: absent
+
   when: 
     - noobaa == True
     - ansible_system in ["Linux", "Darwin"]
     - ansible_architecture in ["x86_64", "amd64"]
+    - installed_version is not defined or installed_version != version

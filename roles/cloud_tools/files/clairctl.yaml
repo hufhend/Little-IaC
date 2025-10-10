@@ -5,7 +5,6 @@
   ansible.builtin.set_fact:
     app: "clairctl"
     app_name: "Clairctl"
-    app_dir: "/usr/local/bin"
 
 # Download and verification steps
 - name: Detect platform
@@ -16,11 +15,11 @@
   ansible.builtin.set_fact:
     arch: "{{ 'amd64' if '64' in ansible_architecture else '386' }}"
 
-- name: Show detected platform
-  ansible.builtin.debug:
-    msg:
-    - "Platform: {{ platform }}"
-    - "Architecture: {{ arch }}"
+# - name: Show detected platform
+#   ansible.builtin.debug:
+#     msg:
+#     - "Platform: {{ platform }}"
+#     - "Architecture: {{ arch }}"
 
 # Manual installation of a binary application
 - name: Install {{ app_name }}

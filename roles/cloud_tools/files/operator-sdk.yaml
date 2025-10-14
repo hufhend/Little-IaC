@@ -1,14 +1,60 @@
 ---
-# Install OpenShift CLI
+# The Operator SDK provides the tools to build, test, and package Operators
 - name: Package Variable Setting
   ansible.builtin.set_fact:
     app: "operator-sdk"
     app_name: "Operator SDK CLI"
-    version: "v1.41.1"
+    version: "1.41.1"
     install_dir: "/home/{{ user_ansible }}/install/operator-sdk"
+
+# Verify installed version
+- name: Check if {{ app_name }} is installed
+  stat:
+    path: "{{ app_dir }}/{{ app }}"
+  register: app_installed
+
+- block:
+    - name: Verify {{ app_name }} version
+      ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+      register: install_result
+      changed_when: false
+
+    - name: Extract and clean version
+      ansible.builtin.set_fact:
+        installed_version: "{{ (install_result.stdout | regex_search('version: \"([v0-9\\.]+)\"', '\\1')) | first | regex_replace('^v', '') }}"
+  when: app_installed.stat.exists
+
+# - name: Show {{ app_name }} version
+#   ansible.builtin.debug:
+#     msg: "{{ app_name }} version is {{ installed_version }}"
+
+# View the latest stable version
+- name: Get latest version from GitHub
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/operator-framework/operator-sdk/releases/latest"
+    return_content: yes
+  register: github_release
+  changed_when: false
+
+- name: Set latest version
+  ansible.builtin.set_fact:
+    latest_version: "{{ github_release.json.name | regex_replace('^v', '') }}"
+
+- name: Show {{ app_name }} version
+  ansible.builtin.debug:
+    msg:
+    - "The installed version was detected: {{ installed_version }}"
+    - "The currently installed version is: {{ version }}"
+  when: app_installed.stat.exists
+
+- name: Compare versions
+  ansible.builtin.debug:
+    msg: "A new version {{ latest_version }} is available! Consider updating."
+  when: latest_version is version(version, '>') 
 
 - name: Install {{ app_name }}
   block:
+  # Download and integrity verification
   - name: Create a install directory
     ansible.builtin.file:
       path: "{{ install_dir }}"
@@ -16,11 +62,26 @@
       owner: "{{ ansible_user }}"
       mode: '0755'
 
+  - name: Detect platform
+    ansible.builtin.set_fact:
+      platform: "{{ ansible_system | lower }}"
+
+  - name: Define architecture map
+    ansible.builtin.set_fact:
+      arch_map:
+        x86_64: amd64
+        amd64: amd64
+        aarch64: arm64
+        arm64: arm64
+
+  - name: Detect architecture
+    ansible.builtin.set_fact:
+      arch: "{{ arch_map.get(ansible_architecture, 'unknown') }}"
+
   - name: Define download URL
     ansible.builtin.set_fact:
-      download_url: "https://github.com/operator-framework/operator-sdk/releases/download/{{ version }}"
+      download_url: "https://github.com/operator-framework/operator-sdk/releases/download/v{{ version }}"
 
-  # Download and integrity verification
   - name: Download {{ app_name }} checksum
     ansible.builtin.get_url:
       url: "{{ download_url }}/checksums.txt"
@@ -45,20 +106,6 @@
     register: gpg_verify_result
     failed_when: gpg_verify_result.rc != 0
 
-  - name: Detect platform
-    ansible.builtin.set_fact:
-      platform: "{{ ansible_system | lower }}"
-
-  - name: Detect architecture
-    ansible.builtin.set_fact:
-      arch: "{{ 'amd64' if '64' in ansible_architecture else 'arm64' }}"
-
-  # - name: Show detected platform
-  #   ansible.builtin.debug:
-  #     msg:
-  #     - "Platform: {{ platform }}"
-  #     - "Architecture: {{ arch }}"
-
   - name: Download {{ app_name}} binary
     ansible.builtin.get_url:
       url: "{{ download_url }}/{{ app }}_{{ platform }}_{{ arch }}"
@@ -78,9 +125,9 @@
       msg: "Checksum verification failed! Please clean up {{ install_dir }} and try again."
     when: "'FAILED' in checksum_result.stdout"
 
-  - name: Show checksum verification
-    ansible.builtin.debug:
-      msg: "{{ checksum_result.stdout_lines | select('search', app ) | list }}"
+  # - name: Show checksum verification
+  #   ansible.builtin.debug:
+  #     msg: "{{ checksum_result.stdout_lines | select('search', app ) | list }}"
 
   # Manual installation 
   - name: Move {{ app }} to local bin
@@ -91,23 +138,16 @@
       remote_src: yes
 
   # Completion script tasks
-  - name: Check if completion script exists
-    stat:
-      path: "/etc/bash_completion.d/{{ app }}"
-    register: completion_script_stat
+  - name: Generate completion script
+    command: "{{ app_dir }}/{{ app }} completion bash"
+    register: completion_script
+    changed_when: false
 
-  - block:
-    - name: Generate completion script
-      command: "{{ app_dir }}/{{ app }} completion bash"
-      register: completion_script
-      changed_when: false
-
-    - name: Save completion script
-      copy:
-        content: "{{ completion_script.stdout }}"
-        dest: "/etc/bash_completion.d/{{ app }}"
-        mode: "0644"
-    when: not completion_script_stat.stat.exists
+  - name: Save completion script
+    copy:
+      content: "{{ completion_script.stdout }}"
+      dest: "/etc/bash_completion.d/{{ app }}"
+      mode: "0644"
 
   # Show installed version
   - name: Verify {{ app_name }} version
@@ -117,12 +157,20 @@
 
   - name: Extract and clean version
     ansible.builtin.set_fact:
-      operator_sdk_version: "{{ (install_result.stdout | regex_search('version: \"([v0-9\\.]+)\"', '\\1')) | first }}"
+      operator_sdk_version: "{{ (install_result.stdout | regex_search('version: \"([v0-9\\.]+)\"', '\\1')) | first | regex_replace('^v', '') }}"
 
   - name: Show {{ app_name }} version
     ansible.builtin.debug:
       msg: "{{ app_name }} version is {{ operator_sdk_version }}"
 
+  # Finally, let's clean up.
+  - name: Clean up installation files
+    ansible.builtin.file:
+      path: "{{ install_dir }}"
+      state: absent
+      
   when: 
     - operatorsdk == True
-    - ansible_architecture == "x86_64"
+    - ansible_system in ["Linux", "Darwin"]
+    - ansible_architecture in ["x86_64", "amd64"]
+    - installed_version is not defined or installed_version != version

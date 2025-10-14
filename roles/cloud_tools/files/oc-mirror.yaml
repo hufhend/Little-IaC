@@ -7,7 +7,7 @@
   ansible.builtin.set_fact:
     app: "oc-mirror"
     app_name: "OpenShift mirror"
-    version: "4.19.13"
+    version: "4.19.14"
     install_dir: "/home/{{ user_ansible }}/install/oc"
 
 # Verify installed version
@@ -67,10 +67,10 @@
     - "The currently installed version is: {{ version }}"
   when: app_installed.stat.exists
 
-- name: Compare versions
-  ansible.builtin.debug:
-    msg: "A new version {{ latest_version }} is available! Consider updating."
-  when: latest_version is version(version, '>') 
+# - name: Compare versions
+#   ansible.builtin.debug:
+#     msg: "A new version {{ latest_version }} is available! Consider updating."
+#   when: latest_version is version(version, '>') 
 
 - name: Install {{ app_name }}
   block:

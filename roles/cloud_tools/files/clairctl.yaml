@@ -5,27 +5,69 @@
   ansible.builtin.set_fact:
     app: "clairctl"
     app_name: "Clairctl"
+    version: "1.2.8"
 
-# Download and verification steps
-- name: Detect platform
+# Verify installed version
+- name: Check if {{ app_name }} is installed
+  stat:
+    path: "{{ app_dir }}/{{ app }}"
+  register: app_installed
+
+- block:
+    - name: Verify {{ app_name }} version
+      ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+      register: install_result
+      changed_when: false
+
+    - name: Extract and clean version
+      ansible.builtin.set_fact:
+        installed_version: "{{ (install_result.stdout | regex_search('version ([0-9\\.]+)', '\\1')) | first }}"
+  when: app_installed.stat.exists
+
+- name: Show {{ app_name }} version
+  ansible.builtin.debug:
+    msg: "{{ app_name }} version is {{ installed_version }}"
+
+# View the latest stable version
+- name: Get latest version from GitHub
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/jgsqware/clairctl/releases/latest"
+    return_content: yes
+  register: github_release
+  changed_when: false
+
+- name: Set latest version
   ansible.builtin.set_fact:
-    platform: "{{ ansible_system | lower }}"
+    latest_version: "{{ github_release.json.tag_name | regex_replace('^v', '') }}"
 
-- name: Detect architecture
-  ansible.builtin.set_fact:
-    arch: "{{ 'amd64' if '64' in ansible_architecture else '386' }}"
+- name: Show {{ app_name }} version
+  ansible.builtin.debug:
+    msg:
+    - "The installed version was detected: {{ installed_version }}"
+    - "The currently installed version is: {{ version }}"
+  when: app_installed.stat.exists
 
-# - name: Show detected platform
-#   ansible.builtin.debug:
-#     msg:
-#     - "Platform: {{ platform }}"
-#     - "Architecture: {{ arch }}"
+- name: Compare versions
+  ansible.builtin.debug:
+    msg: "A new version {{ latest_version }} is available! Consider updating."
+  when: latest_version is version(version, '>') 
 
-# Manual installation of a binary application
 - name: Install {{ app_name }}
   block:
+  # Download and verification steps
+  - name: Detect platform
+    ansible.builtin.set_fact:
+      platform: "{{ ansible_system | lower }}"
+
+  - name: Detect architecture
+    ansible.builtin.set_fact:
+      arch: "{{ 'amd64' if '64' in ansible_architecture else '386' }}"
+      
+  # Manual installation of a binary app
   - name: Download {{ app_name }} binary
     ansible.builtin.get_url:
+      # It seems that only the latest version can be reliably downloaded.
+      # url: "https://github.com/jgsqware/clairctl/releases/download/v{{ version }}/clairctl-{{ platform }}-{{ arch }}"
       url: "https://s3.amazonaws.com/clairctl/latest/clairctl-{{ platform }}-{{ arch }}"
       dest: "{{ app_dir }}/{{ app }}"
       mode: '0755'
@@ -36,8 +78,16 @@
     register: install_result
     changed_when: false
 
+  - name: Extract and clean version
+    ansible.builtin.set_fact:
+      clair_version: "{{ (install_result.stdout | regex_search('version ([0-9\\.]+)', '\\1')) | first }}"
+
   - name: Show {{ app_name }} version
     ansible.builtin.debug:
-      var: install_result.stdout
+      msg: "{{ app_name }} version is {{ clair_version }}"
 
-  when: clairctl == True
+  when: 
+    - clairctl == True
+    - ansible_system in ["Linux", "Darwin"]
+    - ansible_architecture in ["x86_64", "amd64"]
+    - installed_version is not defined or installed_version != version

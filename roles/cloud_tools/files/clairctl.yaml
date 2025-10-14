@@ -24,9 +24,9 @@
         installed_version: "{{ (install_result.stdout | regex_search('version ([0-9\\.]+)', '\\1')) | first }}"
   when: app_installed.stat.exists
 
-- name: Show {{ app_name }} version
-  ansible.builtin.debug:
-    msg: "{{ app_name }} version is {{ installed_version }}"
+# - name: Show {{ app_name }} version
+#   ansible.builtin.debug:
+#     msg: "{{ app_name }} version is {{ installed_version }}"
 
 # View the latest stable version
 - name: Get latest version from GitHub

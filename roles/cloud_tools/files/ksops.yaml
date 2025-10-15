@@ -4,8 +4,31 @@
   ansible.builtin.set_fact:
     app: "ksops"
     app_name: "Ksops"
-    version: "latest"
+    version: "4.4.0"
     install_dir: "/home/{{ user_ansible }}/install/ksops"
+
+# View the latest stable version
+- name: Get latest version from GitHub
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/viaduct-ai/kustomize-sops/releases/latest"
+    return_content: yes
+  register: github_release
+  changed_when: false
+
+- name: Set latest version
+  ansible.builtin.set_fact:
+    latest_version: "{{ github_release.json.tag_name | regex_replace('^v', '') }}"
+
+- name: Show {{ app_name }} version
+  ansible.builtin.debug:
+    msg:
+    - "The currently installed version is: {{ version }}"
+  when: app_installed.stat.exists
+
+- name: Compare versions
+  ansible.builtin.debug:
+    msg: "A new version {{ latest_version }} is available! Consider updating."
+  when: latest_version is version(version, '>') 
 
 - name: Install {{ app_name }}
   block:
@@ -32,17 +55,15 @@
 
     - name: Detect platform
       ansible.builtin.set_fact:
-        platform: "{{ ansible_system | lower }}"
+        platform: "{{ ansible_system }}"
 
-    # - name: Show detected platform
-    #   ansible.builtin.debug:
-    #     msg:
-    #     - "Platform: {{ platform }}"
-    #     - "Architecture: {{ arch }}"
+    - name: Define download URL
+      ansible.builtin.set_fact:
+        download_url: "https://github.com/viaduct-ai/kustomize-sops/releases/download/v{{ version }}"
 
     - name: Download {{ app_name }} archive
       ansible.builtin.get_url:
-        url: " https://github.com/viaduct-ai/kustomize-sops/releases/{{ version }}/download/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
+        url: "{{ download_url }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
         dest: "{{ install_dir }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
         mode: '0755'
 
@@ -63,15 +84,15 @@
         remote_src: yes
       register: mv_result
 
-    - name: Success message
-      debug:
-        msg: "Successfully installed ksops"
-      when: not mv_result.failed
-
     - name: Fail if moving ksops fails
       fail:
         msg: "Failed to move ksops to {{ app_dir }}. Maybe you should run this playbook as root."
       when: mv_result.failed
+
+    - name: Show {{ app_name }} version
+      ansible.builtin.debug:
+        msg: "{{ app_name }} version is {{ version }}"
+      when: not mv_result.failed
 
     # Finally, let's clean up.
     - name: Clean up installation files
@@ -81,4 +102,6 @@
 
   when: 
     - ksops == True
-    - ansible_distribution == "RedHat"
+    - ansible_system in ["Linux", "Darwin"]
+    - ansible_architecture in ["x86_64", "amd64"]
+    - latest_version != version

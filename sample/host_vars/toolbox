@@ -1,0 +1,27 @@
+---
+binenv: true
+starship: true
+argocd: true
+helm: true
+buildx: true
+kubectx: true
+trivy: true
+kubens: true
+velero: true
+k9s: true
+oc: true
+age: true
+kubectl: true
+docker: true
+sops: true
+ocpinstall: true
+ocmirror: true
+kustomize: true
+clairctl: true
+cephadm: true
+ksops: true
+noobaa: true
+operatorsdk: true
+oras: true
+roxctl: true
+yajsv: true

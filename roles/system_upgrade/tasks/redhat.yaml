@@ -90,7 +90,7 @@
 
     - name: Debug EPEL repo check result
       ansible.builtin.debug:
-        var: epel_repo_check.stdout
+        var: epel_repo_check.stdout_lines
   when:
     - ansible_distribution == "RedHat"
     - ansible_distribution_major_version in ["9", "10"]

@@ -4,7 +4,7 @@
   ansible.builtin.set_fact:
     app: "openshift-install"
     app_name: "OpenShift installer"
-    version: "4.19.14"
+    version: "4.19.16"
     install_dir: "/home/{{ user_ansible }}/install/oc"
 
 # Verify installed version
@@ -22,11 +22,6 @@
     - name: Extract and clean version
       set_fact:
         installed_version: "{{ install_result.stdout | regex_search('openshift-install ([\\d.]+)', '\\1', multiline=True) | default(['']) | first }}"  
-
-    # - name: Show {{ app_name }} version
-    #   ansible.builtin.debug:
-    #     msg: "{{ app_name }} version is {{ installed_version }}"
-
   when: app_installed.stat.exists
 
 # View the latest stable version
@@ -82,7 +77,7 @@
       state: directory
       owner: "{{ ansible_user }}"
       mode: '0755'
-  
+
   - name: Download {{ app_name }} checksum
     ansible.builtin.get_url:
       url: "{{ download_url }}/{{ version }}/sha256sum.txt"
@@ -126,10 +121,6 @@
       msg: "Checksum verification failed! Please clean up {{  install_dir }} and try again."
     when: "'FAILED' in checksum_result.stdout"
 
-  # - name: Show checksum verification
-  #   ansible.builtin.debug:
-  #     msg: "{{ checksum_result.stdout_lines | select('search', app) | list }}"
-
   # Manual installation
   - name: Extract {{ app_name }} archive
     ansible.builtin.unarchive:
@@ -144,7 +135,7 @@
       mode: '0755'
       remote_src: yes
 
-  # Completion script tasks
+  # Generate completion script 
   - name: Generate completion script
     command: "{{ app_dir }}/{{ app }} completion bash"
     register: completion_script
@@ -178,5 +169,5 @@
 
   when:
     - ocpinstall == True
-    - ansible_architecture == "x86_64"
+    - ansible_architecture in ["x86_64", "arm64"]
     - installed_version is not defined or installed_version != version

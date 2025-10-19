@@ -7,7 +7,7 @@
   ansible.builtin.set_fact:
     app: "oc-mirror"
     app_name: "OpenShift mirror"
-    version: "4.19.14"
+    version: "4.19.16"
     install_dir: "/home/{{ user_ansible }}/install/oc"
 
 # Verify installed version
@@ -67,11 +67,6 @@
     - "The currently installed version is: {{ version }}"
   when: app_installed.stat.exists
 
-# - name: Compare versions
-#   ansible.builtin.debug:
-#     msg: "A new version {{ latest_version }} is available! Consider updating."
-#   when: latest_version is version(version, '>') 
-
 - name: Install {{ app_name }}
   block:
   # Download and integrity verification
@@ -125,10 +120,6 @@
       msg: "Checksum verification failed! Please clean up {{ install_dir }} and try again."
     when: "'FAILED' in checksum_result.stdout"
 
-  # - name: Show checksum verification
-  #   ansible.builtin.debug:
-  #     msg: "{{ checksum_result.stdout_lines | select('search', app) | list }}"
-
   # Manual installation
   - name: Extract {{ app_name }} archive
     ansible.builtin.unarchive:
@@ -143,7 +134,7 @@
       mode: '0755'
       remote_src: yes
 
-  # Completion script
+  # Generate completion script 
   - name: Generate completion script
     command: "{{ app_dir }}/{{ app }} completion bash"
     register: completion_script
@@ -177,5 +168,5 @@
 
   when: 
     - ocmirror == True
-    - ansible_architecture == "x86_64"
+    - ansible_architecture in ["x86_64", "arm64"]
     - not app_installed.stat.exists

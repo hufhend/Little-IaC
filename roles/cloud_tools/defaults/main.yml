@@ -28,6 +28,7 @@ operatorsdk: false
 oras: false
 roxctl: false
 yajsv: false
+slu: false
 
 # only if you're sure what you're doing
 kubeadm: false

@@ -1,0 +1,157 @@
+# SikaLabs Utils is a Swiss Army knife utility for DevOps
+---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "slu"
+    app_name: "SikaLabs Utils"
+    version: "0.92.0"
+    install_dir: "/home/{{ user_ansible }}/install/slu"
+
+# Verify installed version
+- name: Check if {{ app_name }} is installed
+  stat:
+    path: "{{ app_dir }}/{{ app }}"
+  register: app_installed
+
+- block:
+    - name: Verify {{ app_name }} version
+      ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+      register: install_result
+      changed_when: false
+
+    - name: Extract and clean version
+      ansible.builtin.set_fact:
+        installed_version: "{{ install_result.stdout | regex_search('(\\d+\\.\\d+\\.\\d+)') | default('unknown') }}"
+  when: app_installed.stat.exists
+
+# View the latest stable version
+- name: Get latest version from GitHub
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/sikalabs/slu/releases/latest"
+    return_content: yes
+  register: github_release
+  changed_when: false
+
+- name: Set latest version
+  ansible.builtin.set_fact:
+    latest_version: "{{ github_release.json.tag_name | regex_replace('^v', '') }}"
+
+- name: Show {{ app_name }} version
+  ansible.builtin.debug:
+    msg:
+    - "The installed version was detected: {{ installed_version }}"
+    - "The currently installed version is: {{ version }}"
+  when: app_installed.stat.exists
+
+- name: Compare versions
+  ansible.builtin.debug:
+    msg: "A new version {{ latest_version }} is available! Consider updating."
+  when: latest_version is version(version, '>') 
+
+- name: Install {{ app_name }}
+  block:
+  # Download and integrity verification
+  - name: Create a install directory
+    ansible.builtin.file:
+      path: "{{ install_dir }}"
+      state: directory
+      owner: "{{ ansible_user }}"
+      mode: '0755'
+
+  - name: Detect platform
+    ansible.builtin.set_fact:
+      platform: "{{ ansible_system | lower }}"
+
+  - name: Define architecture map
+    ansible.builtin.set_fact:
+      arch_map:
+        x86_64: amd64
+        amd64: amd64
+        aarch64: arm64
+        arm64: arm64
+
+  - name: Detect architecture
+    ansible.builtin.set_fact:
+      arch: "{{ arch_map.get(ansible_architecture, 'unknown') }}"
+
+  - name: Define download URL
+    ansible.builtin.set_fact:
+      download_url: "https://github.com/sikalabs/slu/releases/download/v{{ version }}"
+
+  - name: Download {{ app_name }} checksum
+    ansible.builtin.get_url:
+      url: "{{ download_url }}/slu_checksums.txt"
+      dest: "{{ install_dir }}/slu_checksums.txt"
+      mode: '0644'
+      force: yes
+
+  - name: Download {{ app_name}} archive
+    ansible.builtin.get_url:
+      url: "{{ download_url }}/{{ app }}_v{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
+      dest: "{{ install_dir }}/{{ app }}_v{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
+      mode: '0644'
+
+  - name: Verify checksum of {{ app_name }}
+    ansible.builtin.command:
+      cmd: sha256sum -c {{ install_dir }}/slu_checksums.txt --ignore-missing
+      chdir: "{{ install_dir }}"
+    register: checksum_result
+    failed_when: false
+    changed_when: false
+
+  - name: Fail and cleanup if checksum failed
+    ansible.builtin.fail:
+      msg: "Checksum verification failed! Please clean up {{ install_dir }} and try again."
+    when: "'FAILED' in checksum_result.stdout"
+
+  # Manual installation
+  - name: Extract {{ app }} binary  
+    ansible.builtin.unarchive:
+      src: "{{ install_dir }}/{{ app }}_v{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
+      dest: "{{ install_dir }}"
+      remote_src: yes
+
+  - name: Move {{ app }} to local bin
+    ansible.builtin.copy:
+      src: "{{ install_dir }}/{{ app }}"
+      dest: "{{ app_dir }}/{{ app }}"
+      mode: '0755'
+      remote_src: yes
+
+  # Completion script tasks
+  - name: Generate completion script
+    command: "{{ app_dir }}/{{ app }} completion bash"
+    register: completion_script
+    changed_when: false
+
+  - name: Save completion script
+    copy:
+      content: "{{ completion_script.stdout }}"
+      dest: "/etc/bash_completion.d/{{ app }}"
+      mode: "0644"
+
+  # Show installed version
+  - name: Verify {{ app_name }} version
+    ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+    register: install_result
+    changed_when: false
+
+  - name: Extract and clean version
+    ansible.builtin.set_fact:
+      slu_version: "{{ install_result.stdout | regex_search('(\\d+\\.\\d+\\.\\d+)') | default('unknown') }}"
+
+  - name: Show {{ app_name }} version
+    ansible.builtin.debug:
+      msg: "{{ app_name }} version is {{ slu_version }}"
+
+  # Finally, let's clean up.
+  - name: Clean up installation files
+    ansible.builtin.file:
+      path: "{{ install_dir }}"
+      state: absent
+      
+  when: 
+    - slu == True
+    - ansible_system in ["Linux", "Darwin"]
+    - ansible_architecture in ["x86_64", "arm64"]
+    - installed_version is not defined or installed_version != version

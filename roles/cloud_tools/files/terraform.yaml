@@ -44,4 +44,6 @@
     debug:
       msg: "{{ install_result.stdout.split('\n') }}"
 
-  when: terraform == True
+  when: 
+    - terraform == True
+    - ansible_distribution == "Ubuntu"

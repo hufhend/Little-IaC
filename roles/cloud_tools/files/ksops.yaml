@@ -7,6 +7,12 @@
     version: "4.4.0"
     install_dir: "/home/{{ user_ansible }}/install/ksops"
 
+# Verify installed version
+- name: Check if {{ app_name }} is installed
+  stat:
+    path: "{{ app_dir }}/{{ app }}"
+  register: app_installed
+
 # View the latest stable version
 - name: Get latest version from GitHub
   ansible.builtin.uri:
@@ -22,7 +28,7 @@
 - name: Show {{ app_name }} version
   ansible.builtin.debug:
     msg:
-    - "The currently installed version is: {{ version }}"
+    - "The currently installed version is {{ version }}"
   when: app_installed.stat.exists
 
 - name: Compare versions
@@ -104,4 +110,4 @@
     - ksops == True
     - ansible_system in ["Linux", "Darwin"]
     - ansible_architecture in ["x86_64", "amd64"]
-    - latest_version != version
+    - latest_version != version or app_installed.stat.exists == False

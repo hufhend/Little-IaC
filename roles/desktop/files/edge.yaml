@@ -15,7 +15,7 @@
 
   - name: Add {{ app_name }} repository
     ansible.builtin.apt_repository:
-      repo: deb [arch=amd64] https://packages.microsoft.com/repos/edge/ stable main
+      repo: deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/edge/ stable main
       state: present
       filename: microsoft-edge
 

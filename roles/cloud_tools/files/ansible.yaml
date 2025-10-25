@@ -1,0 +1,30 @@
+---
+# Ansible for control node
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "ansible"
+    app_name: "Ansible"
+
+- name: Install {{ app_name }}
+  block:
+  - name: Add Ansible GPG key
+    ansible.builtin.apt_key:
+      url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x93C4A3FD7BB9C367
+      keyring: /usr/share/keyrings/ansible.gpg
+      state: present
+
+  - name: Add Ansible PPA repository
+    ansible.builtin.apt_repository:
+      repo: 'deb [signed-by=/usr/share/keyrings/ansible.gpg] http://ppa.launchpad.net/ansible/ansible/ubuntu {{ ansible_distribution_release }} main'
+      state: present
+      filename: ansible
+      update_cache: yes
+
+  - name: Install {{ app_name }}
+    apt:
+      name: ansible
+      state: present
+      update_cache: yes
+  when: 
+    - ansible == True
+    - ansible_distribution == "Ubuntu"

@@ -23,4 +23,6 @@
     ansible.builtin.apt:
       name: python3
       state: present
-  when: python == True
+  when: 
+    - python == True
+    - ansible_distribution == "Ubuntu"

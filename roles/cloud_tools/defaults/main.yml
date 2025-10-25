@@ -1,38 +1,41 @@
----
 # defaults file for cloud_tools
-kubectl: false
-azcli: false
-awscli: false
-terraform: false
-helm: false
-kubens: false
-velero: false
-argocd: false
-starship: false
-buildx: false
-kubectx: false
-saml2aws: false
-trivy: false
-k9s: false
-oc: false
+---
 age: false
-sops: false
-ocpinstall: false
-ocmirror: false
-kustomize: false
-clairctl: false
+ansible: false
+argocd: false
+awscli: false
+azcli: false
+buildx: false
 cephadm: false
+clairctl: false
+helm: false
 ksops: false
+kubeadm: false
+kubectl: false
+kubectx: false
+kubens: false
+kustomize: false
+k9s: false
+longhornctl: false
 noobaa: false
+oc: false
+ocmirror: false
+ocpinstall: false
 operatorsdk: false
 oras: false
+python: false
 roxctl: false
-yajsv: false
+saml2aws: false
 slu: false
-longhornctl: false
+sops: false
+starship: false
+terraform: false
+trivy: false
+velero: false
+yajsv: false
+
 
 # only if you're sure what you're doing
-kubeadm: false
 k8s_version: "1.32"
 
 # common variables

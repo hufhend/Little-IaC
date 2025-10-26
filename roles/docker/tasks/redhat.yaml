@@ -67,6 +67,30 @@
       reboot_timeout: 600
     when: "'docker' not in user_groups.stdout.split()"
 
+  # Show installed version
+  - name: Get Docker version
+    command: docker version
+    register: docker_version_result
+
+  - name: Get Docker Compose version
+    command: docker compose version
+    register: docker_compose_version_result
+
+  - name: Extract Docker versions
+    set_fact:
+      docker_client_version: "{{ docker_version_result.stdout | regex_search('Client:.*\\n Version:\\s+([\\d.]+)', '\\1') | default(['unknown']) | first }}"
+      docker_engine_version: "{{ docker_version_result.stdout | regex_search('Engine:\\s*\\n\\s+Version:\\s+([\\d.]+)', '\\1') | default(['unknown'], true) | first }}"
+      containerd_version: "{{ docker_version_result.stdout | regex_search('containerd:\\s*\\n\\s+Version:\\s+([\\w.]+)', '\\1') | default(['unknown'], true) | first }}"
+      runc_version: "{{ docker_version_result.stdout | regex_search('runc:\\s*\\n\\s+Version:\\s+([\\d.]+)', '\\1') | default(['unknown'], true) | first }}"
+      docker_init_version: "{{ docker_version_result.stdout | regex_search('docker-init:\\s*\\n\\s+Version:\\s+([\\d.]+)', '\\1') | default(['unknown'], true) | first }}"
+      docker_compose_version: "{{ docker_compose_version_result.stdout | regex_search('Docker Compose version v([\\d.]+)', '\\1') | default(['unknown'], true) | first }}"
+
+  - name: Show Docker versions
+    ansible.builtin.debug:
+      msg:
+      - "Docker client: {{ docker_client_version }}"
+      - "Docker engine: {{ docker_engine_version }}, containerd: {{ containerd_version }}, runc: {{ runc_version }}, docker-init: {{ docker_init_version }}, compose: {{ docker_compose_version }}"  
+
   when: 
     - role not in ['combi', 'master', 'worker']
     - ansible_os_family | lower == "redhat"

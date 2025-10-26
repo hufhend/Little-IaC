@@ -2,7 +2,7 @@
 # Python via DeadSnakes repo
 - name: Package Variable Setting
   ansible.builtin.set_fact:
-    app: "python"
+    app: "python3"
     app_name: "Python"
 
 - name: Install {{ app_name }}
@@ -21,8 +21,23 @@
 
   - name: Install {{ app_name }}
     ansible.builtin.apt:
-      name: python3
+      name: "{{ app }}"
       state: present
+
   when: 
     - python == True
     - ansible_distribution == "Ubuntu"
+
+# Show installed version
+- name: Verify {{ app_name }} version
+  ansible.builtin.command: "/usr/bin/{{ app }} --version"
+  register: install_result
+  changed_when: false
+
+- name: Extract and clean version
+  set_fact:
+    python_version: "{{ install_result.stdout | regex_search('Python ([\\d.]+)', '\\1') | first }}"
+
+- name: Show {{ app_name }} version
+  ansible.builtin.debug:
+    msg: "{{ app_name }} version is {{ python_version }}"

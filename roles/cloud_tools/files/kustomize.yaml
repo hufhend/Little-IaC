@@ -4,7 +4,6 @@
   ansible.builtin.set_fact:
     app: "kustomize"
     app_name: "Kustomize"
-    app_dir: "/usr/local/bin"    
 
 - name: Install {{ app_name}}
   block:
@@ -37,11 +36,13 @@
     command: "{{ app_dir }}/{{ app }} version"
     register: "install_result"
     changed_when: false
-    become_user: "{{ ansible_user }}"
-    ignore_errors: true
+
+  - name: Extract and clean version
+    set_fact:
+      new_version: "{{ install_result.stdout | replace('v', '') | trim }}"
 
   - name: Show {{ app_name }} version
-    debug:
-      var: install_result.stdout
+    ansible.builtin.debug:
+      msg: "{{ app_name }} version is {{ new_version }}"
 
   when: kustomize and (binenv | default(false))

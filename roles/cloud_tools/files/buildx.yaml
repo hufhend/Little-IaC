@@ -4,7 +4,6 @@
   ansible.builtin.set_fact:
     app: "buildx"
     app_name: "Buildx plugin"
-    app_dir: "/usr/local/bin"    
 
 - name: Install {{ app_name}}
   block:
@@ -13,6 +12,7 @@
     args:
       creates: "{{ app_dir }}/{{ app }}"
 
+  # Completion script tasks
   - name: Check if completion script exists
     stat:
       path: "/etc/bash_completion.d/{{ app }}"
@@ -31,14 +31,19 @@
       mode: "0644"
     when: not completion_script_stat.stat.exists
 
+  # Show installed version
   - name: Check {{ app_name }} version
     command: "{{ app_dir }}/{{ app }} version"
     register: "install_result"
     changed_when: false
     ignore_errors: true
 
-  - name: Show {{ app_name }} version
-    debug:
-      msg: "{{ install_result.stdout.split('\n') }}"
+  - name: Extract and clean version
+    set_fact:
+      new_version: "{{ (install_result.stdout | regex_search('v?([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1')) | first }}"
 
-  when: buildx and (binenv | default(false))
+  - name: Show {{ app_name }} version
+    ansible.builtin.debug:
+      msg: "{{ app_name }} version is {{ new_version }}"
+
+    when: buildx and (binenv | default(false))

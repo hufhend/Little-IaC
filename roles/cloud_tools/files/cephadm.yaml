@@ -21,9 +21,13 @@
     register: install_result
     changed_when: false
 
+  - name: Extract and clean version
+    set_fact:
+      new_version: "{{ (install_result.stdout | regex_search('cephadm version ([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1')) | first | default('UNKNOWN') }}"
+
   - name: Show {{ app_name }} version
     ansible.builtin.debug:
-      var: install_result.stdout
+      msg: "{{ app_name }} version is {{ new_version }}"
 
   when: 
     - cephadm == True

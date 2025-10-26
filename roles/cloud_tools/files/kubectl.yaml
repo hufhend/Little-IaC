@@ -76,16 +76,18 @@
     changed_when: false
     ignore_errors: true
 
-  - name: Parse version number
+  - name: Extract and clean version
     set_fact:
       kubectl_version: "{{ (install_result.stdout | regex_search('Client Version: v?([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1')) | first }}"
 
   - name: Parse kustomize version number
     set_fact:
-      kustomize_version: "{{ (install_result.stdout | regex_search('Kustomize Version: v?([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1')) | first }}"
+      kustomize_version: "{{ (install_result.stdout | regex_search('Kustomize Version: v?([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1')) | default(['unknown'], true) | first }}"
 
   - name: Show {{ app_name }} versions
     ansible.builtin.debug:
-      msg: "{{ app_name }} version is {{ kubectl_version }} and Kustomize version is {{ kustomize_version }}"
+      msg: 
+      - "{{ app_name }} version is {{ kubectl_version }}"
+      - "Kustomize: {{ kustomize_version }}"
 
   when: (role in ['combi', 'master', 'worker']) or (kubectl == True)

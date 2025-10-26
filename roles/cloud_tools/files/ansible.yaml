@@ -7,24 +7,44 @@
 
 - name: Install {{ app_name }}
   block:
-  - name: Add Ansible GPG key
+  - name: Add {{ app_name }} GPG key
     ansible.builtin.apt_key:
       url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x93C4A3FD7BB9C367
-      keyring: /usr/share/keyrings/ansible.gpg
+      keyring: /usr/share/keyrings/{{ app }}.gpg
       state: present
 
-  - name: Add Ansible PPA repository
+  - name: Add {{ app_name }} PPA repository
     ansible.builtin.apt_repository:
-      repo: 'deb [signed-by=/usr/share/keyrings/ansible.gpg] http://ppa.launchpad.net/ansible/ansible/ubuntu {{ ansible_distribution_release }} main'
+      repo: 'deb [signed-by=/usr/share/keyrings/{{ app }}.gpg] http://ppa.launchpad.net/{{ app }}/{{ app }}/ubuntu {{ ansible_distribution_release }} main'
       state: present
-      filename: ansible
+      filename: "{{ app }}"
       update_cache: yes
 
   - name: Install {{ app_name }}
     apt:
-      name: ansible
+      name: "{{ app }}"
       state: present
       update_cache: yes
   when: 
     - ansible == True
     - ansible_distribution == "Ubuntu"
+
+- block:
+    # Show installed version
+  - name: Get {{ app_name }} version
+    command: "{{ app }} --version"
+    register: ansible_version_result
+
+  - name: Extract and clean versions
+    set_fact:
+      ansible_core_version: "{{ ansible_version_result.stdout | regex_search('ansible \\[core ([\\d.]+)\\]', '\\1') | default(['unknown']) | first }}"
+      python_version: "{{ ansible_version_result.stdout | regex_search('python version = ([\\d.]+)', '\\1') | default(['unknown']) | first }}"
+      jinja_version: "{{ ansible_version_result.stdout | regex_search('jinja version = ([\\d.]+)', '\\1') | default(['unknown']) | first }}"
+      pyyaml_version: "{{ ansible_version_result.stdout | regex_search('pyyaml version = ([\\d.]+)', '\\1') | default(['unknown'], true) | first }}"
+
+  - name: Show {{ app_name }} version
+    ansible.builtin.debug:
+      msg: 
+      - "{{ app_name }} version is {{ ansible_core_version }}"
+      - "Runtime dependencies - Python: {{ python_version }}, Jinja2: {{ jinja_version }}, PyYAML: {{ pyyaml_version }}"
+  when: ansible == True

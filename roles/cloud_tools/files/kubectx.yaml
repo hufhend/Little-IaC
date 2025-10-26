@@ -3,8 +3,7 @@
 - name: Package Variable Setting
   ansible.builtin.set_fact:
     app: "kubectx"
-    app_name: "Kubectx utility"
-    app_dir: "/usr/local/bin"    
+    app_name: "Kubectx"
 
 - name: Install {{ app_name}}
   block:
@@ -17,11 +16,9 @@
     command: "{{ app_dir }}/{{ app }} --version"
     register: "install_result"
     changed_when: false
-    become_user: "{{ ansible_user }}"
-    ignore_errors: true
 
   - name: Show {{ app_name }} version
-    debug:
-      msg: "{{ install_result.stdout.split('\n') }}"
+    ansible.builtin.debug:
+      msg: "{{ app_name }} version is {{ install_result.stdout }}"
 
   when: kubectx and (binenv | default(false))

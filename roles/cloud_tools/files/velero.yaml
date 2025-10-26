@@ -4,7 +4,6 @@
   ansible.builtin.set_fact:
     app: "velero"
     app_name: "Velero"
-    app_dir: "/usr/local/bin"
 
 - name: Install {{ app_name}}
   block:
@@ -13,6 +12,7 @@
     args:
       creates: "{{ app_dir }}/{{ app }}"
 
+  # Show installed version
   - name: Check if completion script exists
     stat:
       path: "/etc/bash_completion.d/{{ app }}"
@@ -30,16 +30,20 @@
       dest: "/etc/bash_completion.d/{{ app }}"
       mode: "0644"
     when: not completion_script_stat.stat.exists
-
+  
+  # Show installed version
   - name: Check {{ app_name }} version
     command: "{{ app_dir }}/{{ app }} version"
     register: "install_result"
     changed_when: false
     become_user: "{{ ansible_user }}"
-    ignore_errors: true
 
+  - name: Extract and clean version
+    set_fact:
+      new_version: "{{ (install_result.stdout | regex_search('Client:\\s*Version: v?([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1')) | first }}"
+      
   - name: Show {{ app_name }} version
     debug:
-      msg: "{{ install_result.stdout.split('\n') |  map('regex_replace', '^\\t', '') | list }}"
+      msg: "{{ app_name }} version is {{ new_version }}"
 
   when: velero and (binenv | default(false))

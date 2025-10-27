@@ -139,15 +139,10 @@
       ansible.builtin.set_fact:
         cli_version: "{{ install_result.stderr | regex_search('CLI version: (\\S+)', '\\1') | first | regex_replace('[\"\\\\n]', '') }}"
 
-    - name: Parse operator image version
-      ansible.builtin.set_fact:
-        operator_version: "{{ install_result.stderr | regex_search('operator-image: noobaa/noobaa-operator:(\\S+)', '\\1') | first | regex_replace('[\"\\\\n]', '') }}"
-
     - name: Show {{ app_name }} version
       ansible.builtin.debug:
         msg:
-          - "CLI version: {{ cli_version }}"
-          - "Operator version: {{ operator_version }}"
+          - "{{ app_name }} version: {{ cli_version }}"
 
     # Finally, let's clean up.
     - name: Clean up installation files

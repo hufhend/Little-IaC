@@ -1,4 +1,8 @@
 ---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    KUBECONFIG: "/home/{{ user_ansible }}/.kube/config"
+
 - name: Installation and setup of cloud management utilities
   block:
   - name: Install cloud tools packages
@@ -17,7 +21,6 @@
   - name: Install cloud tools for RedHat
     ansible.builtin.dnf:
       name:
-        - ansible-core
         - git-subtree
         - go
         - java-latest-openjdk

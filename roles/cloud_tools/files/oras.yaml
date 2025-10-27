@@ -38,13 +38,6 @@
 - name: Show {{ app_name }} version
   ansible.builtin.debug:
     msg:
-    - "Latest OCI registry CLI version is: {{ latest_version }}"
-    - "The currently installed version is: {{ version }}"
-  when: installed_version is not defined
-
-- name: Show {{ app_name }} version
-  ansible.builtin.debug:
-    msg:
     - "The installed version was detected: {{ installed_version }}"
     - "The currently installed version is: {{ version }}"
   when: installed_version is defined

@@ -4,7 +4,7 @@
 - name: Package Variable Setting
   ansible.builtin.set_fact:
     app: "yajsv"
-    app_name: "SON-Schema Validator"
+    app_name: "JSON-Schema Validator"
     version: "1.4.1"
     install_dir: "/home/{{ user_ansible }}/install/yajsv"
 

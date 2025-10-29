@@ -86,20 +86,19 @@
     - ansible_distribution_major_version in ["9", "10"]
 
 
-- name: Install EPEL packages for CentOS 9 and Rocky 9
+- name: Install EPEL packages for CentOS and Rocky
   block:
     - name: Install EPEL packages to CentOS and Rocky
       ansible.builtin.dnf:
         name:
           - epel-release
-          # - epel-next-release
         state: latest
 
-    - name: Install subscription-manager
-      ansible.builtin.dnf:
-        name:
-          - subscription-manager
-        state: latest
+    # - name: Install subscription-manager
+    #   ansible.builtin.dnf:
+    #     name:
+    #       - subscription-manager
+    #     state: latest
   when: 
     - ansible_distribution == "CentOS" or ansible_distribution == "Rocky"
     - ansible_distribution_major_version == "9"

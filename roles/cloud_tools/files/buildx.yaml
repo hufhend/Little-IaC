@@ -46,4 +46,4 @@
     ansible.builtin.debug:
       msg: "{{ app_name }} version is {{ new_version }}"
 
-    when: buildx and (binenv | default(false))
+  when: buildx and (binenv | default(false))

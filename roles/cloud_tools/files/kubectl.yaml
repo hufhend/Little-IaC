@@ -26,48 +26,67 @@
       path: "/etc/bash_completion.d/{{ app }}"
     register: completion_script_stat
 
-  - name: Generate completion script
-    command: "{{ app }} completion bash"
-    register: completion_script
-    changed_when: false
-    when: not completion_script_stat.stat.exists
+  - block:
+      - name: Generate completion script
+        command: "{{ app_dir }}/{{ app }} completion bash"
+        register: completion_script
+        changed_when: false
 
-  - name: Save completion script
-    copy:
-      content: "{{ completion_script.stdout }}"
-      dest: "/etc/bash_completion.d/{{ app }}"
-      mode: "0644"
+      - name: Save completion script
+        copy:
+          content: "{{ completion_script.stdout }}"
+          dest: "/etc/bash_completion.d/{{ app }}"
+          mode: "0644"
     when: not completion_script_stat.stat.exists
 
   # Create local customizations
+  - name: Remove alias for {{ app_name }}
+    ansible.builtin.lineinfile:
+      path: "/home/{{ ansible_user }}/.bashrc"
+      line: "alias k='/usr/bin/kubectl'"
+      state: absent
+  
   - name: Add alias for {{ app_name }}
     ansible.builtin.lineinfile:
-      path: "{{ lookup('env', 'HOME') }}/.bashrc"
-      line: "alias k='/usr/bin/kubectl'"
+      path: "/home/{{ ansible_user }}/.bashrc"
+      line: "alias k='/usr/local/bin/kubectl'"
       create: yes
+
+  - name: Add completion for alias k
+    ansible.builtin.lineinfile:
+      path: "/home/{{ ansible_user }}/.bashrc"
+      line: "complete -F __start_kubectl k"
+      create: yes  
 
   - name: Create a kube directory
     ansible.builtin.file:
-      path: "{{ lookup('env', 'HOME') }}/.kube"
+      path: "/home/{{ ansible_user }}/.kube"
       state: directory
       owner: "{{ ansible_user }}"
       group: "{{ ansible_user }}"
       mode: '0750'
 
-  - name: Get local hostname
-    local_action: command hostname
+  - name: Check if kubeconfig exists
+    stat:
+      path: "{{ kubeconfig_source_path | default('~/.kube/config') }}"
+    register: kubeconfig_src_check
+    delegate_to: localhost
+    run_once: true
+    ignore_errors: yes
     become: no
-    register: local_hostname
 
-  - name: Copy kubeconfig file to remote server
+  - name: Copy kubeconfig to remote servers
     ansible.builtin.copy:
-      src: "{{ lookup('env', 'HOME') }}/.kube/config"
-      dest: "{{ lookup('env', 'HOME') }}/.kube/config"
+      src: "{{ kubeconfig_source_path | default('~/.kube/config') }}"
+      dest: "/home/{{ ansible_user }}/.kube/config"
       owner: "{{ ansible_user }}"
       group: "{{ ansible_user }}"
       mode: '0600'
-    ignore_errors: true
-    when: local_hostname.stdout != ansible_hostname
+      remote_src: false
+    when: 
+      - ansible_connection != 'local'
+      - inventory_hostname not in ['localhost', '127.0.0.1']
+      - kubeconfig_src_check.stat.exists | default(false)
 
   # Show installed version
   - name: Check {{ app_name }} version
@@ -90,4 +109,6 @@
       - "{{ app_name }} version is {{ kubectl_version }}"
       - "Kustomize: {{ kustomize_version }}"
 
-  when: (role in ['combi', 'master', 'worker']) or (kubectl == True)
+  when: 
+    - (role in ['combi', 'master', 'worker']) or kubectl
+    - kubectl and (binenv | default(false))

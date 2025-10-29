@@ -32,18 +32,19 @@
     when: not completion_script_stat.stat.exists
 
   # Show installed version
-  - name: Check {{ app_name }} version
-    command: "{{ app_dir }}/{{ app }} version --client -o json"
-    register: "install_result"
-    changed_when: false
-    become_user: "{{ ansible_user }}"
+  - block:
+      - name: Check {{ app_name }} version
+        command: "{{ app_dir }}/{{ app }} version --client -o json"
+        register: "install_result"
+        changed_when: false
 
-  - name: Extract and clean version
-    set_fact:
-      new_version: "{{ (install_result.stdout | from_json).client.Version | regex_replace('^v|\\+.*$', '') }}"
+      - name: Extract and clean version
+        set_fact:
+          new_version: "{{ (install_result.stdout | from_json).client.Version | regex_replace('^v|\\+.*$', '') }}"
 
-  - name: Show {{ app_name }} version
-    debug:
-      msg: "{{ app_name }} version is {{ new_version }}"
+      - name: Show {{ app_name }} version
+        debug:
+          msg: "{{ app_name }} version is {{ new_version }}"
+    ignore_errors: yes
 
   when: argocd and (binenv | default(false))

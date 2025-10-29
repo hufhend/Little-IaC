@@ -39,12 +39,6 @@
   register: new_locale
   changed_when: false
 
-- name: Print original and current locale
-  ansible.builtin.debug:
-    msg:
-      - "Original locale : {{ original_locale }}"
-      - "Current locale  : {{ new_locale.stdout }}"    
-
 - name: "Check if font Sacramento exists"
   ansible.builtin.stat:
     path: "/usr/local/share/fonts/Sacramento/Sacramento-Regular.ttf"
@@ -75,6 +69,13 @@
       
   when: not sacramento_font.stat.exists
 
+- name: Add KUBECONFIG to .bashrc
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/.bashrc"
+    line: 'export KUBECONFIG="{{ ansible_env.HOME }}/.kube/config"'
+    create: yes
+    state: present
+
 - name: Create a bash completion directory
   ansible.builtin.file:
     path: /etc/bash_completion.d
@@ -82,3 +83,18 @@
     mode: '0755'
     owner: root
     group: root
+
+- name: Display machine information
+  debug:
+    msg:
+    - "{{ ansible_distribution }} {{ ansible_distribution_version }}, {{ ansible_distribution_release }}"
+    - "Kernel: {{ ansible_kernel }}, {{ ansible_architecture }}"
+    - "CPU: {{ ansible_processor_cores }} physical, {{ ansible_processor_vcpus }} logical, RAM: {{ (ansible_memtotal_mb / 1000) | round | int }} GB total, {{ (ansible_memfree_mb / 1000) | round | int }} GB free"    
+    # - "Hostname: {{ ansible_hostname }} {{ ansible_domain }}"
+
+- name: Print original and current locale
+  ansible.builtin.debug:
+    msg:
+      - "Original locale : {{ original_locale }}"
+      - "Current locale  : {{ new_locale.stdout }}"    
+      - "Time zone       : {{ timezone }}"

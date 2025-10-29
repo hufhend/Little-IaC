@@ -13,14 +13,9 @@
     path: /var/run/dnf.pid
     state: absent
   
-- name: Stop dnf-makecache timer
-  ansible.builtin.systemd:
-    name: dnf-makecache.timer
-    state: stopped
-  
 - name: Stop dnf-makecache service
   ansible.builtin.systemd:
-    name: dnf-makecache.service
+    name: dnf-makecache
     state: stopped
   
 - name: Check repositories
@@ -33,12 +28,7 @@
 
 - name: Start dnf-makecache service
   ansible.builtin.systemd:
-    name: dnf-makecache.service
-    state: started
-
-- name: Start dnf-makecache timer
-  ansible.builtin.systemd:
-    name: dnf-makecache.timer
+    name: dnf-makecache
     state: started
 
 # - name: Add Prometheus repository

@@ -41,4 +41,7 @@
       cmd: apt-mark hold azure-cli
     changed_when: false
 
-  when: azcli == True
+  when: 
+    - azcli == True
+    - ansible_distribution == "Ubuntu"
+

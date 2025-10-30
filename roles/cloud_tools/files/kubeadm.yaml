@@ -59,4 +59,6 @@
     debug:
       msg: "{{ install_result.stdout | from_json }}"
 
-  when: kubeadm and (role not in ['combi', 'master', 'worker'])
+  when: 
+    - kubeadm and (role not in ['combi', 'master', 'worker'])
+    - ansible_distribution == "Ubuntu"

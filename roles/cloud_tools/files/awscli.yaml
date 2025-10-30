@@ -77,4 +77,7 @@
         path: "{{ install_dir }}"
         state: absent
 
-  when: awscli == True
+  when: 
+    - awscli == True
+    - ansible_distribution == "Ubuntu"
+

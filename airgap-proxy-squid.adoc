@@ -1,0 +1,85 @@
+= Proxy Configuration for Isolated Ansible Environments
+
+== Introduction
+
+It is common to encounter scenarios where an Ansible playbook must be executed in an isolated environment where direct internet access is restricted or completely unavailable. In such cases, the only feasible way to enable the playbook to download packages or connect to external resources is via a well-configured proxy.
+
+Below is a production-tested Squid proxy configuration that allows controlled access to essential package repositories and services while maintaining security boundaries.
+
+== Squid Proxy Configuration
+
+[source,squid.conf]
+----
+# Basic proxy settings
+http_port 3128
+visible_hostname proxy-server
+
+# Client IP restrictions - REPLACE WITH YOUR ACTUAL IP
+acl allowed_client src 63.177.57.18/32
+
+# Package repositories
+acl redhat_domains dstdomain .redhat.com .fedoraproject.org
+
+# EPEL mirrors (comprehensive list from production logs)
+acl epel_mirrors dstdomain .bahnhof.net .fcix.net .omnilance.com .coreix.net 
+  .rpmfind.net .efect.ro .cc.uoc.gr .netone.nl .telepoint.bg .fau.de 
+  .yandex.ru .n-ix.net .sh.cvut.cz .raiolanetworks.com .ukfast.co.uk 
+  .etf.bg.ac.rs .dogado.de .fjordos.com .mirrorservice.org .nic.funet.fi 
+  .wd6.net .uni-ruse.bg .ircam.fr .freethought-internet.co.uk .grena.ge 
+  .lanet.network .uni-kl.de .vpsnet.com .nextlayer.at .fibianet.dk 
+  .mirror.garr.it .dotsrc.org .uni-stuttgart.de .vhosting-it.com 
+  .liteserver.nl .arnes.si .glesys.net .mangohost.net .leaseweb.net 
+  .ipacct.com .linux.edu.lv .in2p3.fr .cloud9.ge .23m.com .xtom.de 
+  .kernel.org .netsite.dk .imt-systems.com .cspacehostings.com .upjs.sk 
+  .hostico.ro .slu.cz .accum.se .netcologne.de .nsc.liu.se .plusline.net 
+  .digitalnova.at .rbc.ru .cica.es .ukraine.com.ua .ams-1.serverforge.org 
+  .cherryservers.com .koyanet.lv .stud.hs-esslingen.de .lysator.liu.se 
+  .uni-sofia.bg .nsc.ru .tu-chemnitz.de .nluug.nl .serveriai.lt 
+  .alwyzon.net .nic.cz .agdsn.de .logol.ru .hosterion.ro .sahilister.net 
+  .anexia.at
+
+# Application and development domains
+acl next_domains dstdomain .github.com .githubusercontent.com .docker.com 
+  .helm.sh .openshift.com .ubuntu.com .ceph.com .s3.amazonaws.com .k8s.io
+
+# GPG keyserver access
+acl gpg_domains dstdomain .keyserver.ubuntu.com .keys.openpgp.org .pgp.mit.edu
+acl HKP_ports port 11371    # HKP port
+acl HKPS_ports port 11371   # HKPS port
+
+# Access control rules (order matters!)
+http_access allow allowed_client redhat_domains
+http_access allow allowed_client epel_mirrors
+http_access allow allowed_client next_domains
+http_access allow allowed_client gpg_domains
+http_access deny all
+
+# Cache configuration
+cache_dir ufs /var/spool/squid 10000 16 256
+maximum_object_size 256 MB
+----
+
+== Important Notes
+
+* Replace `63.177.57.18/32` with your actual client IP address
+* The configuration uses a whitelist approach - only explicitly allowed domains are accessible
+* EPEL mirrors list is extensive to cover most geographic locations
+* For HTTPS connections, ensure CONNECT method is allowed on port 443
+* GPG keyservers use specialized protocols (HKP/HKPS) on port 11371
+
+== Usage Example
+
+Apply this configuration to `/etc/squid/squid.conf` and restart the service:
+
+[source,bash]
+----
+sudo systemctl restart squid
+sudo systemctl enable squid
+----
+
+Test connectivity from your client machine:
+
+[source,bash]
+----
+curl -I --proxy http://your-proxy-ip:3128 http://www.redhat.com
+----

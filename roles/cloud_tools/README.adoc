@@ -44,6 +44,12 @@ awscli: true
 - Ansible must be installed on the control node.
 - Target nodes must have internet access to download packages and keys.
 
+== Airgap Proxy Configuration
+
+In scenarios where the target environment lacks direct internet access, a proxy server can be configured to facilitate the downloading of necessary packages and resources. Below is a sample Squid proxy configuration that can be adapted for such air-gapped environments.
+
+link:airgap-proxy.adoc[Airgap Proxy Squid]
+
 == Author
 
 This role was created and is maintained by the `Little-IaC` team.

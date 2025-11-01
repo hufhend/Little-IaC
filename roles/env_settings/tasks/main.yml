@@ -98,3 +98,10 @@
       - "Original locale : {{ original_locale }}"
       - "Current locale  : {{ new_locale.stdout }}"    
       - "Time zone       : {{ timezone }}"
+
+# This is where everything else is installed
+- name: Add other software
+  include_tasks:
+    file: "{{ item }}"
+  loop: "{{ query('fileglob', '{{ role_path }}/files/*.yaml') }}"
+  no_log: true

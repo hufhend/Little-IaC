@@ -1,0 +1,131 @@
+---
+- name: Set LDAP/AD integration variables
+  ansible.builtin.set_fact:
+    ad_domain: "{{ ad_domain | default('example.com') }}"
+    ldap_uri: "{{ ldap_uri | default('ldaps://ldap.example.com/') }}"
+    bind_dn: "{{ bind_dn | default('cn=service-account,OU=ServiceAccounts,DC=example,DC=com') }}"
+    user_search_base: "{{ user_search_base | default('ou=Users,DC=example,DC=com') }}"
+    group_search_base: "{{ group_search_base | default('ou=Groups,DC=example,DC=com') }}"
+    search_base: "{{ search_base | default('DC=example,DC=com') }}"
+    allowed_groups: "{{ allowed_groups | default('APP-Linux-Users,APP-Linux-Admins') }}"
+    fallback_homedir: "{{ fallback_homedir | default('/home/%u') }}"
+    default_shell: "{{ default_shell | default('/bin/bash') }}"
+    override_gid: "{{ override_gid | default(100) }}"
+    ldap_service_port: "{{ ldap_service_port | default(636) }}"
+    ldap_tls_cacertdir: "{{ ldap_tls_cacertdir | default('/etc/openldap/cacerts') }}"
+    ca_cert_path: "{{ ca_cert_path | default('/etc/ssl/certs/ca-certificates.crt') }}"
+    sssd_services: "{{ sssd_services | default('nss, pam') }}"
+    debug_level: "{{ debug_level | default(0) }}"
+    ldap_id_use_start_tls: "{{ 'True' if (ldap_uri is defined and ldap_uri.startswith('ldap://')) else 'False' }}"
+
+- name: Check if SSSD is already running
+  ansible.builtin.systemd:
+    name: sssd
+  register: sssd_service
+  changed_when: false
+  check_mode: false
+
+- name: Install and configure LDAP/AD authentication
+  block:
+    - name: Install required packages
+      ansible.builtin.package:
+        name:
+          - sssd
+          - sssd-tools
+          - oddjob
+          - oddjob-mkhomedir
+        state: present
+
+    - name: Create SSSD configuration
+      copy:
+        dest: /etc/sssd/sssd.conf
+        content: |
+          # Created via Ansible Little-IaC - do not change
+
+          [sssd]
+          domains = {{ ad_domain }}
+          services = {{ sssd_services }}
+          config_file_version = 2
+
+          [nss]
+          homedir_substring = /home
+
+          [domain/{{ ad_domain }}]
+          simple_allow_groups = {{ allowed_groups }}
+          access_provider = simple
+          id_provider = ldap
+          auth_provider = ldap
+          sudo_provider = ldap
+          cache_credentials = True
+          ldap_schema = ad
+          ldap_id_mapping = True
+          ldap_uri = {{ ldap_uri }}
+          ldap_service_port = {{ ldap_service_port }}
+          ldap_id_use_start_tls = {{ ldap_id_use_start_tls }}
+          ldap_tls_cacertdir = {{ ldap_tls_cacertdir }}
+          ldap_tls_cacert = {{ ca_cert_path }}
+          ldap_tls_reqcert = allow
+          ldap_default_bind_dn = {{ bind_dn }}
+          ldap_default_authtok_type = obfuscated_password
+          ldap_default_authtok = #OBFUSCATED_PASSWORD#
+          ldap_search_base = {{ search_base }}
+          ldap_user_search_base = {{ user_search_base }}
+          ldap_group_search_base = {{ group_search_base }}
+          fallback_homedir = {{ fallback_homedir }}
+          default_shell = {{ default_shell }}
+          override_gid = {{ override_gid }}
+          debug_level = {{ debug_level }}
+        mode: 0600
+        owner: root
+        group: root
+
+    - name: Enable home directory creation
+      command: authselect select sssd with-mkhomedir --force
+      args:
+        creates: /etc/authselect/current
+
+    - name: Start oddjobd service
+      systemd:
+        name: oddjobd
+        state: started
+        enabled: yes
+
+    - name: Show current authentication configuration
+      command: authselect current
+      register: auth_status
+      changed_when: false
+
+    - name: Display authentication status with details
+      block:
+        - name: Extract authselect profile
+          ansible.builtin.set_fact:
+            auth_profile: "{{ auth_status.stdout_lines[0] | regex_replace('Profile ID: ', '') }}"
+        
+        - name: Extract authselect features
+          ansible.builtin.set_fact:
+            auth_features: "{{ auth_status.stdout_lines[2:] | join(', ') | regex_replace('^- ', '') }}"
+      
+        - name: Display formatted status
+          ansible.builtin.debug:
+            msg:
+              - "┌─────────────────────────────────┐"
+              - "│      AUTHENTICATION STATUS      │"
+              - "├─────────────────────────────────┤"
+              - "│ Profile  :  {{ auth_profile }}"
+              - "│ Features :  {{ auth_features }}"
+              - "└─────────────────────────────────┘"
+
+    - name: Display configuration instructions
+      ansible.builtin.debug:
+        msg:
+          - "LDAP/AD integration configured successfully!"
+          - "Domain: {{ ad_domain }}"
+          - "LDAP URI: {{ ldap_uri }}"
+          - "Required manual steps:"
+          - "  1. Generate password  :  sss_obfuscate -d {{ ad_domain }}"
+          - "  2. Restart service    :  systemctl restart sssd"
+
+  when: 
+    - ad_integration | default(false)
+    - ansible_os_family == "RedHat"
+    - sssd_service.status.ActiveState != "active"

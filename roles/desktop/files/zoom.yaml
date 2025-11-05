@@ -39,7 +39,9 @@
         deb: "{{ zoom_deb_path }}"
         state: present
       when: install_result is failed
-  when: zoom == True
+  when: 
+    - zoom
+    - ansible_distribution == "Ubuntu"
 
 # The change from snap installation was necessary because Zoom snap did not work 
 # properly during automatic installation.

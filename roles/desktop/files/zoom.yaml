@@ -8,13 +8,13 @@
     zoom_deb_url: "https://zoom.us/client/latest/zoom_amd64.deb"
     zoom_deb_path: "/tmp/zoom_amd64.deb"
 
-- name: Unistall {{ app_name }} snap
-  community.general.snap:
-    name: zoom-client
-    state: absent
-
 - name: Install {{ app_name }}
   block:
+    - name: Unistall {{ app_name }} snap
+      community.general.snap:
+        name: zoom-client
+        state: absent
+
     - name: Download {{ app_name }}
       ansible.builtin.get_url:
         url: "{{ zoom_deb_url }}"

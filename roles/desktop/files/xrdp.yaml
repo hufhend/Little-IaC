@@ -1,0 +1,46 @@
+# XRDP installation and configuration for remote desktop access
+- name: Install and configure XRDP for remote desktop access
+  block:
+    - name: Install xrdp package
+      ansible.builtin.package:
+        name: xrdp
+        state: present
+
+    - name: Enable and start xrdp service
+      ansible.builtin.systemd:
+        name: xrdp
+        state: started
+        enabled: yes
+
+    - name: Ensure xrdp socket is also enabled
+      ansible.builtin.systemd:
+        name: xrdp-sesman
+        state: started
+        enabled: yes
+
+    # - name: Open RDP port in firewall (RedHat)
+    #   ansible.builtin.firewalld:
+    #     port: 3389/tcp
+    #     state: enabled
+    #     permanent: yes
+    #     immediate: yes
+    #   when: ansible_os_family == "RedHat"
+
+    # - name: Open RDP port in firewall (Ubuntu)
+    #   community.general.ufw:
+    #     rule: allow
+    #     port: 3389
+    #     proto: tcp
+    #   when: ansible_os_family == "Debian"
+
+    - name: Create xrdp configuration backup
+      ansible.builtin.copy:
+        src: /etc/xrdp/xrdp.ini
+        dest: /etc/xrdp/xrdp.ini.backup
+        remote_src: yes
+        backup: yes
+      notify: restart xrdp
+
+  when: 
+    - desktop == true
+    - rdp_server == true

@@ -10,28 +10,31 @@ firewall: true
 safe_network: 192.168.88.0/24
 
 # Allow installation of larger software packages
-virtualbox: false
-vagrant: false
-chrome: false
-onlyoffice: false
 brave: false
-mega: false
-steam: false
-vscode: false
-openconnect: false
-kodi: false
-wine: false
-signal: false
-lutris: false
 datovka: false
 discord: false
-zoom: false
-spotify: false
-vlc: false
-intune: false
-slack: false
-telegram: false
 edge: false
-rocketchat: false
-stremio: false
 horizon: false
+chrome: false
+intune: false
+kodi: false
+lutris: false
+mega: false
+onlyoffice: false
+openconnect: false
+rocketchat: false
+signal: false
+slack: false
+spotify: false
+steam: false
+stremio: false
+telegram: false
+vagrant: false
+virtualbox: false
+vlc: false
+vscode: false
+wine: false
+zoom: false
+
+# Enable RDP server installation
+rdp_server: false

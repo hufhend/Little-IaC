@@ -1,56 +1,146 @@
----
 - name: Installation and setup of a desktop computer with GUI
   block:
-  - name: Install smart desktop packages
-    ansible.builtin.apt:
-      pkg:
-      - openvpn
-      - network-manager-openvpn
-      - network-manager-openvpn-gnome
-      - openvpn-systemd-resolved
-      - virtualbox
-      - virtualbox-guest-additions-iso
-      - nextcloud-desktop
-      - flameshot
-      - solaar
-      - copyq
-      - keepassxc
-      - thunderbird
-      - flatpak
-      - gnome-software-plugin-flatpak
-      - gnome-software
-      - gnome-tweaks 
+    # Common packages that work on all distributions
+    - name: Install common desktop packages (cross-platform)
+      ansible.builtin.package:
+        name:
+          - firefox              # Web browser
+          - thunderbird          # Email client
+          - keepassxc            # Password manager
+          - flatpak              # Universal package manager
+          - openvpn              # VPN client
+        state: present
 
-  - name: Create a install directory
-    ansible.builtin.file:
-      path: /home/{{ user_ansible }}/install
-      state: directory
-      owner: "{{ ansible_user }}"
-      mode: '0755'
+    # Distribution-specific packages that require different names or are unique to each OS
+    - name: Install distribution-specific packages
+      block:
+        # Ubuntu/Debian specific applications
+        - name: Install Ubuntu-specific packages
+          ansible.builtin.apt:
+            name:
+              - network-manager-openvpn           # OpenVPN integration for NetworkManager
+              - network-manager-openvpn-gnome     # GNOME GUI for OpenVPN
+              - openvpn-systemd-resolved          # DNS resolution for OpenVPN
+              - virtualbox                        # Virtualization software
+              - virtualbox-guest-additions-iso    # Guest additions for VirtualBox
+              - nextcloud-desktop                 # Nextcloud sync client
+              - solaar                            # Logitech device manager
+              - copyq                             # Clipboard manager
+              - flameshot                         # Screenshot tool
+              - gnome-software-plugin-flatpak     # Flatpak support in GNOME Software
+              - gnome-software                    # Software center
+              - gnome-tweaks                      # GNOME customization tool
+            state: present
+          when: ansible_os_family == "Debian"
 
-  - name: Add Flathub repo
-    community.general.flatpak_remote:
-      name: flathub
-      state: present
-      flatpakrepo_url: https://dl.flathub.org/repo/flathub.flatpakrepo
+        # RedHat/CentOS/Rocky specific applications
+        - name: Install RedHat-specific packages
+          ansible.builtin.dnf:
+            name:
+              - NetworkManager-openvpn            # OpenVPN integration (different package name)
+              - virt-manager                      # KVM virtualization manager (instead of VirtualBox)
+              - libvirt                           # Virtualization API
+              - nautilus                          # File manager (part of GNOME)
+              - gnome-software                    # Software center
+              - gnome-tweaks                      # GNOME customization tool
+              - gnome-control-center              # System settings
+            state: present
+          when: ansible_os_family == "RedHat"
 
-  # This is where everything else is installed
-  - name: Add other software
-    include_tasks:
-      file: "{{ item }}"
-    loop: "{{ query('fileglob', '{{ role_path }}/files/*.yaml') }}"
-    no_log: true
+    # Full GNOME desktop installation for RedHat (Ubuntu has GNOME by default)
+    - name: Install GNOME desktop on RedHat
+      block:
+        - name: Install GNOME desktop group
+          dnf:
+            name: "@gnome-desktop"                # GNOME desktop environment group
+            state: present
 
-  - name: Change ownership of packages
-    ansible.builtin.file:
-      path: /home/{{ user_ansible }}/install/
-      state: directory
-      recurse: yes
-      owner: "{{ user_ansible }}"
-      group: "{{ user_ansible }}"
+        - name: Install additional GNOME components
+          dnf:
+            name:
+              - gnome-shell                       # GNOME shell
+              - gnome-session                     # GNOME session manager
+              - gnome-terminal                    # Terminal emulator
+              - gnome-system-monitor              # System monitoring tool
+              - gdm                               # GNOME Display Manager
+              - xorg-x11-server-Xorg              # X11 server
+              - gedit                             # Text editor
+              - eog                               # Image viewer
+              - evince                            # PDF viewer
+              - file-roller                       # Archive manager
+              - gnome-calculator                  # Calculator
+              - gnome-calendar                    # Calendar application
+            state: present
 
-  # All conditions need to be met at once
+        - name: Set graphical target as default
+          command: systemctl set-default graphical.target
+          args:
+            creates: /etc/systemd/system/default.target
+
+        - name: Start and enable GDM
+          systemd:
+            name: gdm
+            state: started
+            enabled: yes
+      when: ansible_os_family == "RedHat"
+
+    # Create directory for additional software installations
+    - name: Create a install directory
+      ansible.builtin.file:
+        path: /home/{{ user_ansible }}/install
+        state: directory
+        owner: "{{ ansible_user }}"
+        mode: '0755'
+
+    # Add Flathub repository for universal packages
+    - name: Add Flathub repo
+      community.general.flatpak_remote:
+        name: flathub
+        state: present
+        flatpakrepo_url: https://dl.flathub.org/repo/flathub.flatpakrepo
+
+    # Include additional software tasks from YAML files
+    - name: Add other software
+      include_tasks:
+        file: "{{ item }}"
+      loop: "{{ query('fileglob', '{{ role_path }}/files/*.yaml') }}"
+      no_log: true
+
+    # Set proper ownership for user's install directory
+    - name: Change ownership of packages directory
+      ansible.builtin.file:
+        path: /home/{{ user_ansible }}/install/
+        state: directory
+        recurse: yes
+        owner: "{{ user_ansible }}"
+        group: "{{ user_ansible }}"
+
+    # Check if GDM is already running (GUI is active)
+    - name: Check if GDM service is active
+      ansible.builtin.systemd_service:
+        name: gdm
+      register: gdm_service_status
+      when: ansible_os_family == "RedHat"
+
+    # Reboot only if GDM is not running (GUI not active)
+    - name: Reboot system to start GUI (RedHat only) - if GDM not running
+      ansible.builtin.reboot:
+        msg: "Rebooting to start GNOME desktop environment"
+        connect_timeout: 5
+        reboot_timeout: 300
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: whoami
+      when: 
+        - ansible_os_family == "RedHat"
+        - gdm_service_status is defined
+        - not gdm_service_status.status.ActiveState == "active"
+
+  # Conditions for when this role should run
   when:
-    - ansible_distribution == "Ubuntu"
-    - ansible_distribution_release == "jammy" or ansible_distribution_release == "noble"
     - desktop == true
+    # Ubuntu 22.04 (jammy) or 24.04 (noble) OR RedHat 8+
+    - |
+      (ansible_distribution == "Ubuntu" and 
+       (ansible_distribution_release == "jammy" or ansible_distribution_release == "noble")) or
+      (ansible_os_family == "RedHat" and ansible_distribution_major_version | int >= 8)

@@ -1,4 +1,3 @@
----
 # Chrome browser
 - name: Package Variable Setting
   ansible.builtin.set_fact:
@@ -7,21 +6,43 @@
 
 - name: Install {{ app_name }}
   block:
-  - name: Add {{ app_name }} GPG key
-    ansible.builtin.apt_key:
-      url:  https://dl.google.com/linux/linux_signing_key.pub
-      keyring: /usr/share/keyrings/google-chrome.gpg
-      state: present
+    # Ubuntu/Debian installation block
+    - name: Install {{ app_name }} on Ubuntu/Debian
+      block:
+        - name: Add {{ app_name }} GPG key
+          ansible.builtin.apt_key:
+            url: https://dl.google.com/linux/linux_signing_key.pub
+            keyring: /usr/share/keyrings/google-chrome.gpg
+            state: present
 
-  - name: Add {{ app_name }} repository
-    ansible.builtin.apt_repository:
-      repo: deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main
-      state: present
-      filename: google-chrome
+        - name: Add {{ app_name }} repository
+          ansible.builtin.apt_repository:
+            repo: deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main
+            state: present
+            filename: google-chrome
 
-  - name: Install {{ app_name }}
-    ansible.builtin.apt:
-      name: google-chrome-stable
-      state: present
+        - name: Install {{ app_name }}
+          ansible.builtin.apt:
+            name: google-chrome-stable
+            state: present
+      when: ansible_os_family == "Debian"
+
+    # RedHat installation block
+    - name: Install {{ app_name }} on RedHat
+      block:
+        - name: Add {{ app_name }} repository
+          ansible.builtin.yum_repository:
+            name: google-chrome
+            description: Google Chrome
+            baseurl: http://dl.google.com/linux/chrome/rpm/stable/x86_64
+            enabled: yes
+            gpgcheck: yes
+            gpgkey: https://dl.google.com/linux/linux_signing_key.pub
+
+        - name: Install {{ app_name }}
+          ansible.builtin.dnf:
+            name: google-chrome-stable
+            state: present
+      when: ansible_os_family == "RedHat"
 
   when: chrome == True

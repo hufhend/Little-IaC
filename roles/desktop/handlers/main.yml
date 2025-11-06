@@ -1,2 +1,11 @@
 ---
 # handlers file for desktop
+- name: restart xrdp
+  systemd:
+    name: xrdp
+    state: restarted
+
+- name: restart xrdp-sesman
+  systemd:
+    name: xrdp-sesman
+    state: restarted

@@ -4,7 +4,7 @@
 #   begin     : Tue 7 May 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: desktop.yaml, v1.15 09/12/2024
+#   $Id: desktop.yaml, v1.20 09/11/2025
 #   ***************************************
 
 #   --------------------------------------------------------------------
@@ -19,8 +19,8 @@
   become: true
   become_user: root
   roles:
-    - role: system_upgrade
     - role: env_settings
+    - role: system_upgrade
     - role: docker
     - role: firewall
     - role: desktop

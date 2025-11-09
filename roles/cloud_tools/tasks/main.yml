@@ -24,8 +24,11 @@
         - git-subtree
         - go
         - java-latest-openjdk
+        - nano
         - nmap-ncat
+        - rsync
         - trivy
+        - vim
       state: latest
     when: ansible_distribution == "RedHat" or ansible_distribution == "CentOS" or ansible_distribution == "Rocky"
 

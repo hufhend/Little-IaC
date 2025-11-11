@@ -1,10 +1,50 @@
-# XRDP installation and configuration for remote desktop access
 - name: Install and configure XRDP for remote desktop access
   block:
     - name: Install xrdp package
       ansible.builtin.package:
-        name: xrdp
+        name: 
+          - xrdp
+          - xorgxrdp
+          - gnome-session
+          - gnome-terminal
+          - nautilus
+          - gnome-software
         state: present
+
+    - name: Configure XRDP for modern Gnome
+      ansible.builtin.copy:
+        content: |
+          [globals]
+          bitmap_cache=yes
+          bitmap_compression=yes
+          port=3389
+          crypt_level=low
+          channel_code=1
+
+          [xrdp1]
+          name=sesman-X11rdp
+          lib=libxup.so
+          username=ask
+          password=ask
+          ip=127.0.0.1
+          port=-1
+          code=20
+        dest: /etc/xrdp/xrdp.ini
+        backup: yes
+      notify: restart xrdp
+
+    - name: Create custom Xsession
+      ansible.builtin.copy:
+        content: |
+          #!/bin/sh
+          export GNOME_SHELL_SESSION_MODE=classic
+          export XDG_CURRENT_DESKTOP="GNOME-classic:GNOME"
+          export XDG_MENU_PREFIX="gnome-"
+          exec /usr/bin/gnome-session --session=gnome-classic
+        dest: /etc/xrdp/startwm.sh
+        mode: '0755'
+        backup: yes
+      notify: restart xrdp
 
     - name: Enable and start xrdp service
       ansible.builtin.systemd:
@@ -18,28 +58,14 @@
         state: started
         enabled: yes
 
-    # - name: Open RDP port in firewall (RedHat)
-    #   ansible.builtin.firewalld:
-    #     port: 3389/tcp
-    #     state: enabled
-    #     permanent: yes
-    #     immediate: yes
-    #   when: ansible_os_family == "RedHat"
-
-    # - name: Open RDP port in firewall (Ubuntu)
-    #   community.general.ufw:
-    #     rule: allow
-    #     port: 3389
-    #     proto: tcp
-    #   when: ansible_os_family == "Debian"
-
-    - name: Create xrdp configuration backup
-      ansible.builtin.copy:
-        src: /etc/xrdp/xrdp.ini
-        dest: /etc/xrdp/xrdp.ini.backup
-        remote_src: yes
-        backup: yes
-      notify: restart xrdp
+    # Firewall configuration
+    - name: Open RDP port in firewall (RedHat)
+      ansible.builtin.firewalld:
+        port: 3389/tcp
+        state: enabled
+        permanent: yes
+        immediate: yes
+      when: ansible_os_family == "RedHat"
 
   when: 
     - desktop == true

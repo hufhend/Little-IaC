@@ -11,6 +11,7 @@ docker_pihole: false
 docker_prometheus: false
 docker_torproject: false
 docker_openvpn: false
+docker_vault: false
 vpn_url: vpn.example.com
 docker_homeassistant: false
 

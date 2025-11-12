@@ -1,11 +1,31 @@
 ---
-- name: Set vault app variable
+# Vault Cluster Deployment - Idempotent installation with first-run detection
+- name: Set HashiCorp Vault variable
   ansible.builtin.set_fact:
     app: "vault-cluster"
     app_name: "Vault Cluster"
     vault_version: "1.21"
 
-- name: Deploy {{ app_name }}
+# Detect if this is first run by checking Vault API status
+- name: Check if Vault needs initialization
+  block:
+    - name: Check Vault status via API
+      community.docker.docker_container_exec:
+        container: vault1
+        env:
+          VAULT_ADDR: "http://127.0.0.1:8200"
+        command: |
+          vault status -format=json
+      register: vault_status_api
+      ignore_errors: true
+      changed_when: false
+
+    - name: Set initialization flag
+      ansible.builtin.set_fact:
+        vault_needs_init: "{{ vault_status_api.failed or (vault_status_api.stdout is defined and vault_status_api.stdout != '' and (vault_status_api.stdout | from_json).initialized == false) }}"
+
+# First-run setup: clone, configure, initialize Vault cluster
+- name: Install and initialize Vault
   block:
     - name: Git clone {{ app_name }}
       ansible.builtin.git:
@@ -29,7 +49,7 @@
       become: true
       become_user: root
 
-    - name: Update Vault version in docker-compose.yml
+    - name: Update Vault version in docker-compose.yaml
       ansible.builtin.replace:
         path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/docker-compose.yaml
         regexp: 'hashicorp/vault:.*'
@@ -47,6 +67,7 @@
         timeout: 60
         state: started
 
+    # Initialize Vault and extract unseal keys/token
     - name: Initialize Vault cluster on vault1
       community.docker.docker_container_exec:
         container: vault1
@@ -106,21 +127,36 @@
         command: |
           vault operator raft join http://vault1:8200
 
-    - name: Unseal vault2 node
-      community.docker.docker_container_exec:
-        container: vault2
-        env:
-          VAULT_ADDR: "http://127.0.0.1:8200"
-        command: |
-          vault operator unseal {{ unseal_key }}
+  when: 
+    - docker_vault
+    - vault_needs_init | default(true)
 
-    - name: Unseal vault3 node
+# Always unseal nodes and verify cluster status (runs on every execution)
+- name: Unseal Vault cluster (always run)
+  block:
+    - name: Load existing initialization data
+      ansible.builtin.slurp:
+        src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/vault-init.json
+      register: existing_init_data
+      ignore_errors: true
+
+    - name: Set facts from initialization file
+      ansible.builtin.set_fact:
+        unseal_key: "{{ (existing_init_data.content | b64decode | from_json).unseal_keys_b64[0] }}"
+        root_token: "{{ (existing_init_data.content | b64decode | from_json).root_token }}"
+      when: existing_init_data is success
+
+    # Unseal all nodes in loop - required after restarts
+    - name: Unseal all Vault nodes
       community.docker.docker_container_exec:
-        container: vault3
+        container: "vault{{ node_num }}"
         env:
           VAULT_ADDR: "http://127.0.0.1:8200"
         command: |
           vault operator unseal {{ unseal_key }}
+      loop: "{{ range(1, 4) }}"
+      loop_control:
+        loop_var: node_num
 
     - name: Check Raft cluster status
       community.docker.docker_container_exec:

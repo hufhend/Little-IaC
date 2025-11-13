@@ -6,8 +6,8 @@
     app_name: "Vault Cluster"
     vault_version: "1.21"
 
-# Detect if this is first run by checking Vault API status
-- name: Check if Vault needs initialization
+# Detect Vault state by checking Vault API status
+- name: Check Vault status
   block:
     - name: Check Vault status via API
       community.docker.docker_container_exec:
@@ -20,9 +20,10 @@
       ignore_errors: true
       changed_when: false
 
-    - name: Set initialization flag
-      ansible.builtin.set_fact:
-        vault_needs_init: "{{ vault_status_api.failed or (vault_status_api.stdout is defined and vault_status_api.stdout != '' and (vault_status_api.stdout | from_json).initialized == false) }}"
+- name: Set Vault state flags
+  ansible.builtin.set_fact:
+    vault_api_available: "{{ vault_status_api is success }}"
+    vault_needs_init: "{{ not (vault_status_api is success) or (vault_status_api.stdout is defined and vault_status_api.stdout != '' and (vault_status_api.stdout | from_json).initialized == false) }}"
 
 # First-run setup: clone, configure, initialize Vault cluster
 - name: Install and initialize Vault
@@ -179,3 +180,4 @@
           - "  Unseal Key: {{ unseal_key }}"
 
   when: docker_vault
+  

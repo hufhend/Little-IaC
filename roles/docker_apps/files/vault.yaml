@@ -6,178 +6,179 @@
     app_name: "Vault Cluster"
     vault_version: "1.21"
 
-# Detect Vault state by checking Vault API status
-- name: Check Vault status
-  block:
-    - name: Check Vault status via API
-      community.docker.docker_container_exec:
-        container: vault1
-        env:
-          VAULT_ADDR: "http://127.0.0.1:8200"
-        command: |
-          vault status -format=json
-      register: vault_status_api
-      ignore_errors: true
-      changed_when: false
+- block:
+  # Detect Vault state by checking Vault API status
+  - name: Check Vault status
+    block:
+      - name: Check Vault status via API
+        community.docker.docker_container_exec:
+          container: vault1
+          env:
+            VAULT_ADDR: "http://127.0.0.1:8200"
+          command: |
+            vault status -format=json
+        register: vault_status_api
+        ignore_errors: true
+        changed_when: false
 
-- name: Set Vault state flags
-  ansible.builtin.set_fact:
-    vault_api_available: "{{ vault_status_api is success }}"
-    vault_needs_init: "{{ not (vault_status_api is success) or (vault_status_api.stdout is defined and vault_status_api.stdout != '' and (vault_status_api.stdout | from_json).initialized == false) }}"
+  - name: Set Vault state flags
+    ansible.builtin.set_fact:
+      vault_api_available: "{{ vault_status_api is success }}"
+      vault_needs_init: "{{ not (vault_status_api is success) or (vault_status_api.stdout is defined and vault_status_api.stdout != '' and (vault_status_api.stdout | from_json).initialized == false) }}"
 
-# First-run setup: clone, configure, initialize Vault cluster
-- name: Install and initialize Vault
-  block:
-    - name: Git clone {{ app_name }}
-      ansible.builtin.git:
-        repo: 'https://github.com/hufhend/vault-cluster.git'
-        dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
-        force: true
+  # First-run setup: clone, configure, initialize Vault cluster
+  - name: Install and initialize Vault
+    block:
+      - name: Git clone {{ app_name }}
+        ansible.builtin.git:
+          repo: 'https://github.com/hufhend/vault-cluster.git'
+          dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+          force: true
 
-    - name: Create Vault data directories
-      ansible.builtin.file:
-        path: "{{ dir_path }}"
-        state: directory
-        owner: "100"
-        group: "100"
-        mode: '0755'
-      loop:
-        - "/home/{{ docker_user }}/{{ docker_home }}/{{ app }}/vault1/data"
-        - "/home/{{ docker_user }}/{{ docker_home }}/{{ app }}/vault2/data"
-        - "/home/{{ docker_user }}/{{ docker_home }}/{{ app }}/vault3/data"
-      loop_control:
-        loop_var: dir_path
-      become: true
-      become_user: root
+      - name: Create Vault data directories
+        ansible.builtin.file:
+          path: "{{ dir_path }}"
+          state: directory
+          owner: "100"
+          group: "100"
+          mode: '0755'
+        loop:
+          - "/home/{{ docker_user }}/{{ docker_home }}/{{ app }}/vault1/data"
+          - "/home/{{ docker_user }}/{{ docker_home }}/{{ app }}/vault2/data"
+          - "/home/{{ docker_user }}/{{ docker_home }}/{{ app }}/vault3/data"
+        loop_control:
+          loop_var: dir_path
+        become: true
+        become_user: root
 
-    - name: Update Vault version in docker-compose.yaml
-      ansible.builtin.replace:
-        path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/docker-compose.yaml
-        regexp: 'hashicorp/vault:.*'
-        replace: 'hashicorp/vault:{{ vault_version }}'
+      - name: Update Vault version in docker-compose.yaml
+        ansible.builtin.replace:
+          path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/docker-compose.yaml
+          regexp: 'hashicorp/vault:.*'
+          replace: 'hashicorp/vault:{{ vault_version }}'
 
-    - name: Create and start {{ app_name }}
-      community.docker.docker_compose_v2:
-        project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+      - name: Create and start {{ app_name }}
+        community.docker.docker_compose_v2:
+          project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
-    - name: Wait for Vault to start
-      ansible.builtin.wait_for:
-        host: "{{ ansible_host }}"
-        port: 8200
-        delay: 5
-        timeout: 60
-        state: started
+      - name: Wait for Vault to start
+        ansible.builtin.wait_for:
+          host: "{{ ansible_host }}"
+          port: 8200
+          delay: 5
+          timeout: 60
+          state: started
 
-    # Initialize Vault and extract unseal keys/token
-    - name: Initialize Vault cluster on vault1
-      community.docker.docker_container_exec:
-        container: vault1
-        env:
-          VAULT_ADDR: "http://127.0.0.1:8200"
-        command: |
-          vault operator init -key-shares=1 -key-threshold=1 -format=json
-      register: vault_init_result
+      # Initialize Vault and extract unseal keys/token
+      - name: Initialize Vault cluster on vault1
+        community.docker.docker_container_exec:
+          container: vault1
+          env:
+            VAULT_ADDR: "http://127.0.0.1:8200"
+          command: |
+            vault operator init -key-shares=1 -key-threshold=1 -format=json
+        register: vault_init_result
 
-    - name: Save initialization output to file
-      ansible.builtin.copy:
-        content: "{{ vault_init_result.stdout }}"
-        dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/vault-init.json
-        mode: '0600'
+      - name: Save initialization output to file
+        ansible.builtin.copy:
+          content: "{{ vault_init_result.stdout }}"
+          dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/vault-init.json
+          mode: '0600'
 
-    - name: Parse unseal key from initialization
-      ansible.builtin.set_fact:
-        unseal_key: "{{ (vault_init_result.stdout | from_json).unseal_keys_b64[0] }}"
+      - name: Parse unseal key from initialization
+        ansible.builtin.set_fact:
+          unseal_key: "{{ (vault_init_result.stdout | from_json).unseal_keys_b64[0] }}"
 
-    - name: Parse root token from initialization
-      ansible.builtin.set_fact:
-        root_token: "{{ (vault_init_result.stdout | from_json).root_token }}"
+      - name: Parse root token from initialization
+        ansible.builtin.set_fact:
+          root_token: "{{ (vault_init_result.stdout | from_json).root_token }}"
 
-    - name: Save unseal key to file
-      ansible.builtin.copy:
-        content: "{{ unseal_key }}"
-        dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/unseal_key.txt
-        mode: '0600'
+      - name: Save unseal key to file
+        ansible.builtin.copy:
+          content: "{{ unseal_key }}"
+          dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/unseal_key.txt
+          mode: '0600'
 
-    - name: Save root token to file
-      ansible.builtin.copy:
-        content: "{{ root_token }}"
-        dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/root_token.txt
-        mode: '0600'
+      - name: Save root token to file
+        ansible.builtin.copy:
+          content: "{{ root_token }}"
+          dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/root_token.txt
+          mode: '0600'
 
-    - name: Unseal vault1 node
-      community.docker.docker_container_exec:
-        container: vault1
-        env:
-          VAULT_ADDR: "http://127.0.0.1:8200"
-        command: |
-          vault operator unseal {{ unseal_key }}
+      - name: Unseal vault1 node
+        community.docker.docker_container_exec:
+          container: vault1
+          env:
+            VAULT_ADDR: "http://127.0.0.1:8200"
+          command: |
+            vault operator unseal {{ unseal_key }}
 
-    - name: Join vault2 to Raft cluster
-      community.docker.docker_container_exec:
-        container: vault2
-        env:
-          VAULT_ADDR: "http://127.0.0.1:8200"
-        command: |
-          vault operator raft join http://vault1:8200
+      - name: Join vault2 to Raft cluster
+        community.docker.docker_container_exec:
+          container: vault2
+          env:
+            VAULT_ADDR: "http://127.0.0.1:8200"
+          command: |
+            vault operator raft join http://vault1:8200
 
-    - name: Join vault3 to Raft cluster
-      community.docker.docker_container_exec:
-        container: vault3
-        env:
-          VAULT_ADDR: "http://127.0.0.1:8200"
-        command: |
-          vault operator raft join http://vault1:8200
+      - name: Join vault3 to Raft cluster
+        community.docker.docker_container_exec:
+          container: vault3
+          env:
+            VAULT_ADDR: "http://127.0.0.1:8200"
+          command: |
+            vault operator raft join http://vault1:8200
 
-  when: 
-    - docker_vault
-    - vault_needs_init | default(true)
+    when: 
+      - docker_vault
+      - vault_needs_init | default(true)
 
-# Always unseal nodes and verify cluster status (runs on every execution)
-- name: Unseal Vault cluster (always run)
-  block:
-    - name: Load existing initialization data
-      ansible.builtin.slurp:
-        src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/vault-init.json
-      register: existing_init_data
-      ignore_errors: true
+  # Always unseal nodes and verify cluster status (runs on every execution)
+  - name: Unseal Vault cluster (always run)
+    block:
+      - name: Load existing initialization data
+        ansible.builtin.slurp:
+          src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/vault-init.json
+        register: existing_init_data
+        ignore_errors: true
 
-    - name: Set facts from initialization file
-      ansible.builtin.set_fact:
-        unseal_key: "{{ (existing_init_data.content | b64decode | from_json).unseal_keys_b64[0] }}"
-        root_token: "{{ (existing_init_data.content | b64decode | from_json).root_token }}"
-      when: existing_init_data is success
+      - name: Set facts from initialization file
+        ansible.builtin.set_fact:
+          unseal_key: "{{ (existing_init_data.content | b64decode | from_json).unseal_keys_b64[0] }}"
+          root_token: "{{ (existing_init_data.content | b64decode | from_json).root_token }}"
+        when: existing_init_data is success
 
-    # Unseal all nodes in loop - required after restarts
-    - name: Unseal all Vault nodes
-      community.docker.docker_container_exec:
-        container: "vault{{ node_num }}"
-        env:
-          VAULT_ADDR: "http://127.0.0.1:8200"
-        command: |
-          vault operator unseal {{ unseal_key }}
-      loop: "{{ range(1, 4) }}"
-      loop_control:
-        loop_var: node_num
+      # Unseal all nodes in loop - required after restarts
+      - name: Unseal all Vault nodes
+        community.docker.docker_container_exec:
+          container: "vault{{ node_num }}"
+          env:
+            VAULT_ADDR: "http://127.0.0.1:8200"
+          command: |
+            vault operator unseal {{ unseal_key }}
+        loop: "{{ range(1, 4) }}"
+        loop_control:
+          loop_var: node_num
 
-    - name: Check Raft cluster status
-      community.docker.docker_container_exec:
-        container: vault1
-        env:
-          VAULT_ADDR: "http://127.0.0.1:8200"
-          VAULT_TOKEN: "{{ root_token }}"
-        command: |
-          vault operator raft list-peers
-      register: raft_status
+      - name: Check Raft cluster status
+        community.docker.docker_container_exec:
+          container: vault1
+          env:
+            VAULT_ADDR: "http://127.0.0.1:8200"
+            VAULT_TOKEN: "{{ root_token }}"
+          command: |
+            vault operator raft list-peers
+        register: raft_status
 
-    - name: Display cluster information
-      ansible.builtin.debug:
-        msg:
-          - "Vault Cluster successfully deployed!"
-          - ""
-          - "Access Information:"
-          - "  Web UI: http://{{ ansible_host }}:8200" 
-          - "  Root Token: {{ root_token }}"
-          - "  Unseal Key: {{ unseal_key }}"
+      - name: Display cluster information
+        ansible.builtin.debug:
+          msg:
+            - "Vault Cluster successfully deployed!"
+            - ""
+            - "Access Information:"
+            - "  Web UI: http://{{ ansible_host }}:8200" 
+            - "  Root Token: {{ root_token }}"
+            - "  Unseal Key: {{ unseal_key }}"
 
   when: docker_vault
   

@@ -4,7 +4,7 @@
 #   begin     : Wed 28 Feb 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: host-init.yaml, v1.30 05/09/2024
+#   $Id: host-init.yaml, v1.40 13/11/2025
 #   **********************************************
 
 #   --------------------------------------------------------------------
@@ -25,26 +25,28 @@
   ansible.builtin.hostname:
     name: "{{ inventory_hostname }}"
 
+# Unified user creation for both macOS and Linux
 - name: Add Ansible user
   ansible.builtin.user:
     name: "{{ user_ansible }}"
     create_home: true
-    skeleton: /etc/skel
-    shell: /bin/bash
+    shell: "{{ '/bin/zsh' if ansible_os_family == 'Darwin' else '/bin/bash' }}"
+    group: "{{ 'staff' if ansible_os_family == 'Darwin' else user_ansible }}"
+    home: "{{ '/Users/' + user_ansible if ansible_os_family == 'Darwin' else omit }}"
     uid: 2000
     state: present
   when: ansible_user != user_ansible
 
-# If this block is commented out and only a single user is present in the system, 
-# the next time the system is started, a dialog for creating a new user is opened. 
-# This can be interesting if you are making gaming computers for sale.
+# Only for Linux systems
 - name: Ansible user doesn't log in via GUI
   ansible.builtin.lineinfile:
     path: "/var/lib/AccountsService/users/{{ user_ansible }}"
     regexp: '^SystemAccount='
     line: 'SystemAccount=true'
   ignore_errors: true    
-  when: ansible_user != user_ansible
+  when: 
+    - ansible_user != user_ansible
+    - ansible_os_family != "Darwin"
 
 - name: Print ansible_user variable
   debug:
@@ -58,14 +60,20 @@
   ansible.builtin.stat:
     path: "/etc/sudoers.d/{{ user_ansible }}"
   register: sudoers_file
+  changed_when: false
+
+- name: Set sudoers parameters based on OS
+  set_fact:
+    sudoers_group: "{{ 'wheel' if ansible_os_family == 'Darwin' else 'root' }}"
+    sudoers_mode: '0440'
 
 - name: Upload the sudoers template
   template:
     src: templates/sudoers.j2
     dest: "/etc/sudoers.d/{{ user_ansible }}"
     owner: root
-    group: root
-    mode: '0640'
+    group: "{{ sudoers_group }}"
+    mode: "{{ sudoers_mode }}"
   when: not sudoers_file.stat.exists
 
 - name: Add Ansible authorized ssh key
@@ -81,3 +89,10 @@
     dest: /etc/hosts
     regexp: '^127\.0\.0\.1'
     line: 127.0.0.1   localhost {{ inventory_hostname }}
+
+- name: Restart SSH service on macOS to recognize new user
+  command: launchctl kickstart -k system/com.openssh.sshd
+  when: ansible_os_family == "Darwin"
+  become: yes
+  changed_when: true
+  

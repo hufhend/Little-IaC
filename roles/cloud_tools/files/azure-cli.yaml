@@ -32,9 +32,13 @@
     become_user: "{{ ansible_user }}"
     ignore_errors: true
 
+  - name: Extract and clean {{ app_name }} version
+    set_fact:
+      new_version: "{{ (install_result.stdout | from_json)['azure-cli'] }}"
+
   - name: Show {{ app_name }} version
     debug:
-      msg: "{{ install_result.stdout | from_json }}"
+      msg: "{{ app_name }} version is {{ new_version }}"
 
   - name: Hold {{ app_name }} to prevent upgrades
     ansible.builtin.command:

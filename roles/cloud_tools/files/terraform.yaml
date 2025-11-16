@@ -40,9 +40,13 @@
     become_user: "{{ ansible_user }}"
     ignore_errors: true
 
+  - name: Extract and clean {{ app_name }} version
+    set_fact:
+      new_version: "{{ (install_result.stdout | regex_search('Terraform v?([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1')) | first }}"
+
   - name: Show {{ app_name }} version
     debug:
-      msg: "{{ install_result.stdout.split('\n') }}"
+      msg: "{{ app_name }} version is {{ new_version }}"
 
   when: 
     - terraform == True

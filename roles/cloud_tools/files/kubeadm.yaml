@@ -2,7 +2,7 @@
 - name: Package Variable Setting
   ansible.builtin.set_fact:
     app: "kubeadm"
-    app_name: "kubeadm"
+    app_name: "Kubeadm"
 
 - name: Set up cloud management utilities
   block:
@@ -49,15 +49,19 @@
     when: not completion_script_stat.stat.exists
 
   - name: Check {{ app_name }} version
-    command: "/usr/bin/{{ app }} version -o json"
+    command: "/usr/bin/{{ app }} version"
     register: "install_result"
     changed_when: false
     become_user: "{{ ansible_user }}"
     ignore_errors: true
 
+  - name: Extract and clean {{ app_name }} version
+    set_fact:
+      new_version: "{{ (install_result.stdout | regex_search('GitVersion:\"v?([0-9]+\\.[0-9]+\\.[0-9]+)\"', '\\1')) | first }}"
+
   - name: Show {{ app_name }} version
     debug:
-      msg: "{{ install_result.stdout | from_json }}"
+      msg: "{{ app_name }} version is {{ new_version }}"
 
   when: 
     - kubeadm and (role not in ['combi', 'master', 'worker'])

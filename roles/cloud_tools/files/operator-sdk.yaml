@@ -4,7 +4,7 @@
   ansible.builtin.set_fact:
     app: "operator-sdk"
     app_name: "Operator SDK CLI"
-    version: "1.41.1"
+    version: "1.42.0"
     install_dir: "/home/{{ user_ansible }}/install/operator-sdk"
 
 # Verify installed version

@@ -4,7 +4,7 @@
   ansible.builtin.set_fact:
     app: "oc"
     app_name: "OpenShift CLI"
-    version: "4.20.0"
+    version: "4.20.1"
     install_dir: "/home/{{ user_ansible }}/install/oc"
 
 # Verify installed version

@@ -1,12 +1,32 @@
----
 # Vault Cluster Deployment - Idempotent installation with first-run detection
-- name: Set HashiCorp Vault variable
+- name: Set HashiCorp Vault variables
   ansible.builtin.set_fact:
     app: "vault-cluster"
     app_name: "Vault Cluster"
     vault_version: "1.21"
 
 - block:
+  # PREVENTIVE START - ensure containers are running
+  - name: Check if Vault directory exists
+    ansible.builtin.stat:
+      path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+    register: vault_dir_exists
+
+  - name: Ensure Vault containers are running
+    community.docker.docker_compose_v2:
+      project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+      state: present
+    when: vault_dir_exists.stat.exists
+
+  - name: Wait for Vault to start
+    ansible.builtin.wait_for:
+      host: "{{ ansible_host }}"
+      port: 8200
+      delay: 1
+      timeout: 60
+      state: started
+    when: vault_dir_exists.stat.exists
+
   # Detect Vault state by checking Vault API status
   - name: Check Vault status
     block:
@@ -23,8 +43,13 @@
 
   - name: Set Vault state flags
     ansible.builtin.set_fact:
-      vault_api_available: "{{ vault_status_api is success }}"
-      vault_needs_init: "{{ not (vault_status_api is success) or (vault_status_api.stdout is defined and vault_status_api.stdout != '' and (vault_status_api.stdout | from_json).initialized == false) }}"
+      # API is available if we have stdout (even if rc != 0)
+      vault_api_available: "{{ vault_status_api.stdout is defined and vault_status_api.stdout != '' }}"
+      # If we have stdout, parse the state, otherwise assume the worst
+      vault_initialized: "{{ (vault_status_api.stdout | from_json).initialized if vault_status_api.stdout is defined else false }}"
+      vault_sealed: "{{ (vault_status_api.stdout | from_json).sealed if vault_status_api.stdout is defined else true }}"
+      # Needs initialization only if not initialized or API is not available
+      vault_needs_init: "{{ not (vault_status_api.stdout is defined) or ((vault_status_api.stdout | from_json).initialized | default(false) | bool == false) }}"
 
   # First-run setup: clone, configure, initialize Vault cluster
   - name: Install and initialize Vault
@@ -51,7 +76,7 @@
         become: true
         become_user: root
 
-      - name: Update Vault version in docker-compose.yaml
+      - name: Update version in docker-compose.yaml
         ansible.builtin.replace:
           path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/docker-compose.yaml
           regexp: 'hashicorp/vault:.*'
@@ -78,32 +103,38 @@
           command: |
             vault operator init -key-shares=1 -key-threshold=1 -format=json
         register: vault_init_result
+        when: vault_needs_init
 
       - name: Save initialization output to file
         ansible.builtin.copy:
           content: "{{ vault_init_result.stdout }}"
           dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/vault-init.json
           mode: '0600'
+        when: vault_init_result is defined and vault_init_result is success
 
       - name: Parse unseal key from initialization
         ansible.builtin.set_fact:
           unseal_key: "{{ (vault_init_result.stdout | from_json).unseal_keys_b64[0] }}"
+        when: vault_init_result is defined and vault_init_result is success
 
       - name: Parse root token from initialization
         ansible.builtin.set_fact:
           root_token: "{{ (vault_init_result.stdout | from_json).root_token }}"
+        when: vault_init_result is defined and vault_init_result is success
 
       - name: Save unseal key to file
         ansible.builtin.copy:
           content: "{{ unseal_key }}"
           dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/unseal_key.txt
           mode: '0600'
+        when: vault_init_result is defined and vault_init_result is success
 
       - name: Save root token to file
         ansible.builtin.copy:
           content: "{{ root_token }}"
           dest: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/root_token.txt
           mode: '0600'
+        when: vault_init_result is defined and vault_init_result is success
 
       - name: Unseal vault1 node
         community.docker.docker_container_exec:
@@ -148,7 +179,7 @@
           root_token: "{{ (existing_init_data.content | b64decode | from_json).root_token }}"
         when: existing_init_data is success
 
-      # Unseal all nodes in loop - required after restarts
+      # Unseal all nodes only if vault is sealed
       - name: Unseal all Vault nodes
         community.docker.docker_container_exec:
           container: "vault{{ node_num }}"
@@ -159,6 +190,19 @@
         loop: "{{ range(1, 4) }}"
         loop_control:
           loop_var: node_num
+        ignore_errors: true
+        failed_when: false
+        when: 
+          - existing_init_data is success
+          - vault_sealed | default(true)
+
+      - name: Wait for Vault cluster to stabilize
+        ansible.builtin.wait_for:
+          host: "{{ ansible_host }}"
+          port: 8200
+          delay: 3
+          timeout: 30
+          state: started
 
       - name: Check Raft cluster status
         community.docker.docker_container_exec:
@@ -169,6 +213,10 @@
           command: |
             vault operator raft list-peers
         register: raft_status
+        retries: 6
+        delay: 5
+        until: raft_status is success
+        when: existing_init_data is success
 
       - name: Display cluster information
         ansible.builtin.debug:
@@ -179,6 +227,14 @@
             - "  Web UI: http://{{ ansible_host }}:8200" 
             - "  Root Token: {{ root_token }}"
             - "  Unseal Key: {{ unseal_key }}"
+        when: existing_init_data is success
+
+      - name: Display raft status
+        ansible.builtin.debug:
+          var: raft_status.stdout_lines
+        when: 
+          - existing_init_data is success
+          - raft_status is defined
+        when: existing_init_data is success
 
   when: docker_vault
-  

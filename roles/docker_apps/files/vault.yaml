@@ -187,11 +187,10 @@
             VAULT_ADDR: "http://127.0.0.1:8200"
           command: |
             vault operator unseal {{ unseal_key }}
-        loop: "{{ range(1, 4) }}"
+        loop: [1, 2, 3]
         loop_control:
           loop_var: node_num
         ignore_errors: true
-        failed_when: false
         when: 
           - existing_init_data is success
           - vault_sealed | default(true)
@@ -235,6 +234,5 @@
         when: 
           - existing_init_data is success
           - raft_status is defined
-        when: existing_init_data is success
 
   when: docker_vault

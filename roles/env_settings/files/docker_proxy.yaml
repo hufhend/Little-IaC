@@ -1,0 +1,28 @@
+- name: Configure Docker proxy
+  block:
+    - name: Create Docker service directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/docker.service.d
+        state: directory
+        mode: '0755'
+
+    - name: Configure Docker proxy settings
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/docker.service.d/http-proxy.conf
+        content: |
+          [Service]
+          Environment="HTTP_PROXY={{ proxy_url }}"
+          Environment="HTTPS_PROXY={{ proxy_url }}"
+          Environment="NO_PROXY={{ no_proxy }},.localdomain,172.16.0.0/12"
+        mode: '0644'
+
+    - name: Reload systemd and restart Docker
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        daemon_reload: yes
+        enabled: yes
+
+  when: 
+    - proxy_config | default(false)
+    - ansible_facts['which_docker'] is defined

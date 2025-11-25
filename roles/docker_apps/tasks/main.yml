@@ -58,7 +58,7 @@
   - name: Add other Docker apps
     include_tasks:
       file: "{{ item }}"
-    loop: "{{ query('fileglob', '{{ role_path }}/files/*.yaml') }}"
+    loop: "{{ query('fileglob', role_path ~ '/files/*.yaml') }}"
     no_log: true
 
   # - name: Application debugging part

@@ -103,7 +103,7 @@
     - name: Add other software
       include_tasks:
         file: "{{ item }}"
-      loop: "{{ query('fileglob', '{{ role_path }}/files/*.yaml') }}"
+      loop: "{{ query('fileglob', role_path ~ '/files/*.yaml') }}"
       no_log: true
 
     # Set proper ownership for user's install directory

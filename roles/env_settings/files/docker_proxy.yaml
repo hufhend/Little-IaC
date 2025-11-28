@@ -1,3 +1,10 @@
+- name: Check if Docker is installed
+  stat:
+    path: /usr/bin/docker
+  register: docker_installed
+  ignore_errors: yes
+  changed_when: false
+
 - name: Configure Docker proxy
   block:
     - name: Create Docker service directory
@@ -25,4 +32,4 @@
 
   when: 
     - proxy_config | default(false)
-    - ansible_facts['which_docker'] is defined
+    - docker_installed.stat.exists

@@ -5,12 +5,24 @@
     app_name: "Vault Cluster"
     vault_version: "1.21"
 
+- name: Install Python requests library
+  ansible.builtin.package:
+    name: python3-requests
+    state: present
+  become: true
+  become_user: root
+  when: docker_vault
+
 - block:
   # PREVENTIVE START - ensure containers are running
   - name: Check if Vault directory exists
     ansible.builtin.stat:
       path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
     register: vault_dir_exists
+
+  - name: Include config tasks
+    ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
+    when: vault_dir_exists.stat.exists
 
   - name: Ensure Vault containers are running
     community.docker.docker_compose_v2:
@@ -23,7 +35,7 @@
       host: "{{ ansible_host }}"
       port: 8200
       delay: 1
-      timeout: 60
+      timeout: 180
       state: started
     when: vault_dir_exists.stat.exists
 
@@ -76,6 +88,9 @@
         become: true
         become_user: root
 
+      - name: Include config tasks
+        ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
+
       - name: Update version in docker-compose.yaml
         ansible.builtin.replace:
           path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/docker-compose.yaml
@@ -91,7 +106,7 @@
           host: "{{ ansible_host }}"
           port: 8200
           delay: 5
-          timeout: 60
+          timeout: 180
           state: started
 
       # Initialize Vault and extract unseal keys/token

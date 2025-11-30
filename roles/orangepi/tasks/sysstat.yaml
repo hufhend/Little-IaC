@@ -1,42 +1,25 @@
-  - name: Shorten history for sysstat
-    ansible.builtin.lineinfile:
-      path: /etc/sysstat/sysstat
-      regexp: '^HISTORY=7'
-      line: 'HISTORY=3'
+- name: Stop and disable sysstat services
+  ansible.builtin.systemd:
+    name: "{{ service_item }}"
+    state: stopped
+    enabled: no
+  loop:
+    - sysstat
+    - sysstat-collect
+  loop_control:
+    loop_var: service_item
 
-  - name: Keep history for sysstat
-    ansible.builtin.lineinfile:
-      path: /etc/sysstat/sysstat
-      regexp: '^COMPRESSAFTER=10'
-      line: 'COMPRESSAFTER=1'
+- name: Remove sysstat package completely
+  ansible.builtin.package:
+    name: sysstat
+    state: absent
 
-  - name: Create a sysstat directory
-    ansible.builtin.file:
-      path: /var/log.hdd/sysstat
-      state: directory
-      owner: root
-      group: root
-      mode: '0755'
-
-  # sysstat.service simply cannot be in the zram
-  - name:  Change directory for sysstat
-    ansible.builtin.lineinfile:
-      path: /etc/sysstat/sysstat
-      regexp: '^SA_DIR=/var/log/sysstat'
-      line: 'SA_DIR=/var/log.hdd/sysstat'
-
-  - name: Ensure old sysstat is absent
-    ansible.builtin.file:
-      path: /var/log/sysstat
-      state: absent
-
-  - name: Create link to new sysstat
-    ansible.builtin.file:
-      src: /var/log.hdd/sysstat
-      dest: /var/log/sysstat
-      state: link
-
-  - name: Restart system activity logs
-    ansible.builtin.systemd:
-      name: sysstat.service
-      state: restarted
+- name: Clean up sysstat directories
+  ansible.builtin.file:
+    path: "{{ dir_item }}"
+    state: absent
+  loop:
+    - /var/log/sysstat
+    - /var/log.hdd/sysstat
+  loop_control:
+    loop_var: dir_item

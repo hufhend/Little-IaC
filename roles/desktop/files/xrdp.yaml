@@ -11,27 +11,27 @@
           - gnome-software
         state: present
 
-    - name: Configure XRDP for modern Gnome
-      ansible.builtin.copy:
-        content: |
-          [globals]
-          bitmap_cache=yes
-          bitmap_compression=yes
-          port=3389
-          crypt_level=low
-          channel_code=1
+    # - name: Configure XRDP for modern Gnome
+    #   ansible.builtin.copy:
+    #     content: |
+    #       [globals]
+    #       bitmap_cache=yes
+    #       bitmap_compression=yes
+    #       port=3389
+    #       crypt_level=low
+    #       channel_code=1
 
-          [xrdp1]
-          name=sesman-X11rdp
-          lib=libxup.so
-          username=ask
-          password=ask
-          ip=127.0.0.1
-          port=-1
-          code=20
-        dest: /etc/xrdp/xrdp.ini
-        backup: yes
-      notify: restart xrdp
+    #       [xrdp1]
+    #       name=sesman-X11rdp
+    #       lib=libxup.so
+    #       username=ask
+    #       password=ask
+    #       ip=127.0.0.1
+    #       port=-1
+    #       code=20
+    #     dest: /etc/xrdp/xrdp.ini
+    #     backup: yes
+    #   notify: restart xrdp
 
     - name: Create custom Xsession
       ansible.builtin.copy:

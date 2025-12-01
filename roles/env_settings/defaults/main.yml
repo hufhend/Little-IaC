@@ -6,3 +6,21 @@ desktop: false
 timezone: Europe/Prague
 country: Czech
 lang: cs_CZ.UTF-8
+
+# LDAP/AD integration defaults
+ad_domain: "example.com"
+ldap_uri: "ldaps://ldap.example.com/"
+bind_dn: "cn=service-account,OU=ServiceAccounts,DC=example,DC=com"
+user_search_base: "ou=Users,DC=example,DC=com"
+group_search_base: "ou=Groups,DC=example,DC=com"
+search_base: "DC=example,DC=com"
+allowed_groups: "APP-Linux-Users,APP-Linux-Admins"
+fallback_homedir: "/home/%u"
+default_shell: "/bin/bash"
+override_gid: 100
+ldap_service_port: 636
+ldap_tls_cacertdir: "/etc/openldap/cacerts"
+ca_cert_path: "/etc/ssl/certs/ca-certificates.crt"
+sssd_services: "nss, pam"
+debug_level: 0
+ldap_default_authtok: #OBFUSCATED_PASSWORD#

@@ -4,7 +4,7 @@
   ansible.builtin.set_fact:
     app: "noobaa"
     app_name: "NooBaa Operator CLI"
-    version: "5.19.0"
+    version: "5.20.0"
     install_dir: "/home/{{ user_ansible }}/install/noobaa"
 
 # Verify installed version

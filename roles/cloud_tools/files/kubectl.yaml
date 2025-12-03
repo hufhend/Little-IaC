@@ -75,6 +75,12 @@
     ignore_errors: yes
     become: no
 
+  - name: Get local hostname
+    local_action: command hostname
+    ignore_errors: yes
+    become: no
+    register: local_hostname
+
   - name: Copy kubeconfig to remote servers
     ansible.builtin.copy:
       src: "{{ kubeconfig_source_path | default('~/.kube/config') }}"
@@ -84,8 +90,7 @@
       mode: '0600'
       remote_src: false
     when: 
-      - ansible_connection != 'local'
-      - inventory_hostname not in ['localhost', '127.0.0.1']
+      - local_hostname.stdout != ansible_hostname
       - kubeconfig_src_check.stat.exists | default(false)
 
   # Show installed version

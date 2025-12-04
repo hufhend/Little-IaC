@@ -1,0 +1,43 @@
+# Ungoogled Chromium installation
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "ungoogled-chromium"
+    app_name: "Ungoogled Chromium"
+
+- name: Install {{ app_name }} via Flatpak
+  block:
+    # - name: Check if Flatpak is installed
+    #   ansible.builtin.package_facts:
+    #     manager: auto
+
+    # - name: Install Flatpak if not present (Debian)
+    #   ansible.builtin.apt:
+    #     name: flatpak
+    #     state: present
+    #   when: 
+    #     - ansible_os_family == "Debian"
+    #     - "'flatpak' not in ansible_facts.packages"
+
+    # - name: Install Flatpak if not present (RedHat)
+    #   ansible.builtin.dnf:
+    #     name: flatpak
+    #     state: present
+    #   when: 
+    #     - ansible_os_family == "RedHat"
+    #     - "'flatpak' not in ansible_facts.packages"
+
+    # - name: Add Flathub repository
+    #   community.general.flatpak_remote:
+    #     name: flathub
+    #     flatpakrepo_url: https://dl.flathub.org/repo/flathub.flatpakrepo
+    #     state: present
+
+    - name: Install {{ app_name }}
+      community.general.flatpak:
+        name: io.github.ungoogled_software.ungoogled_chromium
+        state: present
+        method: system
+
+  when: 
+    - ungoogled_chromium == True
+    - ansible_os_family in ["Debian", "RedHat"]

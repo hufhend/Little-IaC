@@ -30,6 +30,7 @@ spotify: false
 steam: false
 stremio: false
 telegram: false
+ungoogled_chromium: false
 vagrant: false
 virtualbox: false
 vlc: false

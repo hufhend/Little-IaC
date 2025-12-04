@@ -1,0 +1,45 @@
+# Chromium browser installation
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "chromium"
+    app_name: "Chromium browser"
+
+- name: Install {{ app_name }}
+  block:
+    # Ubuntu/Debian installation via Snap
+    - name: Install {{ app_name }} on Ubuntu/Debian via Snap
+      block:
+        - name: Install Chromium via snap
+          community.general.snap:
+            name: chromium
+            state: present
+            classic: yes
+        
+        - name: Install chromium-ffmpeg
+          community.general.snap:
+            name: chromium-ffmpeg
+            state: present
+            channel: stable
+      
+      when: ansible_os_family == "Debian"
+
+    # RedHat/Fedora installation via DNF
+    - name: Install {{ app_name }} on RedHat
+      block:
+        - name: Install Chromium from EPEL/Fedora repos
+          ansible.builtin.dnf:
+            name: chromium
+            state: present
+
+      when: ansible_os_family == "RedHat"
+
+    # Arch Linux installation via Pacman
+    - name: Install {{ app_name }} on Arch Linux
+      ansible.builtin.pacman:
+        name: chromium
+        state: present
+        update_cache: yes
+      
+      when: ansible_os_family == "Archlinux"
+
+  when: chromium == True

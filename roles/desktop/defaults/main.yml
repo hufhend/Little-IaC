@@ -16,6 +16,7 @@ discord: false
 edge: false
 horizon: false
 chrome: false
+chromium: false
 intune: false
 kodi: false
 lutris: false

@@ -1,5 +1,5 @@
 ---
-# Microsoft Visual Studio Code
+# Microsoft Visual Studio Code - Multi-distro installation
 - name: Package Variable Setting
   ansible.builtin.set_fact:
     app: "code"
@@ -7,38 +7,122 @@
 
 - name: Install {{ app_name }}
   block:
-  - name: Add Microsoft GPG key
-    ansible.builtin.apt_key:
-      url: https://packages.microsoft.com/keys/microsoft.asc
-      keyring: /usr/share/keyrings/microsoft.gpg
-      state: present
+    # Ubuntu/Debian installation block
+    - name: Install {{ app_name }} on Ubuntu/Debian
+      block:
+        - name: Add Microsoft GPG key
+          ansible.builtin.apt_key:
+            url: https://packages.microsoft.com/keys/microsoft.asc
+            keyring: /usr/share/keyrings/microsoft.gpg
+            state: present
+        
+        - name: Add {{ app_name }} repository
+          ansible.builtin.apt_repository:
+            repo: deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main
+            state: present
+            filename: vscode
+        
+        - name: Install {{ app_name }}
+          ansible.builtin.apt:
+            name: code
+            state: present
+            update_cache: yes
+      
+      when: ansible_os_family == "Debian"
 
-  # - name: Check if {{ app_name }} repository file exists
-  #   ansible.builtin.stat:
-  #     path: /etc/apt/sources.list.d/vscode.list
-  #   register: vscode_repo_file
+    # RedHat/Fedora/CentOS/Rocky/AlmaLinux installation block
+    - name: Install {{ app_name }} on RedHat
+      block:
+        - name: Import Microsoft GPG key for RPM
+          ansible.builtin.rpm_key:
+            key: https://packages.microsoft.com/keys/microsoft.asc
+            state: present
+        
+        - name: Add {{ app_name }} repo for RedHat
+          ansible.builtin.yum_repository:
+            name: vscode
+            description: "Visual Studio Code"
+            baseurl: https://packages.microsoft.com/yumrepos/vscode
+            enabled: yes
+            gpgcheck: yes
+            gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+            repo_gpgcheck: yes
+        
+        - name: Install {{ app_name }}
+          ansible.builtin.dnf:
+            name: code
+            state: present
+            disable_gpg_check: no
+      
+      when: ansible_os_family == "RedHat"
 
-  - name: Add {{ app_name }} repository
-    ansible.builtin.apt_repository:
-      repo: deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main
-      # repo: deb [arch=amd64,arm64,armhf] https://packages.microsoft.com/repos/code stable main
-      state: present
-      filename: vscode
-  #   when: not vscode_repo_file.stat.exists
+    # Arch Linux installation
+    - name: Install {{ app_name }} on Arch Linux
+      block:
+        - name: Install {{ app_name }} from Arch repos
+          ansible.builtin.pacman:
+            name: code
+            state: present
+            update_cache: yes
+          when: not vscode_use_aur | default(true)
+      
+      when: ansible_os_family == "Archlinux"
 
-  # # workarround for vscode repository
-  # # changes the contents of the file itself during installation
-  # - name: Ensure {{ app_name }} repository is correctly set
-  #   ansible.builtin.lineinfile:
-  #     path: /etc/apt/sources.list.d/vscode.list
-  #     line: "deb [arch=amd64,arm64,armhf] https://packages.microsoft.com/repos/code stable main"
-  #     create: yes
-  #     state: present
-  #     regexp: '^deb .*packages.microsoft.com/repos/code.*$'
-  #   when: vscode_repo_file.stat.exists
+    # openSUSE installation
+    - name: Install {{ app_name }} on openSUSE
+      block:
+        - name: Import Microsoft GPG key for openSUSE
+          ansible.builtin.rpm_key:
+            key: https://packages.microsoft.com/keys/microsoft.asc
+            state: present
+        
+        - name: Add {{ app_name }} repo for openSUSE
+          ansible.builtin.zypper_repository:
+            name: vscode
+            repo: https://packages.microsoft.com/yumrepos/vscode
+            state: present
+            disable_gpg_check: no
+            auto_import_keys: yes
+        
+        - name: Refresh zypper repo
+          ansible.builtin.command: zypper refresh
+        
+        - name: Install {{ app_name }}
+          ansible.builtin.zypper:
+            name: code
+            state: present
+      
+      when: ansible_distribution == "openSUSE"
 
-  - name: Install {{ app_name }}
-    ansible.builtin.apt:
-      name: code
-      state: present
+    # Flatpak installation (universal fallback)
+    - name: Install {{ app_name }} via Flatpak (universal)
+      block:
+        - name: Install flatpak if not present
+          ansible.builtin.package:
+            name: flatpak
+            state: present
+        
+        - name: Add flathub repo
+          ansible.builtin.command:
+            cmd: flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          ignore_errors: yes
+        
+        - name: Install {{ app_name }} Flatpak
+          ansible.builtin.flatpak:
+            name: com.visualstudio.code
+            state: present
+            method: system  # nebo user
+      
+      when: vscode_flatpak | default(false)
+
+    # Snap installation (mainly for Ubuntu)
+    - name: Install {{ app_name }} via Snap
+      community.general.snap:
+        name: code
+        state: present
+        classic: yes
+        channel: "{{ vscode_snap_channel | default('stable') }}"
+      
+      when: vscode_snap | default(false)
+
   when: vscode == True

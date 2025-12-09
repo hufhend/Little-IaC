@@ -1,0 +1,35 @@
+# Created via Ansible Little-IaC - do not change
+
+[sssd]
+domains = {{ ad_domain }}
+services = {{ sssd_services }}
+config_file_version = 2
+
+[nss]
+homedir_substring = /home
+
+[domain/{{ ad_domain }}]
+simple_allow_groups = {{ allowed_groups }}
+access_provider = simple
+id_provider = ldap
+auth_provider = ldap
+sudo_provider = ldap
+cache_credentials = True
+ldap_schema = ad
+ldap_id_mapping = True
+ldap_uri = {{ ldap_uri }}
+ldap_service_port = {{ ldap_service_port }}
+ldap_id_use_start_tls = {{ ldap_id_use_start_tls }}
+ldap_tls_cacertdir = {{ ldap_tls_cacertdir }}
+ldap_tls_cacert = {{ ca_cert_path }}
+ldap_tls_reqcert = allow
+ldap_default_bind_dn = {{ bind_dn }}
+ldap_default_authtok_type = obfuscated_password
+ldap_default_authtok = {{ ldap_default_authtok }}
+ldap_search_base = {{ search_base }}
+ldap_user_search_base = {{ user_search_base }}
+ldap_group_search_base = {{ group_search_base }}
+fallback_homedir = {{ fallback_homedir }}
+default_shell = {{ default_shell }}
+override_gid = {{ override_gid }}
+debug_level = {{ debug_level }}

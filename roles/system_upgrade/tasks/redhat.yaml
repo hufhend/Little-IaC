@@ -1,35 +1,44 @@
 ---
-- name: Clean DNF cache and lock files
-  ansible.builtin.command:
-    cmd: dnf clean all
+- name: Ensure DNF is ready (clean, unlock, refresh)
+  block:
+    - name: Clean DNF
+      ansible.builtin.command:
+        cmd: dnf clean all
+      changed_when: false
+      ignore_errors: yes
 
-- name: Remove YUM/DNF cache metadata
-  ansible.builtin.file:
-    path: /var/cache/dnf
-    state: absent
-  
-- name: Remove DNF lock files
-  ansible.builtin.file:
-    path: /var/run/dnf.pid
-    state: absent
-  
-- name: Stop dnf-makecache service
-  ansible.builtin.systemd:
-    name: dnf-makecache
-    state: stopped
-  
-- name: Check repositories
-  ansible.builtin.command: dnf makecache
-  
-- name: Update repositories
-  ansible.builtin.dnf:
-    name: "*"
-    state: latest
+    - name: Remove any lock files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/run/dnf.pid
+        - /var/cache/dnf/lock
+      ignore_errors: yes
 
-- name: Start dnf-makecache service
-  ansible.builtin.systemd:
-    name: dnf-makecache
-    state: started
+    - name: Force refresh repositories metadata
+      ansible.builtin.command:
+        cmd: dnf makecache --assumeyes --refresh
+      register: cache_result
+      changed_when: >
+        'Metadata cache created' in cache_result.stdout or 
+        'Metadata cache refreshed' in cache_result.stdout
+      failed_when: 
+        - cache_result.rc != 0
+        - and 
+        - "'Metadata cache created' not in cache_result.stdout"
+        - and
+        - "'Metadata cache refreshed' not in cache_result.stdout"
+  rescue:
+    - name: If failed, try with more aggressive cleanup
+      ansible.builtin.command:
+        cmd: rm -rf /var/cache/dnf/* /var/lib/dnf/lock*
+      ignore_errors: yes
+    
+    - name: Retry refresh
+      ansible.builtin.command:
+        cmd: dnf makecache --assumeyes --refresh
+      changed_when: false
 
 # - name: Add Prometheus repository
 #   ansible.builtin.yum_repository:

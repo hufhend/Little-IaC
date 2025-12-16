@@ -24,3 +24,8 @@ ca_cert_path: "/etc/ssl/certs/ca-certificates.crt"
 sssd_services: "nss, pam"
 debug_level: 0
 ldap_default_authtok: #OBFUSCATED_PASSWORD#
+
+# OCP Login Script
+cluster_url: "https://api.example.com:6443"
+ocp_username: "username"
+ocp_login: false

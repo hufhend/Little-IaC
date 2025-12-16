@@ -31,7 +31,7 @@
     name: "{{ user_ansible }}"
     create_home: true
     shell: "{{ '/bin/zsh' if ansible_os_family == 'Darwin' else '/bin/bash' }}"
-    group: "{{ 'staff' if ansible_os_family == 'Darwin' else user_ansible }}"
+    group: "{{ 'staff' if ansible_os_family == 'Darwin' else omit }}"
     home: "{{ '/Users/' + user_ansible if ansible_os_family == 'Darwin' else omit }}"
     uid: 2000
     state: present

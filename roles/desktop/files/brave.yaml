@@ -2,53 +2,52 @@
 # Brave browser - universal installation
 - name: Set Brave variables
   ansible.builtin.set_fact:
-    brave_app_name: "Brave"
-    brave_package_name: "brave-browser"
-  when: brave == True
+    app: "brave-browser"
+    app_name: "Brave"
 
-- name: Install Brave browser (Ubuntu)
+- name: Install {{ app_name }} browser
   block:
-    - name: Add Brave GPG key
+    - name: Add {{ app_name }} GPG key
       ansible.builtin.apt_key:
         url: https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
         keyring: /usr/share/keyrings/brave-browser-archive-keyring.gpg
         state: present
 
-    - name: Add Brave repository
+    - name: Add {{ app_name }} repository
       ansible.builtin.apt_repository:
         repo: deb [arch=amd64 signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main
         state: present
         filename: brave-browser
 
-    - name: Install {{ brave_app_name }} browser
+    - name: Install {{ app_name }} browser
       ansible.builtin.apt:
-        name: "{{ brave_package_name }}"
+        name: "{{ app }}"
         state: present
         update_cache: yes
   when: 
     - brave == True
     - ansible_os_family == "Debian"
 
-- name: Install Brave browser (RedHat)
+- name: Install {{ app_name }} browser (RedHat)
   block:
-    - name: Add Brave repository GPG key
+    - name: Add {{ app_name }} GPG key (RedHat)
       ansible.builtin.rpm_key:
         key: https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
         state: present
 
-    - name: Add Brave repository for RedHat
+    - name: Add {{ app_name }} repository (RedHat)
       ansible.builtin.yum_repository:
-        name: brave-browser
-        description: "{{ brave_app_name }} browser repository"
+        name: "{{ app }}"
+        description: "{{ app_name }} browser repository"
         baseurl: https://brave-browser-rpm-release.s3.brave.com/brave-browser/{{ ansible_distribution_major_version }}/$basearch/
         gpgcheck: yes
         gpgkey: https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
         enabled: yes
         state: present
 
-    - name: Install {{ brave_app_name }} browser
+    - name: Install {{ app_name }} browser (RedHat)
       ansible.builtin.dnf:
-        name: "{{ brave_package_name }}"
+        name: "{{ app }}"
         state: present
         disable_gpg_check: no
   when:

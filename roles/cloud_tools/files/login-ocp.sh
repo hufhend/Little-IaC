@@ -5,7 +5,7 @@
 #   begin     : Tue 16 Dec 2025
 #   copyright : (c) 2025 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: login-ocp.sh, v1.00 16/12/2025
+#   $Id: login-ocp.sh, v1.20 18/12/2025
 #   ***********************************
 
 #   --------------------------------------------------------------------
@@ -15,11 +15,17 @@
 #   (at your option) any later version.
 #   --------------------------------------------------------------------
 
-# Cluster variables - SET BY ANSIBLE
-CLUSTER_URL="{{ cluster_url }}"
-USERNAME="{{ ocp_username }}"
-{% set cluster_name = cluster_url.replace('https://', '').replace('.', '-') %}
-CONTEXT_NAME="default/{{ cluster_name }}/{{ ocp_username }}"
+# Cluster variables - MUST BE SET IN ENVIRONMENT
+CLUSTER_URL="${OCP_CLUSTER_URL}"
+USERNAME="${OCP_USERNAME}"
+
+# Generate context name from cluster URL
+if [ -n "${CLUSTER_URL}" ]; then
+    CLUSTER_NAME=$(echo "${CLUSTER_URL}" | sed 's|https://||' | tr '.' '-')
+    CONTEXT_NAME="default/${CLUSTER_NAME}/${USERNAME}"
+else
+    CONTEXT_NAME="default/unknown-cluster/${USERNAME}"
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -45,6 +51,24 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Function to validate configuration
+validate_config() {
+    if [ -z "${CLUSTER_URL}" ]; then
+        log_error "Cluster URL is not configured!"
+        log_error "Set environment variables in your ~/.bashrc or ~/.bash_aliases:"
+        log_error "  export OCP_CLUSTER_URL='https://api.cluster.example.com:6443'"
+        log_error "  export OCP_USERNAME='your-username'"
+        return 1
+    fi
+    
+    if [ -z "${USERNAME}" ]; then
+        log_error "Username is not configured!"
+        return 1
+    fi
+    
+    return 0
+}
+
 # Function to check login status
 check_oc_login() {
     log_info "Checking cluster login status..."
@@ -55,6 +79,11 @@ check_oc_login() {
         log_error "Install with: brew install openshift-cli  # for macOS"
         log_error "or download from: https://mirror.openshift.com/pub/openshift-v4/clients/ocp/"
         exit 1
+    fi
+
+    # Validate configuration first
+    if ! validate_config; then
+        return 1
     fi
 
     # Check if we're logged in using whoami
@@ -117,17 +146,15 @@ cleanup_old_config() {
         oc logout
         log_info "Logged out from old session"
     fi
-
-    # Backup old credentials
-    if [ -f ~/.kube/config ]; then
-        # Create backup
-        cp ~/.kube/config ~/.kube/config.backup.$(date +%Y%m%d%H%M%S)
-        log_info "Configuration backup created"
-    fi
 }
 
 # Main login function
 login_to_cluster() {
+    # Validate configuration
+    if ! validate_config; then
+        return 1
+    fi
+
     log_info "Logging into cluster: ${CLUSTER_URL}"
     log_info "Username: ${USERNAME}"
     
@@ -136,6 +163,12 @@ login_to_cluster() {
     echo -e "${GREEN}│ Cluster: ${CLUSTER_URL} ${NC}"
     echo -e "${GREEN}│ Username: ${USERNAME} ${NC}"
     echo -e "${GREEN}└────────────────────────────────────────────────────┘${NC}"
+    echo
+
+    # Warning about insecure TLS
+    log_warn "Using insecure TLS verification (--insecure-skip-tls-verify)"
+    log_warn "This should only be used in trusted environments!"
+    
     echo
 
     # Clean up old configuration
@@ -179,7 +212,7 @@ login_to_cluster() {
             # Show oc version
             echo
             log_info "OpenShift CLI version:"
-            oc version 2>/dev/null | grep -E "(Client Version:|openshift)"
+            oc version 2>/dev/null | grep -E "(Client Version:|openshift)" || true
 
             return 0
         else
@@ -194,6 +227,11 @@ login_to_cluster() {
 
 # Simplified version for quick use
 quick_login() {
+    # Validate configuration
+    if ! validate_config; then
+        return 1
+    fi
+    
     echo "Logging into ${CLUSTER_URL}..."
     
     # Logout if already logged in
@@ -219,17 +257,29 @@ show_help() {
     echo "  -q, --quick      Quick login without interactive questions"
     echo "  -h, --help       Show this help message"
     echo "  --status         Check current login status only"
+    echo "  --force, -f      Force login (skip status check)"
+    echo
+    echo "Environment variables (set in ~/.bashrc or ~/.bash_aliases):"
+    echo "  OCP_CLUSTER_URL  Cluster API URL (e.g., https://api.cluster.example.com:6443)"
+    echo "  OCP_USERNAME     OpenShift username"
     echo
     echo "Examples:"
     echo "  $0               Interactive login mode"
     echo "  $0 --quick       Quick non-interactive login"
     echo "  $0 --status      Check current login status"
+    echo "  $0 --force       Force login without asking"
+    echo
+    echo "Installation:"
+    echo "  sudo install $0 /usr/local/bin/ocp-login"
+    echo "  chmod +x /usr/local/bin/ocp-login"
 }
 
 # Check status only
 check_status() {
     if check_oc_login; then
         log_success "✓ You are logged in with valid permissions"
+        log_info "Cluster: ${CLUSTER_URL}"
+        log_info "Context: ${CONTEXT_NAME}"
         exit 0
     else
         log_error "✗ You are not logged in or have invalid permissions"
@@ -250,6 +300,12 @@ main() {
         check_status
     fi
     
+    # Check for force login flag
+    if [ "$1" = "--force" ] || [ "$1" = "-f" ]; then
+        login_to_cluster
+        exit 0
+    fi
+    
     # Check for quick login flag
     if [ "$1" = "--quick" ] || [ "$1" = "-q" ]; then
         quick_login
@@ -257,6 +313,9 @@ main() {
     fi
     
     echo -e "${BLUE}=== OpenShift Cluster Manager ===${NC}"
+    echo
+    log_info "Cluster: ${CLUSTER_URL}"
+    log_info "Context: ${CONTEXT_NAME}"
     echo
     
     # Check current status

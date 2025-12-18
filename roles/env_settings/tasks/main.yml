@@ -76,23 +76,6 @@
     create: yes
     state: present
 
-- block:
-    - name: Create scr directory
-      ansible.builtin.file:
-        path: "/home/{{ user_ansible }}/scr"
-        state: directory
-        mode: '0750'
-        owner: "{{ user_ansible  }}"
-
-    - name: Deploy OCP login script
-      ansible.builtin.template:
-        src: templates/login-ocp.sh.j2
-        dest: "/home/{{ user_ansible }}/scr/login-ocp.sh"
-        mode: '0740'
-        owner: "{{ user_ansible }}"
-        group: "{{ user_ansible }}"
-  when: ocp_login
-
 - name: Create a bash completion directory
   ansible.builtin.file:
     path: /etc/bash_completion.d

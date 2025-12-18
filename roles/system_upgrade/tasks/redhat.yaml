@@ -23,12 +23,7 @@
       changed_when: >
         'Metadata cache created' in cache_result.stdout or 
         'Metadata cache refreshed' in cache_result.stdout
-      failed_when: 
-        - cache_result.rc != 0
-        - and 
-        - "'Metadata cache created' not in cache_result.stdout"
-        - and
-        - "'Metadata cache refreshed' not in cache_result.stdout"
+      ignore_errors: yes
   rescue:
     - name: If failed, try with more aggressive cleanup
       ansible.builtin.command:
@@ -80,6 +75,8 @@
     - name: Refresh the repo cache
       ansible.builtin.dnf:
         update_cache: yes
+        cacheonly: yes
+      ignore_errors: yes
 
     - name: Verify EPEL repo is enabled
       ansible.builtin.command:
@@ -112,6 +109,15 @@
     - ansible_distribution == "CentOS" or ansible_distribution == "Rocky"
     - ansible_distribution_major_version == "9"
 
+- name: Update all system packages
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+    update_only: yes
+  register: system_update
+  changed_when: system_update.changed
+  async: 3600
+  poll: 30
 
 - name: Install useful packages
   ansible.builtin.dnf:

@@ -42,3 +42,8 @@ k8s_version: "1.32"
 # common variables
 app_dir: "/usr/local/bin"
 install_dir: "/home/{{ user_ansible }}/install"
+
+# OCP Login Script
+cluster_url: "https://api.example.com:6443"
+ocp_username: "username"
+ocp_login: false

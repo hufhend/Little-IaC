@@ -4,7 +4,7 @@
   ansible.builtin.set_fact:
     app: "openshift-install"
     app_name: "OpenShift installer"
-    version: "4.20.6"
+    version: "4.20.8"
     install_dir: "/home/{{ user_ansible }}/install/oc"
 
 # Verify installed version

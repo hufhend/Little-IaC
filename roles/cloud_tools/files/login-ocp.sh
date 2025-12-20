@@ -5,7 +5,7 @@
 #   begin     : Tue 16 Dec 2025
 #   copyright : (c) 2025 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: login-ocp.sh, v1.20 18/12/2025
+#   $Id: login-ocp.sh, v1.22 18/12/2025
 #   ***********************************
 
 #   --------------------------------------------------------------------
@@ -15,17 +15,10 @@
 #   (at your option) any later version.
 #   --------------------------------------------------------------------
 
-# Cluster variables - MUST BE SET IN ENVIRONMENT
+# Cluster variables - ALL MUST BE SET IN ENVIRONMENT
 CLUSTER_URL="${OCP_CLUSTER_URL}"
 USERNAME="${OCP_USERNAME}"
-
-# Generate context name from cluster URL
-if [ -n "${CLUSTER_URL}" ]; then
-    CLUSTER_NAME=$(echo "${CLUSTER_URL}" | sed 's|https://||' | tr '.' '-')
-    CONTEXT_NAME="default/${CLUSTER_NAME}/${USERNAME}"
-else
-    CONTEXT_NAME="default/unknown-cluster/${USERNAME}"
-fi
+CONTEXT_NAME="${OCP_CONTEXT}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -53,16 +46,26 @@ log_error() {
 
 # Function to validate configuration
 validate_config() {
+    local missing_vars=()
+    
     if [ -z "${CLUSTER_URL}" ]; then
-        log_error "Cluster URL is not configured!"
-        log_error "Set environment variables in your ~/.bashrc or ~/.bash_aliases:"
-        log_error "  export OCP_CLUSTER_URL='https://api.cluster.example.com:6443'"
-        log_error "  export OCP_USERNAME='your-username'"
-        return 1
+        missing_vars+=("OCP_CLUSTER_URL")
     fi
     
     if [ -z "${USERNAME}" ]; then
-        log_error "Username is not configured!"
+        missing_vars+=("OCP_USERNAME")
+    fi
+    
+    if [ -z "${CONTEXT_NAME}" ]; then
+        missing_vars+=("OCP_CONTEXT")
+    fi
+    
+    if [ ${#missing_vars[@]} -gt 0 ]; then
+        log_error "Missing required environment variables!"
+        log_error "Set these in your ~/.bashrc or ~/.bash_aliases:"
+        log_error "  export OCP_CLUSTER_URL='https://api.cluster.example.com:6443'"
+        log_error "  export OCP_USERNAME='your-username'"
+        log_error "  export OCP_CONTEXT='your-context-name'"
         return 1
     fi
     
@@ -102,28 +105,30 @@ check_oc_login() {
         if [ -n "${CURRENT_CONTEXT}" ]; then
             log_success "Active context: ${CURRENT_CONTEXT}"
 
-            # Check if we're in the right cluster
-            if [[ "${CURRENT_CONTEXT}" == *"$(echo ${CLUSTER_URL} | sed 's|https://||' | tr '.' '-')"* ]]; then
-                log_success "You are in the target cluster"
-
-                # Try to get current project (if we have permissions)
-                if CURRENT_PROJECT=$(oc project -q 2>/dev/null); then
-                    log_success "Current project: ${CURRENT_PROJECT}"
-                else
-                    log_warn "Cannot load current project - limited permissions"
-                fi
-
-                # Test basic permissions - try to get something simple
-                if oc get nodes --request-timeout=5s &> /dev/null; then
-                    log_success "You have valid cluster permissions"
-                    return 0
-                else
-                    log_warn "You have limited permissions in the cluster"
-                    return 2
-                fi
+            # Check if we're in the right context
+            if [ "${CURRENT_CONTEXT}" = "${CONTEXT_NAME}" ]; then
+                log_success "✓ Context matches: ${CONTEXT_NAME}"
             else
-                log_warn "You are not in the target cluster"
+                log_warn "⚠ Context doesn't match"
+                log_warn "  Expected: ${CONTEXT_NAME}"
+                log_warn "  Current:  ${CURRENT_CONTEXT}"
                 return 3
+            fi
+
+            # Try to get current project (if we have permissions)
+            if CURRENT_PROJECT=$(oc project -q 2>/dev/null); then
+                log_success "Current project: ${CURRENT_PROJECT}"
+            else
+                log_warn "Cannot load current project - limited permissions"
+            fi
+
+            # Test basic permissions
+            if oc get nodes --request-timeout=5s &> /dev/null; then
+                log_success "You have valid cluster permissions"
+                return 0
+            else
+                log_warn "You have limited permissions in the cluster"
+                return 2
             fi
         fi
     fi
@@ -138,7 +143,7 @@ cleanup_old_config() {
     # Remove old context if it exists
     if oc config get-contexts "${CONTEXT_NAME}" &> /dev/null; then
         oc config delete-context "${CONTEXT_NAME}"
-        log_info "Old context removed"
+        log_info "Old context '${CONTEXT_NAME}' removed"
     fi
 
     # Logout if we're logged in
@@ -148,27 +153,56 @@ cleanup_old_config() {
     fi
 }
 
+# Function to setup context after login
+setup_context() {
+    log_info "Setting up context: ${CONTEXT_NAME}"
+    
+    # Get current cluster and user from oc config
+    CURRENT_CLUSTER=$(oc config view --minify -o jsonpath='{.contexts[0].context.cluster}' 2>/dev/null)
+    CURRENT_USER=$(oc config view --minify -o jsonpath='{.contexts[0].context.user}' 2>/dev/null)
+    
+    if [ -z "${CURRENT_CLUSTER}" ] || [ -z "${CURRENT_USER}" ]; then
+        log_warn "Could not extract cluster/user info, using current context"
+        CURRENT_CONTEXT=$(oc config current-context 2>/dev/null)
+        oc config rename-context "${CURRENT_CONTEXT}" "${CONTEXT_NAME}" 2>/dev/null
+    else
+        # Create or update the context
+        oc config set-context "${CONTEXT_NAME}" \
+            --cluster="${CURRENT_CLUSTER}" \
+            --user="${CURRENT_USER}" \
+            --namespace=default 2>/dev/null
+    fi
+    
+    # Switch to our context
+    oc config use-context "${CONTEXT_NAME}" 2>/dev/null
+    
+    if [ $? -eq 0 ]; then
+        log_success "Context '${CONTEXT_NAME}' configured and activated"
+        return 0
+    else
+        log_error "Failed to setup context '${CONTEXT_NAME}'"
+        return 1
+    fi
+}
+
 # Main login function
 login_to_cluster() {
     # Validate configuration
     if ! validate_config; then
         return 1
     fi
-
-    log_info "Logging into cluster: ${CLUSTER_URL}"
-    log_info "Username: ${USERNAME}"
     
     echo -e "${GREEN}┌────────────────────────────────────────────────────┐${NC}"
     echo -e "${GREEN}│ OpenShift Cluster Login                            │${NC}"
-    echo -e "${GREEN}│ Cluster: ${CLUSTER_URL} ${NC}"
-    echo -e "${GREEN}│ Username: ${USERNAME} ${NC}"
+    echo -e "${GREEN}│ Cluster: ${CLUSTER_URL}${NC}"
+    echo -e "${GREEN}│ Username: ${USERNAME}${NC}"
+    echo -e "${GREEN}│ Context: ${CONTEXT_NAME}${NC}"
     echo -e "${GREEN}└────────────────────────────────────────────────────┘${NC}"
     echo
 
     # Warning about insecure TLS
     log_warn "Using insecure TLS verification (--insecure-skip-tls-verify)"
     log_warn "This should only be used in trusted environments!"
-    
     echo
 
     # Clean up old configuration
@@ -180,6 +214,9 @@ login_to_cluster() {
     # Check login success
     if [ $? -eq 0 ]; then
         log_success "Login successful!"
+
+        # Setup our context
+        setup_context
 
         # Short pause for stabilization
         sleep 2
@@ -196,11 +233,9 @@ login_to_cluster() {
             CURRENT_CONTEXT=$(oc config current-context)
             log_success "Active context: ${CURRENT_CONTEXT}"
 
-            # Try to get basic cluster info
+            # Test cluster connection
             echo
             log_info "Testing cluster connection..."
-
-            # Test with timeout
             if timeout 10s oc get nodes --no-headers 2>/dev/null | head -5; then
                 NODE_COUNT=$(oc get nodes --no-headers 2>/dev/null | wc -l)
                 echo -e "${GREEN}[SUCCESS]${NC} Cluster responding, node count: ${NODE_COUNT}"
@@ -233,6 +268,7 @@ quick_login() {
     fi
     
     echo "Logging into ${CLUSTER_URL}..."
+    echo "Using context: ${CONTEXT_NAME}"
     
     # Logout if already logged in
     oc logout 2>/dev/null
@@ -242,9 +278,24 @@ quick_login() {
     
     if [ $? -eq 0 ]; then
         echo "✓ Logged in as: $(oc whoami)"
-        echo "✓ Context: $(oc config current-context)"
+        
+        # Setup context
+        CURRENT_CLUSTER=$(oc config view --minify -o jsonpath='{.contexts[0].context.cluster}' 2>/dev/null)
+        CURRENT_USER=$(oc config view --minify -o jsonpath='{.contexts[0].context.user}' 2>/dev/null)
+        
+        if [ -n "${CURRENT_CLUSTER}" ] && [ -n "${CURRENT_USER}" ]; then
+            oc config set-context "${CONTEXT_NAME}" \
+                --cluster="${CURRENT_CLUSTER}" \
+                --user="${CURRENT_USER}" \
+                --namespace=default 2>/dev/null
+            oc config use-context "${CONTEXT_NAME}" 2>/dev/null
+            echo "✓ Context set to: ${CONTEXT_NAME}"
+        else
+            echo "✓ Using current context: $(oc config current-context)"
+        fi
     else
         echo "✗ Login failed"
+        return 1
     fi
 }
 
@@ -259,9 +310,10 @@ show_help() {
     echo "  --status         Check current login status only"
     echo "  --force, -f      Force login (skip status check)"
     echo
-    echo "Environment variables (set in ~/.bashrc or ~/.bash_aliases):"
+    echo "Environment variables (REQUIRED - set in ~/.bashrc or ~/.bash_aliases):"
     echo "  OCP_CLUSTER_URL  Cluster API URL (e.g., https://api.cluster.example.com:6443)"
     echo "  OCP_USERNAME     OpenShift username"
+    echo "  OCP_CONTEXT      Context name (e.g., 'my-prod-cluster', 'dev-env', etc.)"
     echo
     echo "Examples:"
     echo "  $0               Interactive login mode"
@@ -272,6 +324,11 @@ show_help() {
     echo "Installation:"
     echo "  sudo install $0 /usr/local/bin/ocp-login"
     echo "  chmod +x /usr/local/bin/ocp-login"
+    echo
+    echo "Example ~/.bash_aliases configuration:"
+    echo "  export OCP_CLUSTER_URL='https://api.cluster.example.com:6443'"
+    echo "  export OCP_USERNAME='jan.novak'"
+    echo "  export OCP_CONTEXT='production-cluster'"
 }
 
 # Check status only
@@ -315,6 +372,7 @@ main() {
     echo -e "${BLUE}=== OpenShift Cluster Manager ===${NC}"
     echo
     log_info "Cluster: ${CLUSTER_URL}"
+    log_info "Username: ${USERNAME}"
     log_info "Context: ${CONTEXT_NAME}"
     echo
     

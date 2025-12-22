@@ -5,7 +5,7 @@
 #   begin     : Tue 16 Dec 2025
 #   copyright : (c) 2025 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: ocp-login.sh, v2.10 21/12/2025
+#   $Id: ocp-login.sh, v2.11 22/12/2025
 #   ************************************
 
 #   --------------------------------------------------------------------
@@ -138,7 +138,20 @@ validate_openshift_config() {
     if [ -z "${OCP_CONTEXT}" ]; then
         # Try to generate context name from URL
         if [ -n "${OCP_CLUSTER_URL}" ]; then
-            OCP_CONTEXT=$(echo "${OCP_CLUSTER_URL}" | sed 's|https://api.||;s|:6443||;s|\.oskarmobil\.cz||;s|\.||g')
+            # Generic domain removal - no hardcoded domains
+            OCP_CONTEXT=$(echo "${OCP_CLUSTER_URL}" | sed '
+                s|https://api\.||
+                s|https://||
+                s|:6443||
+                s|\.example\.com||
+                s|\.com||
+                s|\.cz||
+                s|\.org||
+                s|\.net||
+                s|\.io||
+                s|-cluster||
+                s|\.|-|g
+            ')
             export OCP_CONTEXT
             log_debug "Auto-generated context name: ${OCP_CONTEXT}"
         else
@@ -199,6 +212,18 @@ is_openshift_cluster() {
     fi
     
     return 1  # It's not OpenShift
+}
+
+# Function to check if URL points to a real OpenShift cluster
+is_valid_openshift_url() {
+    local url=$1
+    
+    # Quick check if URL contains common OpenShift patterns
+    if echo "${url}" | grep -qi "openshift\|ocp\|api\."; then
+        return 0
+    fi
+    
+    return 1
 }
 
 # Function to check cluster connection status
@@ -294,6 +319,13 @@ login_openshift() {
     local username="${OCP_USERNAME}"
     local context_name="${OCP_CONTEXT}"
     
+    # Check if this looks like a real OpenShift cluster URL
+    if ! is_valid_openshift_url "${cluster_url}"; then
+        log_warn "URL '${cluster_url}' doesn't look like an OpenShift cluster"
+        log_warn "OpenShift clusters typically use 'https://api.' prefix"
+        echo
+    fi
+    
     if [ "${quick_mode}" = "true" ]; then
         echo -e "${INFO} Logging into ${cluster_url}..."
         
@@ -320,6 +352,8 @@ login_openshift() {
             fi
         else
             log_error "Login failed"
+            log_error "This might not be an OpenShift cluster"
+            log_error "For Kubernetes clusters, use kubeconfig instead"
             return 1
         fi
         
@@ -388,6 +422,8 @@ login_openshift() {
             
         else
             log_error "Login failed!"
+            log_error "Check if this is really an OpenShift cluster"
+            log_error "For Kubernetes, use kubeconfig files instead"
             return 1
         fi
     fi
@@ -434,6 +470,22 @@ handle_kubernetes() {
         return 1
     fi
     
+    return 0
+}
+
+# Function to prevent quick/force on Kubernetes clusters
+prevent_k8s_quick_force() {
+    if [ -n "${KUBECONFIG}" ] && [ -z "${OCP_CLUSTER_URL}" ]; then
+        log_error "Quick/Force login is only for OpenShift clusters!"
+        log_error ""
+        log_error "You seem to be using a Kubernetes cluster (KUBECONFIG is set)"
+        log_error "For Kubernetes clusters, use:"
+        log_error "  ocls           # Check status"
+        log_error "  kubectl ...    # Direct commands"
+        log_error ""
+        log_error "For OpenShift, set OCP_CLUSTER_URL and OCP_USERNAME first"
+        return 1
+    fi
     return 0
 }
 
@@ -522,9 +574,20 @@ main() {
             ;;
             
         quick|force)
+            # Check if this is a Kubernetes cluster
+            if ! prevent_k8s_quick_force; then
+                exit 1
+            fi
+            
             if [ -z "${OCP_CLUSTER_URL}" ] || [ -z "${OCP_USERNAME}" ]; then
                 log_error "Quick/Force login requires OpenShift configuration"
                 log_error "Set OCP_CLUSTER_URL and OCP_USERNAME environment variables"
+                echo
+                log_info "Example:"
+                log_info "  export OCP_CLUSTER_URL='https://api.openshift.example.com:6443'"
+                log_info "  export OCP_USERNAME='your-username'"
+                echo
+                log_info "Or use predefined aliases like: ocl-dev, ocl-staging, ocl-prod"
                 exit 1
             fi
             login_openshift "${quick_mode}"

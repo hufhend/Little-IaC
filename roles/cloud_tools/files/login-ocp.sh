@@ -5,7 +5,7 @@
 #   begin     : Tue 16 Dec 2025
 #   copyright : (c) 2025 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: ocp-login.sh, v2.11 22/12/2025
+#   $Id: ocp-login.sh, v2.12 23/12/2025
 #   ************************************
 
 #   --------------------------------------------------------------------
@@ -82,7 +82,7 @@ detect_cluster_type() {
     fi
     
     # Priority 2: Check if we're trying to use OpenShift login
-    if [ "${mode}" = "force" ] || [ "${mode}" = "quick" ]; then
+    if [ "${mode}" = "force" ]; then
         echo "openshift"
         return 0
     fi
@@ -139,7 +139,7 @@ validate_openshift_config() {
         # Try to generate context name from URL
         if [ -n "${OCP_CLUSTER_URL}" ]; then
             # Generic domain removal - no hardcoded domains
-            OCP_CONTEXT=$(echo "${OCP_CLUSTER_URL}" | sed '
+            OCP_CONTEXT_PARSED=$(echo "${OCP_CLUSTER_URL}" | sed '
                 s|https://api\.||
                 s|https://||
                 s|:6443||
@@ -152,8 +152,11 @@ validate_openshift_config() {
                 s|-cluster||
                 s|\.|-|g
             ')
-            export OCP_CONTEXT
-            log_debug "Auto-generated context name: ${OCP_CONTEXT}"
+            export OCP_CONTEXT_PARSED
+            log_debug "Auto-generated context name: ${OCP_CONTEXT_PARSED}"
+            
+            # Use parsed context if not manually set
+            OCP_CONTEXT="${OCP_CONTEXT_PARSED}"
         else
             missing_vars+=("OCP_CONTEXT")
         fi
@@ -266,6 +269,22 @@ check_cluster_status() {
         print_success "Context" "${current_context}"
         print_success "Project" "${current_project}"
         
+        # Check context match with better logic
+        local expected_context="${OCP_CONTEXT:-${OCP_CONTEXT_PARSED}}"
+        
+        if [ -n "${expected_context}" ] && [ "${current_context}" != "${expected_context}" ]; then
+            if [ -n "${OCP_CONTEXT}" ]; then
+                # Manually configured context - warning
+                log_warn "Context doesn't match configured value"
+                log_warn "  Configured: ${OCP_CONTEXT}"
+                log_warn "  Current:    ${current_context}"
+            elif [ -n "${OCP_CONTEXT_PARSED}" ]; then
+                # Only parsed context - just info
+                log_info "Using context: ${current_context}"
+                log_info "(Auto-generated would be: ${OCP_CONTEXT_PARSED})"
+            fi
+        fi
+        
         # Test cluster access
         if oc get nodes --request-timeout=5s &> /dev/null; then
             local node_count=$(oc get nodes --no-headers 2>/dev/null | wc -l)
@@ -309,15 +328,13 @@ check_cluster_status() {
 
 # Function to login to OpenShift cluster
 login_openshift() {
-    local quick_mode=$1
-    
     if ! validate_openshift_config; then
         return 1
     fi
     
     local cluster_url="${OCP_CLUSTER_URL}"
     local username="${OCP_USERNAME}"
-    local context_name="${OCP_CONTEXT}"
+    local context_name="${OCP_CONTEXT:-${OCP_CONTEXT_PARSED}}"
     
     # Check if this looks like a real OpenShift cluster URL
     if ! is_valid_openshift_url "${cluster_url}"; then
@@ -326,106 +343,73 @@ login_openshift() {
         echo
     fi
     
-    if [ "${quick_mode}" = "true" ]; then
-        echo -e "${INFO} Logging into ${cluster_url}..."
-        
-        # Logout from any existing session
+    # Interactive login
+    echo -e "${GREEN}┌───────────────────────────────────────────────────┐${NC}"
+    echo -e "${GREEN}│                  OpenShift Login                  │${NC}"
+    echo -e "${GREEN}└───────────────────────────────────────────────────┘${NC}"
+    echo
+    print_info "Cluster" "${cluster_url}"
+    print_info "Username" "${username}"
+    print_info "Context" "${context_name}"
+    echo
+    
+    log_warn "Using insecure TLS verification (--insecure-skip-tls-verify)"
+    log_warn "This should only be used in trusted environments!"
+    echo
+    
+    # Clean up old configuration
+    if oc config get-contexts "${context_name}" &> /dev/null; then
+        oc config delete-context "${context_name}" 2>/dev/null
+        log_info "Removed old context: ${context_name}"
+    fi
+    
+    if oc whoami &> /dev/null; then
         oc logout 2>/dev/null
+        log_info "Logged out from old session"
+    fi
+    
+    # Start login
+    oc login "${cluster_url}" -u "${username}" --insecure-skip-tls-verify=true
+    
+    if [ $? -eq 0 ]; then
+        echo
+        echo -e "${CHECKMARK} ${GREEN}Login successful!${NC}"
         
-        # Login with insecure TLS (as in original script)
-        oc login "${cluster_url}" -u "${username}" --insecure-skip-tls-verify=true
+        # Setup context
+        local current_cluster=$(oc config view --minify -o jsonpath='{.contexts[0].context.cluster}' 2>/dev/null)
+        local current_user=$(oc config view --minify -o jsonpath='{.contexts[0].context.user}' 2>/dev/null)
         
-        if [ $? -eq 0 ]; then
-            echo -e "${CHECKMARK} ${GREEN}Logged in as:$(tput sgr0) $(oc whoami)"
-            
-            # Setup context
-            local current_cluster=$(oc config view --minify -o jsonpath='{.contexts[0].context.cluster}' 2>/dev/null)
-            local current_user=$(oc config view --minify -o jsonpath='{.contexts[0].context.user}' 2>/dev/null)
-            
-            if [ -n "${current_cluster}" ] && [ -n "${current_user}" ]; then
-                oc config set-context "${context_name}" \
-                    --cluster="${current_cluster}" \
-                    --user="${current_user}" \
-                    --namespace=default 2>/dev/null
-                oc config use-context "${context_name}" 2>/dev/null
-                echo -e "${CHECKMARK} ${GREEN}Context set to:$(tput sgr0) ${context_name}"
-            fi
-        else
-            log_error "Login failed"
-            log_error "This might not be an OpenShift cluster"
-            log_error "For Kubernetes clusters, use kubeconfig instead"
-            return 1
+        if [ -n "${current_cluster}" ] && [ -n "${current_user}" ]; then
+            oc config set-context "${context_name}" \
+                --cluster="${current_cluster}" \
+                --user="${current_user}" \
+                --namespace=default 2>/dev/null
+            oc config use-context "${context_name}" 2>/dev/null
+            echo
+            echo -e "${CHECKMARK} ${GREEN}Context configured:${NC}"
+            print_success "Name" "${context_name}"
+            print_success "Cluster" "${current_cluster}"
+            print_success "User" "${current_user}"
+        fi
+        
+        # Show cluster info
+        echo
+        log_info "Cluster information:"
+        print_success "User" "$(oc whoami)"
+        print_success "Context" "$(oc config current-context)"
+        
+        # Test connection
+        if oc get nodes --request-timeout=5s &> /dev/null; then
+            local node_count=$(oc get nodes --no-headers 2>/dev/null | wc -l)
+            print_success "Status" "Cluster responding"
+            print_success "Nodes" "${node_count} available"
         fi
         
     else
-        # Interactive login
-        echo -e "${GREEN}┌───────────────────────────────────────────────────┐${NC}"
-        echo -e "${GREEN}│                  OpenShift Login                  │${NC}"
-        echo -e "${GREEN}└───────────────────────────────────────────────────┘${NC}"
-        echo
-        print_info "Cluster" "${cluster_url}"
-        print_info "Username" "${username}"
-        print_info "Context" "${context_name}"
-        echo
-        
-        log_warn "Using insecure TLS verification (--insecure-skip-tls-verify)"
-        log_warn "This should only be used in trusted environments!"
-        echo
-        
-        # Clean up old configuration
-        if oc config get-contexts "${context_name}" &> /dev/null; then
-            oc config delete-context "${context_name}" 2>/dev/null
-            log_info "Removed old context: ${context_name}"
-        fi
-        
-        if oc whoami &> /dev/null; then
-            oc logout 2>/dev/null
-            log_info "Logged out from old session"
-        fi
-        
-        # Start login
-        oc login "${cluster_url}" -u "${username}" --insecure-skip-tls-verify=true
-        
-        if [ $? -eq 0 ]; then
-            echo
-            echo -e "${CHECKMARK} ${GREEN}Login successful!${NC}"
-            
-            # Setup context
-            local current_cluster=$(oc config view --minify -o jsonpath='{.contexts[0].context.cluster}' 2>/dev/null)
-            local current_user=$(oc config view --minify -o jsonpath='{.contexts[0].context.user}' 2>/dev/null)
-            
-            if [ -n "${current_cluster}" ] && [ -n "${current_user}" ]; then
-                oc config set-context "${context_name}" \
-                    --cluster="${current_cluster}" \
-                    --user="${current_user}" \
-                    --namespace=default 2>/dev/null
-                oc config use-context "${context_name}" 2>/dev/null
-                echo
-                echo -e "${CHECKMARK} ${GREEN}Context configured:${NC}"
-                print_success "Name" "${context_name}"
-                print_success "Cluster" "${current_cluster}"
-                print_success "User" "${current_user}"
-            fi
-            
-            # Show cluster info
-            echo
-            log_info "Cluster information:"
-            print_success "User" "$(oc whoami)"
-            print_success "Context" "$(oc config current-context)"
-            
-            # Test connection
-            if oc get nodes --request-timeout=5s &> /dev/null; then
-                local node_count=$(oc get nodes --no-headers 2>/dev/null | wc -l)
-                print_success "Status" "Cluster responding"
-                print_success "Nodes" "${node_count} available"
-            fi
-            
-        else
-            log_error "Login failed!"
-            log_error "Check if this is really an OpenShift cluster"
-            log_error "For Kubernetes, use kubeconfig files instead"
-            return 1
-        fi
+        log_error "Login failed!"
+        log_error "Check if this is really an OpenShift cluster"
+        log_error "For Kubernetes, use kubeconfig files instead"
+        return 1
     fi
     
     return 0
@@ -473,10 +457,10 @@ handle_kubernetes() {
     return 0
 }
 
-# Function to prevent quick/force on Kubernetes clusters
-prevent_k8s_quick_force() {
+# Function to prevent force on Kubernetes clusters
+prevent_k8s_force() {
     if [ -n "${KUBECONFIG}" ] && [ -z "${OCP_CLUSTER_URL}" ]; then
-        log_error "Quick/Force login is only for OpenShift clusters!"
+        log_error "Force login is only for OpenShift clusters!"
         log_error ""
         log_error "You seem to be using a Kubernetes cluster (KUBECONFIG is set)"
         log_error "For Kubernetes clusters, use:"
@@ -500,7 +484,6 @@ show_help() {
     echo -e "${BLUE}Usage:${NC} $0 [OPTION]"
     echo
     echo -e "${YELLOW}Options:${NC}"
-    echo "  -q, --quick      Quick login (OpenShift only)"
     echo "  -h, --help       Show this help message"
     echo "  --status, -s     Check current cluster status"
     echo "  --force, -f      Force OpenShift login (skip status check)"
@@ -509,7 +492,7 @@ show_help() {
     echo -e "${GREEN}OpenShift mode (requires):${NC}"
     echo "  OCP_CLUSTER_URL  Cluster API URL (e.g., https://api.cluster.example.com:6443)"
     echo "  OCP_USERNAME     OpenShift username"
-    echo "  OCP_CONTEXT      Context name (optional, auto-generated)"
+    echo "  OCP_CONTEXT      Context name (optional, auto-generated as OCP_CONTEXT_PARSED)"
     echo
     echo -e "${GREEN}Kubernetes mode (no login needed):${NC}"
     echo "  KUBECONFIG       Path to kubeconfig file (default: ~/.kube/config)"
@@ -518,30 +501,23 @@ show_help() {
     echo -e "${CYAN}Examples:${NC}"
     echo "  $0                 # Interactive mode (detects cluster type)"
     echo "  $0 --status        # Check current cluster status"
-    echo "  $0 --quick         # Quick OpenShift login"
     echo "  $0 --force         # Force OpenShift login"
     echo
     echo -e "${MAGENTA}Aliases in .bash_aliases:${NC}"
     echo "  alias ocl='ocp-login'                    # Interactive"
-    echo "  alias oclq='ocp-login --quick'           # Quick OpenShift"
     echo "  alias ocls='ocp-login --status'          # Status check"
+    echo "  alias oclf='ocp-login --force'           # Force OpenShift login"
 }
 
 # Main function
 main() {
     local command="interactive"
-    local quick_mode=false
     local force_mode=false
     DEBUG="false"
     
     # Parse arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
-            -q|--quick)
-                command="quick"
-                quick_mode=true
-                shift
-                ;;
             -h|--help)
                 show_help
                 exit 0
@@ -573,14 +549,14 @@ main() {
             exit $?
             ;;
             
-        quick|force)
+        force)
             # Check if this is a Kubernetes cluster
-            if ! prevent_k8s_quick_force; then
+            if ! prevent_k8s_force; then
                 exit 1
             fi
             
             if [ -z "${OCP_CLUSTER_URL}" ] || [ -z "${OCP_USERNAME}" ]; then
-                log_error "Quick/Force login requires OpenShift configuration"
+                log_error "Force login requires OpenShift configuration"
                 log_error "Set OCP_CLUSTER_URL and OCP_USERNAME environment variables"
                 echo
                 log_info "Example:"
@@ -590,7 +566,7 @@ main() {
                 log_info "Or use predefined aliases like: ocl-dev, ocl-staging, ocl-prod"
                 exit 1
             fi
-            login_openshift "${quick_mode}"
+            login_openshift
             ;;
             
         interactive)
@@ -640,7 +616,7 @@ main() {
                     read -p "Do you want to login to ${OCP_CLUSTER_URL}? (y/N): " -n 1 -r
                     echo
                     if [[ $REPLY =~ ^[Yy]$ ]]; then
-                        login_openshift "false"
+                        login_openshift
                     else
                         log_info "Login cancelled"
                     fi

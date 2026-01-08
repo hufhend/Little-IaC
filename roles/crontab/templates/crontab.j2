@@ -12,8 +12,8 @@
 {% if second_disk is defined and second_disk != 'none' %}
 
 # Check the second disk
-05 11   *  *  1-6    sudo /usr/sbin/smartctl -t short {{ second_disk }}   2>/dev/null
-10 11   *  *  sun    sudo /usr/sbin/smartctl -t long  {{ second_disk }}   2>/dev/null   # Sunday
+05 11   *  *  1-5    sudo /usr/sbin/smartctl -t short {{ second_disk }}   2>/dev/null
+00 01   *  *  fri    sudo /usr/sbin/smartctl -t long  {{ second_disk }}   2>/dev/null   # Friday night
 {% endif %}
 
 # Complete system update

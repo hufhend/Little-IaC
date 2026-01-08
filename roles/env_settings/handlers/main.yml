@@ -1,2 +1,12 @@
 ---
-# handlers file for env_settings
+- name: Update CA trust
+  command: update-ca-trust
+  changed_when: false
+  listen: "update ca trust"
+  notify: restart docker
+
+- name: Restart Docker
+  service:
+    name: docker
+    state: restarted
+  listen: "restart docker"

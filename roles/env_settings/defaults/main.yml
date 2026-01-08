@@ -24,3 +24,6 @@ ca_cert_path: "/etc/ssl/certs/ca-certificates.crt"
 sssd_services: "nss, pam"
 debug_level: 0
 ldap_default_authtok: #OBFUSCATED_PASSWORD#
+
+# uploading internal certificates
+add_certs: false

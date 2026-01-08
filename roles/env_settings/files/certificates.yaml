@@ -1,0 +1,32 @@
+---
+- name: Debug certificate installation
+  debug:
+    msg: "Installing additional certificates"
+  changed_when: false
+
+- block:
+    - name: Ensure certificate directory exists
+      file:
+        path: /etc/pki/ca-trust/source/anchors/
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Copy additional certificates to the system
+      copy:
+        src: "{{ cert.src }}"
+        dest: "/etc/pki/ca-trust/source/anchors/{{ cert.dest }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop: "{{ internal_certificates }}"
+      loop_control:
+        loop_var: cert
+        label: "{{ cert.dest }}"
+      notify: update ca trust
+
+    - name: Reload system daemons
+      meta: flush_handlers
+
+  when: add_certs | default(false)

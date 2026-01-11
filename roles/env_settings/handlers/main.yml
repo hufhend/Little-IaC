@@ -2,11 +2,18 @@
 - name: Update CA trust
   command: update-ca-trust
   changed_when: false
-  listen: "update ca trust"
-  notify: restart docker
+  listen: "update-ca-trust"
+  notify: restart-docker
+
+- name: Update CA certificates
+  command: update-ca-certificates
+  changed_when: false
+  listen: "update-ca-certificates"
+  notify: restart-docker
 
 - name: Restart Docker
   service:
     name: docker
     state: restarted
-  listen: "restart docker"
+  when: "'docker' in ansible_facts.services"
+  listen: "restart-docker"

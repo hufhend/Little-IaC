@@ -1,0 +1,27 @@
+# LibreWolf browser - Flatpak universal installation
+- name: Set LibreWolf variables
+  ansible.builtin.set_fact:
+    app: "librewolf"
+    app_name: "LibreWolf"
+
+- name: Ensure Flatpak is installed
+  block:
+    - name: Install Flatpak
+      ansible.builtin.package:
+        name: flatpak
+        state: present
+
+    - name: Add Flathub remote repository
+      community.general.flatpak_remote:
+        name: flathub
+        flatpakrepo_url: https://repo.librewolf.net/librewolf.repo
+        state: present
+      register: flathub_added
+
+    - name: Install {{ app_name }} browser
+      community.general.flatpak:
+        name: "{{ app }}"
+        state: present
+        method: system
+  when:
+    - librewolf == True

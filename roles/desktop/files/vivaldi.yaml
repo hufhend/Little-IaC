@@ -1,0 +1,19 @@
+# Vivaldi browser - Snap installation (official recommended method)
+- name: Set Vivaldi variables
+  ansible.builtin.set_fact:
+    app: "vivaldi"
+    app_name: "Vivaldi"
+
+- name: Install Vivaldi via Snap
+  block:
+    - name: Ensure Snap is installed
+      ansible.builtin.package:
+        name: snapd
+        state: present
+
+    - name: Install Vivaldi browser
+      community.general.snap:
+        name: "{{ app }}"
+        state: present
+        classic: true
+  when: vivaldi == True

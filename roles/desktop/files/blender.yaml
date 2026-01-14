@@ -1,0 +1,12 @@
+---
+# Blender is the free and open source 3D creation suite
+- name: Set Blender variables
+  ansible.builtin.set_fact:
+    app: "blender"
+    app_name: "Blender"
+
+- name: Install {{ app_name }}
+  ansible.builtin.package:
+    name: "{{ app }}"
+    state: present
+  when: blender == True

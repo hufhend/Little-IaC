@@ -10,6 +10,7 @@ firewall: true
 safe_network: 192.168.88.0/24
 
 # Allow installation of larger software packages
+blender: false
 brave: false
 datovka: false
 discord: false
@@ -19,6 +20,7 @@ chrome: false
 chromium: false
 intune: false
 kodi: false
+librewolf: false
 lutris: false
 mega: false
 onlyoffice: false
@@ -33,6 +35,7 @@ telegram: false
 ungoogled_chromium: false
 vagrant: false
 virtualbox: false
+vivaldi: false
 vlc: false
 vscode: false
 wine: false

@@ -1,0 +1,13 @@
+---
+# akopeo is a command line utility that performs various operations on 
+# container images and image repositories.
+- name: Set skopeo variables
+  ansible.builtin.set_fact:
+    app: "skopeo"
+    app_name: "Skopeo"
+
+- name: Install {{ app_name }}
+  ansible.builtin.package:
+    name: "{{ app }}"
+    state: present
+  when: skopeo == True

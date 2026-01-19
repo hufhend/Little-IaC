@@ -26,6 +26,7 @@ oras: false
 python: false
 roxctl: false
 saml2aws: false
+skopeo: false
 slu: false
 sops: false
 starship: false
@@ -37,7 +38,7 @@ yajsv: false
 
 
 # only if you're sure what you're doing
-k8s_version: "1.32"
+k8s_version: "1.33"
 
 # common variables
 app_dir: "/usr/local/bin"

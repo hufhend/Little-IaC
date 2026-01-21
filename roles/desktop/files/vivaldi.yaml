@@ -16,4 +16,28 @@
         name: "{{ app }}"
         state: present
         classic: true
-  when: vivaldi == True
+  when: 
+    - vivaldi == True
+    - ansible_facts['os_family'] == "Debian"
+
+- name: Install Vivaldi on RedHat/Fedora via Flatpak
+  block:
+    - name: Ensure Flatpak is installed
+      ansible.builtin.package:
+        name: flatpak
+        state: present
+
+    - name: Add Flathub repository
+      community.general.flatpak_remote:
+        name: flathub
+        flatpakrepo_url: https://dl.flathub.org/repo/flathub.flatpakrepo
+        state: present
+
+    - name: Install Vivaldi browser via Flatpak
+      community.general.flatpak:
+        name: com.vivaldi.Vivaldi
+        state: present
+        method: system
+  when:
+    - vivaldi == True
+    - ansible_facts['os_family'] == "RedHat"

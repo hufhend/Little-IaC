@@ -93,6 +93,15 @@
       - local_hostname.stdout != ansible_hostname
       - kubeconfig_src_check.stat.exists | default(false)
 
+  # - name: Remove kubeconfig from remote servers
+  #   ansible.builtin.file:
+  #     path: "/home/{{ ansible_user }}/.kube/config"
+  #     state: absent
+  #   when: 
+  #     - local_hostname.stdout != ansible_hostname
+  #   ignore_errors: yes
+  #   register: kubeconfig_removed
+
   # Show installed version
   - name: Check {{ app_name }} version
     command: "{{ app_dir }}/{{ app }} version --client"

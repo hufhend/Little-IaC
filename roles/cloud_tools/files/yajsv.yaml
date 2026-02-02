@@ -29,9 +29,12 @@
 - name: Get latest version from GitHub
   ansible.builtin.uri:
     url: "https://api.github.com/repos/neilpa/yajsv/releases/latest"
+    headers: '{{ ({"Authorization": "token " + github_token} if github_token is defined and github_token | length > 0 else {}) | to_json }}'
     return_content: yes
+    timeout: 30
   register: github_release
   changed_when: false
+  run_once: yes
 
 - name: Set latest version
   ansible.builtin.set_fact:

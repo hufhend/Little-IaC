@@ -41,12 +41,16 @@
   ansible.builtin.set_fact:
     arch: "{{ arch_map.get(ansible_architecture, 'unknown') }}"
 
+# View the latest stable version
 - name: Get latest version from GitHub
   ansible.builtin.uri:
     url: "https://api.github.com/repos/{{ app }}/{{ app }}-operator/releases/latest"
+    headers: '{{ ({"Authorization": "token " + github_token} if github_token is defined and github_token | length > 0 else {}) | to_json }}'
     return_content: yes
+    timeout: 30
   register: github_release
   changed_when: false
+  run_once: yes
 
 - name: Set latest version
   ansible.builtin.set_fact:

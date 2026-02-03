@@ -4,7 +4,7 @@
   ansible.builtin.set_fact:
     app: "slu"
     app_name: "SikaLabs Utils"
-    version: "0.96.0"
+    version: "0.97.0"
     install_dir: "/home/{{ user_ansible }}/install/slu"
 
 # Verify installed version

@@ -16,7 +16,7 @@
   community.general.locale_gen:
     name: '{{ lang }}'
     state: present
-  when: ansible_os_family | lower != "redhat"
+  when: ansible_facts["os_family"] | lower != "redhat"
 
 - name: Set English as the default locale
   ansible.builtin.shell: localectl set-locale LANG=en_US.UTF-8 LC_MESSAGES=en_US.UTF-8 LC_TIME=en_US.UTF-8
@@ -38,6 +38,53 @@
   ansible.builtin.shell: echo $LANG
   register: new_locale
   changed_when: false
+
+- name: Add KUBECONFIG to .bashrc
+  lineinfile:
+    path: ~/.bashrc
+    line: 'export KUBECONFIG=~/.kube/config'
+    create: yes
+    state: present
+
+- name: Create a bash completion directory
+  ansible.builtin.file:
+    path: /etc/bash_completion.d
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Display machine information
+  debug:
+    msg:
+    - "{{ ansible_facts.distribution }} {{ ansible_facts.distribution_version }}, {{ ansible_facts.distribution_release }}"
+    - "Kernel: {{ ansible_facts.kernel }}, {{ ansible_facts.architecture }}"
+    - "CPU: {{ ansible_facts.processor_cores }} physical, {{ ansible_facts.processor_vcpus }} logical, RAM: {{ (ansible_facts.memtotal_mb / 1000) | round | int }} GB total, {{ (ansible_facts.memfree_mb / 1000) | round | int }} GB free"
+
+- name: Print original and current locale
+  ansible.builtin.debug:
+    msg:
+      - "Original locale : {{ original_locale }}"
+      - "Current locale  : {{ new_locale.stdout }}"
+      - "Time zone       : {{ timezone }}"
+
+- name: Include proxy setup
+  include_tasks: ../files/proxy.yaml
+
+- name: Include RedHat registration
+  include_tasks: ../files/subscription.yaml
+  when: ansible_facts["os_family"] == "RedHat"
+
+# This is where everything else is installed
+- name: Add other software
+  include_tasks:
+    file: "{{ item }}"
+  loop: "{{ query('fileglob', role_path ~ '/files/*.yaml') }}"
+  # Vynecháme proxy.yaml a subscription.yaml
+  when: >-
+    'proxy.yaml' not in item and
+    'subscription.yaml' not in item
+  no_log: true
 
 - name: "Check if font Sacramento exists"
   ansible.builtin.stat:
@@ -65,43 +112,6 @@
     - name: Remove fonts tarball
       ansible.builtin.file:
         path: /tmp/fonts.tar.gz
-        state: absent      
-      
+        state: absent
+
   when: not sacramento_font.stat.exists
-
-- name: Add KUBECONFIG to .bashrc
-  lineinfile:
-    path: "{{ ansible_env.HOME }}/.bashrc"
-    line: 'export KUBECONFIG="{{ ansible_env.HOME }}/.kube/config"'
-    create: yes
-    state: present
-
-- name: Create a bash completion directory
-  ansible.builtin.file:
-    path: /etc/bash_completion.d
-    state: directory
-    mode: '0755'
-    owner: root
-    group: root
-
-- name: Display machine information
-  debug:
-    msg:
-    - "{{ ansible_distribution }} {{ ansible_distribution_version }}, {{ ansible_distribution_release }}"
-    - "Kernel: {{ ansible_kernel }}, {{ ansible_architecture }}"
-    - "CPU: {{ ansible_processor_cores }} physical, {{ ansible_processor_vcpus }} logical, RAM: {{ (ansible_memtotal_mb / 1000) | round | int }} GB total, {{ (ansible_memfree_mb / 1000) | round | int }} GB free"    
-    # - "Hostname: {{ ansible_hostname }} {{ ansible_domain }}"
-
-- name: Print original and current locale
-  ansible.builtin.debug:
-    msg:
-      - "Original locale : {{ original_locale }}"
-      - "Current locale  : {{ new_locale.stdout }}"    
-      - "Time zone       : {{ timezone }}"
-
-# This is where everything else is installed
-- name: Add other software
-  include_tasks:
-    file: "{{ item }}"
-  loop: "{{ query('fileglob', role_path ~ '/files/*.yaml') }}"
-  no_log: true

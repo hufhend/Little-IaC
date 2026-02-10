@@ -1,0 +1,39 @@
+---
+- name: Simple RedHat registration
+  block:
+    - name: Check if RedHat system is registered
+      ansible.builtin.command: subscription-manager identity
+      register: subscription_check
+      changed_when: false
+      failed_when: false
+      no_log: true
+
+    - name: Check if RedHat has repo files
+      ansible.builtin.stat:
+        path: /etc/yum.repos.d/redhat.repo
+      register: redhat_repo
+      changed_when: false
+
+    - name: Register RedHat system if credentials are provided
+      redhat_subscription:
+        state: present
+        username: "{{ rh_username }}"
+        password: "{{ rh_password }}"
+        auto_attach: true
+      when:
+        - rh_username | length > 0
+        - rh_password | length > 0
+        - subscription_check.rc != 0
+        - not redhat_repo.stat.exists
+      ignore_errors: true
+
+  when:
+    - ansible_facts["distribution"] == "RedHat"
+    - rh_username | default('') | length > 0
+    - rh_password | default('') | length > 0
+
+  rescue:
+    - name: Warn if registration failed
+      ansible.builtin.debug:
+        msg: "RedHat registration failed. Continuing without registration."
+      changed_when: false

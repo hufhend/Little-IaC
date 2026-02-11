@@ -1,0 +1,13 @@
+# S3cmd is command line tool and client for Amazon S3 and other cloud storage
+# service providers that use the S3 protocol
+---
+- name: Set S3cmd variables
+  ansible.builtin.set_fact:
+    app: "s3cmd"
+    app_name: "S3cmd"
+
+- name: Install {{ app_name }}
+  ansible.builtin.package:
+    name: "{{ app }}"
+    state: present
+  when: s3cmd == True

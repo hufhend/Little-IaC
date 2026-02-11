@@ -25,6 +25,7 @@ operatorsdk: false
 oras: false
 python: false
 roxctl: false
+s3cmd: false
 saml2aws: false
 skopeo: false
 slu: false

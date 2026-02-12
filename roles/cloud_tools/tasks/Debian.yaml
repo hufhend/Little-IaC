@@ -1,0 +1,11 @@
+---
+- name: Install cloud tools for Debian family
+  ansible.builtin.apt:
+    name:
+      - cephadm
+      - ncat
+      - nmap
+    state: latest
+  when:
+    - ansible_facts['os_family'] == "Debian"
+    - ansible_facts['distribution'] == "Ubuntu"

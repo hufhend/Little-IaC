@@ -5,93 +5,81 @@
 
 - name: Installation and setup of cloud management utilities
   block:
-  - name: Install cloud tools packages
-    ansible.builtin.package:
-      name:
-        - gh
-        - git
-        - make
-        - sshpass
-        - tcpdump
-        - telnet
-        - wget
-        - yq
-      state: latest
+    # Common packages - distro agnostic
+    - name: Install common cloud tools packages
+      ansible.builtin.package:
+        name:
+          - gh
+          - git
+          - make
+          - sshpass
+          - tcpdump
+          - telnet
+          - wget
+          - yq
+        state: latest
 
-  - name: Install cloud tools for RedHat
-    ansible.builtin.dnf:
-      name:
-        - git-subtree
-        - go
-        - java-latest-openjdk
-        - nano
-        - nmap-ncat
-        - rsync
-        - trivy
-        - vim
-      state: latest
-    when: ansible_distribution == "RedHat" or ansible_distribution == "CentOS" or ansible_distribution == "Rocky"
+    # Distro specific includes
+    - name: Include RedHat specific tasks
+      ansible.builtin.include_tasks: RedHat.yaml
+      when: ansible_facts['os_family'] == "RedHat"
 
-  - name: Install cloud tools packages for Ubuntu
-    ansible.builtin.apt:
-      name:
-        - cephadm
-        - ncat
-        - nmap
-      state: latest
-    when: ansible_distribution == "Ubuntu"
+    - name: Include Debian specific tasks
+      ansible.builtin.include_tasks: Debian.yaml
+      when: ansible_facts['os_family'] == "Debian"
 
-  - name: Create a install directory
-    ansible.builtin.file:
-      path: /home/{{ user_ansible }}/install
-      state: directory
-      owner: "{{ ansible_user }}"
-      mode: '0755'
+    - name: Create install directory
+      ansible.builtin.file:
+        path: "/home/{{ user_ansible }}/install"
+        state: directory
+        owner: "{{ ansible_user }}"
+        mode: '0755'
 
-  # This is where everything else is installed
-  - name: Add other software
-    include_tasks:
-      file: "{{ item }}"
-    loop: "{{ query('fileglob', role_path ~ '/files/*.yaml') }}"
-    no_log: true
+    # Binenv self-update
+    - name: Check if binenv exists
+      ansible.builtin.stat:
+        path: /usr/local/bin/binenv
+      register: binenv_stat
 
-  - name: Change ownership of packages
-    ansible.builtin.file:
-      path: /home/{{ user_ansible }}/install/
-      state: directory
-      recurse: yes
-      owner: "{{ user_ansible }}"
-      group: "{{ user_ansible }}"
+    - name: Upgrade all binenv distributions
+      block:
+        - name: Update software distributions
+          ansible.builtin.command: /usr/local/bin/binenv update
+        - name: Upgrade binenv distributions
+          ansible.builtin.command: /usr/local/bin/binenv upgrade
+      when: binenv_stat.stat.exists
 
-  - block:
-      - name: Create scr directory
-        ansible.builtin.file:
-          path: "/home/{{ user_ansible }}/scr"
-          state: directory
-          mode: '0750'
-          owner: "{{ user_ansible  }}"
-          group: "{{ user_ansible }}"
+    # Install all tools from files/*.yaml
+    - name: Install other software from includes
+      ansible.builtin.include_tasks: "{{ item }}"
+      loop: "{{ query('fileglob', role_path ~ '/files/*.yaml') }}"
+      no_log: true
 
-      - name: Deploy OCP login script
-        ansible.builtin.copy:
-          src: files/login-ocp.sh
-          dest: "/usr/local/bin/ocp-login"
-          mode: '0755'
-          owner: "{{ user_ansible }}"
-          group: "{{ user_ansible }}"
-    when: ocp_login
+    # Fix ownership after root installations
+    - name: Change ownership of install directory
+      ansible.builtin.file:
+        path: "/home/{{ user_ansible }}/install"
+        state: directory
+        recurse: true
+        owner: "{{ user_ansible }}"
+        group: "{{ user_ansible }}"
 
-  - name: Check if binenv exists
-    ansible.builtin.stat:
-      path: /usr/local/bin/binenv
-    register: binenv_stat
-    
-  - name: Upgrade all binenv distributions
-    block:
-    - name: Update software distributions
-      command: /usr/local/bin/binenv update
+    # OCP login helper
+    - name: Setup OCP login scripts
+      when: ocp_login | default(false)
+      block:
+        - name: Create scr directory
+          ansible.builtin.file:
+            path: "/home/{{ user_ansible }}/scr"
+            state: directory
+            mode: '0750'
+            owner: "{{ user_ansible }}"
+            group: "{{ user_ansible }}"
 
-    - name: Upgrade binenv distributions
-      command: /usr/local/bin/binenv upgrade
-
-    when: binenv_stat.stat.exists
+        - name: Deploy OCP login script
+          ansible.builtin.copy:
+            src: files/login-ocp.sh
+            dest: "/usr/local/bin/ocp-login"
+            mode: '0755'
+            owner: "{{ user_ansible }}"
+            group: "{{ user_ansible }}"

@@ -136,6 +136,7 @@
       - langpacks-cs
       - glibc-all-langpacks
       - bash-completion
+      - tree
       # - node_exporter
     state: latest
   

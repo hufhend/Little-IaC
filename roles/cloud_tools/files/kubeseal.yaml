@@ -1,0 +1,29 @@
+# The kubeseal utility uses asymmetric crypto to encrypt secrets
+# that only the controller can decrypt
+---
+- name: Package Variable Setting
+  ansible.builtin.set_fact:
+    app: "kubeseal"
+    app_name: "Kubeseal"
+
+- name: Install {{ app_name }}
+  block:
+  - name: Install {{ app_name }}
+    command: "{{ app_dir }}/binenv install {{ app }}"
+    args:
+      creates: "{{ app_dir }}/{{ app }}"
+
+  - name: Check {{ app_name }} version
+    command: "{{ app_dir }}/{{ app }} --version"
+    register: "install_result"
+    changed_when: false
+
+  - name: Extract and clean version
+    set_fact:
+      new_version: "{{ install_result.stdout | regex_replace('^.*version: ', '') | trim }}"
+
+  - name: Show {{ app_name }} version
+    ansible.builtin.debug:
+      msg: "{{ app_name }} version is {{ new_version }}"
+
+  when: kubeseal and (binenv | default(false))

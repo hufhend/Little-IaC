@@ -136,7 +136,7 @@
 
   # Generate completion script 
   - name: Generate completion script
-    command: "{{ app_dir }}/{{ app }} completion bash"
+    command: "{{ app_dir }}/{{ app }} --v2 completion bash"
     register: completion_script
     changed_when: false
 

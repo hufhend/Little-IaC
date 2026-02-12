@@ -3,7 +3,7 @@
   ansible.builtin.set_fact:
     app: "vault-cluster"
     app_name: "Vault Cluster"
-    vault_version: "1.21"
+    vault_version: "1.21.3"
 
 - name: Install Python requests library
   ansible.builtin.package:
@@ -20,8 +20,19 @@
       path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
     register: vault_dir_exists
 
-  - name: Include config tasks
-    ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
+  - block:
+      - name: Include config tasks
+        ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
+
+      - name: Update version in docker-compose.yaml
+        ansible.builtin.replace:
+          path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/docker-compose.yaml
+          regexp: 'hashicorp/vault:.*'
+          replace: 'hashicorp/vault:{{ vault_version }}'
+
+      - name: Create and start {{ app_name }}
+        community.docker.docker_compose_v2:
+          project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
     when: vault_dir_exists.stat.exists
 
   - name: Ensure Vault containers are running
@@ -87,19 +98,6 @@
           loop_var: dir_path
         become: true
         become_user: root
-
-      - name: Include config tasks
-        ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
-
-      - name: Update version in docker-compose.yaml
-        ansible.builtin.replace:
-          path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/docker-compose.yaml
-          regexp: 'hashicorp/vault:.*'
-          replace: 'hashicorp/vault:{{ vault_version }}'
-
-      - name: Create and start {{ app_name }}
-        community.docker.docker_compose_v2:
-          project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
       - name: Wait for Vault to start
         ansible.builtin.wait_for:
@@ -175,7 +173,7 @@
           command: |
             vault operator raft join http://vault1:8200
 
-    when: 
+    when:
       - docker_vault
       - vault_needs_init | default(true)
 
@@ -206,7 +204,7 @@
         loop_control:
           loop_var: node_num
         ignore_errors: true
-        when: 
+        when:
           - existing_init_data is success
           - vault_sealed | default(true)
 
@@ -238,7 +236,7 @@
             - "Vault Cluster successfully deployed!"
             - ""
             - "Access Information:"
-            - "  Web UI: http://{{ ansible_host }}:8200" 
+            - "  Web UI: http://{{ ansible_host }}:8200"
             - "  Root Token: {{ root_token }}"
             - "  Unseal Key: {{ unseal_key }}"
         when: existing_init_data is success
@@ -246,7 +244,7 @@
       - name: Display raft status
         ansible.builtin.debug:
           var: raft_status.stdout_lines
-        when: 
+        when:
           - existing_init_data is success
           - raft_status is defined
 

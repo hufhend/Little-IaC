@@ -114,4 +114,24 @@
         path: /tmp/fonts.tar.gz
         state: absent
 
+    - name: Ensure compatibility with RedHat
+      block:
+        # - name: Create a directory /usr/share/fonts/local
+        #   ansible.builtin.file:
+        #     path: /usr/share/fonts/local
+        #     state: directory
+        #     mode: '0755'
+
+        - name: Create a symbolic link from /usr/local/share/fonts
+          ansible.builtin.file:
+            src: /usr/local/share/fonts
+            dest: /usr/share/fonts/local
+            state: link
+            force: yes
+
+        - name: Update font cache
+          ansible.builtin.command:
+            cmd: fc-cache -f
+          changed_when: false
+      when: ansible_facts["os_family"] == "RedHat"
   when: not sacramento_font.stat.exists

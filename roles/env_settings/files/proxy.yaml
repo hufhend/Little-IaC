@@ -78,7 +78,7 @@
             regexp: '^Acquire::https::Proxy'
             line: 'Acquire::https::Proxy "{{ proxy_url }}";'
             state: present
-      when: ansible_os_family == "Debian"
+      when: ansible_facts["os_family"] == "Debian"
 
     - name: Configure package manager proxy for RedHat family
       block:
@@ -89,7 +89,7 @@
             line: 'proxy={{ proxy_url }}'
             state: present
             insertafter: '[main]'
-          when: ansible_distribution_major_version | int >= 8
+          when: ansible_facts['distribution_major_version'] | int >= 8
 
         - name: Configure YUM proxy (RHEL 7 and older)
           ansible.builtin.lineinfile:
@@ -98,9 +98,9 @@
             line: 'proxy={{ proxy_url }}'
             state: present
             insertafter: '[main]'
-          when: ansible_distribution_major_version | int < 8
+          when: ansible_facts['distribution_major_version'] | int < 8
 
-      when: ansible_os_family == "RedHat"
+      when: ansible_facts["os_family"] == "RedHat"
 
   when: proxy_config | default(false)
   

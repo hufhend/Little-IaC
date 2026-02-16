@@ -15,19 +15,13 @@
 
 - name: Set certificate facts per OS
   set_fact:
-    ca_cert_path: "{{
-      '/etc/pki/ca-trust/source/anchors/' if ansible_os_family == 'RedHat'
-      else '/usr/local/share/ca-certificates/'
-    }}"
-    ca_update_command: "{{
-      'update-ca-trust' if ansible_os_family == 'RedHat'
-      else 'update-ca-certificates'
-    }}"
+    ca_cert_path: "{{ '/etc/pki/ca-trust/source/anchors/' if ansible_facts.os_family == 'RedHat' else '/usr/local/share/ca-certificates/' }}"
+    ca_update_command: "{{ 'update-ca-trust' if ansible_facts.os_family == 'RedHat' else 'update-ca-certificates' }}"
   when: add_certs | default(false)
 
 - name: Debug certificate installation
   debug:
-    msg: "Installing additional certificates to {{ ca_cert_path }} ({{ ansible_os_family }})"
+    msg: "Installing additional certificates to {{ ca_cert_path }} ({{ ansible_facts.os_family }})"
   changed_when: false
   when: add_certs | default(false)
 

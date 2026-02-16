@@ -83,5 +83,5 @@
 
   when: 
     - ad_integration | default(false)
-    - ansible_os_family == "RedHat"
+    - ansible_facts["os_family"] == "RedHat"
     - sssd_service.status.ActiveState != "active"

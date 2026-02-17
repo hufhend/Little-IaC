@@ -4,7 +4,7 @@
   ansible.builtin.set_fact:
     app: "slu"
     app_name: "SikaLabs Utils"
-    version: "0.97.1"
+    version: "0.98.0"
     install_dir: "/home/{{ user_ansible }}/install/slu"
 
 # Verify installed version
@@ -49,7 +49,7 @@
 - name: Compare versions
   ansible.builtin.debug:
     msg: "A new version {{ latest_version }} is available! Consider updating."
-  when: latest_version is version(version, '>') 
+  when: latest_version is version(version, '>')
 
 - name: Install {{ app_name }}
   block:
@@ -63,7 +63,7 @@
 
   - name: Detect platform
     ansible.builtin.set_fact:
-      platform: "{{ ansible_system | lower }}"
+      platform: "{{ ansible_facts['system'] | lower }}"
 
   - name: Define architecture map
     ansible.builtin.set_fact:
@@ -75,7 +75,7 @@
 
   - name: Detect architecture
     ansible.builtin.set_fact:
-      arch: "{{ arch_map.get(ansible_architecture, 'unknown') }}"
+      arch: "{{ arch_map.get(ansible_facts['architecture'], 'unknown') }}"
 
   - name: Define download URL
     ansible.builtin.set_fact:
@@ -108,7 +108,7 @@
     when: "'FAILED' in checksum_result.stdout"
 
   # Manual installation
-  - name: Extract {{ app }} binary  
+  - name: Extract {{ app }} binary
     ansible.builtin.unarchive:
       src: "{{ install_dir }}/{{ app }}_v{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
       dest: "{{ install_dir }}"
@@ -152,9 +152,9 @@
     ansible.builtin.file:
       path: "{{ install_dir }}"
       state: absent
-      
-  when: 
+
+  when:
     - slu == True
-    - ansible_system in ["Linux", "Darwin"]
-    - ansible_architecture in ["x86_64", "arm64"]
+    - ansible_facts["system"] in ["Linux", "Darwin"]
+    - ansible_facts["architecture"] in ["x86_64", "arm64"]
     - installed_version is not defined or installed_version != version

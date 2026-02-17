@@ -1,10 +1,10 @@
 ---
 #   **********************************************
-#   Ansible initialization playbook - Ubuntu 22.04
+#   Ansible initialization playbook - Ubuntu 24.04
 #   begin     : Wed 28 Feb 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: host-init.yaml, v1.40 13/11/2025
+#   $Id: host-init.yaml, v1.42 17/12/2026
 #   **********************************************
 
 #   --------------------------------------------------------------------
@@ -30,9 +30,9 @@
   ansible.builtin.user:
     name: "{{ user_ansible }}"
     create_home: true
-    shell: "{{ '/bin/zsh' if ansible_os_family == 'Darwin' else '/bin/bash' }}"
-    group: "{{ 'staff' if ansible_os_family == 'Darwin' else omit }}"
-    home: "{{ '/Users/' + user_ansible if ansible_os_family == 'Darwin' else omit }}"
+    shell: "{{ '/bin/zsh' if ansible_facts['os_family'] == 'Darwin' else '/bin/bash' }}"
+    group: "{{ 'staff' if ansible_facts['os_family'] == 'Darwin' else omit }}"
+    home: "{{ '/Users/' + user_ansible if ansible_facts['os_family'] == 'Darwin' else omit }}"
     uid: 2000
     state: present
   when: ansible_user != user_ansible
@@ -43,10 +43,10 @@
     path: "/var/lib/AccountsService/users/{{ user_ansible }}"
     regexp: '^SystemAccount='
     line: 'SystemAccount=true'
-  ignore_errors: true    
-  when: 
+  ignore_errors: true
+  when:
     - ansible_user != user_ansible
-    - ansible_os_family != "Darwin"
+    - ansible_facts["os_family"] != "Darwin"
 
 - name: Print ansible_user variable
   debug:
@@ -64,7 +64,7 @@
 
 - name: Set sudoers parameters based on OS
   set_fact:
-    sudoers_group: "{{ 'wheel' if ansible_os_family == 'Darwin' else 'root' }}"
+    sudoers_group: "{{ 'wheel' if ansible_facts['os_family'] == 'Darwin' else 'root' }}"
     sudoers_mode: '0440'
 
 - name: Upload the sudoers template
@@ -92,7 +92,6 @@
 
 - name: Restart SSH service on macOS to recognize new user
   command: launchctl kickstart -k system/com.openssh.sshd
-  when: ansible_os_family == "Darwin"
-  become: yes
+  when: ansible_facts["os_family"] == "Darwin"
+  become: true
   changed_when: true
-  

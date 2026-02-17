@@ -1,13 +1,13 @@
 ---
-# oc-mirror is a tool that copies OpenShift release images, operators, and other related content 
-# to a local registry, enabling OpenShift installations and updates in disconnected environments 
+# oc-mirror is a tool that copies OpenShift release images, operators, and other related content
+# to a local registry, enabling OpenShift installations and updates in disconnected environments
 # with limited or no internet access.
 
 - name: Package Variable Setting
   ansible.builtin.set_fact:
     app: "oc-mirror"
     app_name: "OpenShift mirror"
-    version: "4.21.0"
+    version: "4.21.1"
     install_dir: "/home/{{ user_ansible }}/install/oc"
 
 # Verify installed version
@@ -31,12 +31,12 @@
 # View the latest stable version
 - name: Detect platform
   ansible.builtin.set_fact:
-    platform: "{{ ansible_system | lower }}"
+    platform: "{{ ansible_facts['system'] | lower }}"
 
 - name: Detect architecture
   ansible.builtin.set_fact:
-    arch: "{{ ansible_architecture }}"
-    
+    arch: "{{ ansible_facts['architecture'] }}"
+
 - name: Define download URL
   ansible.builtin.set_fact:
     download_url: "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp"
@@ -134,7 +134,7 @@
       mode: '0755'
       remote_src: yes
 
-  # Generate completion script 
+  # Generate completion script
   - name: Generate completion script
     command: "{{ app_dir }}/{{ app }} --v2 completion bash"
     register: completion_script
@@ -166,7 +166,7 @@
       path: "{{ install_dir }}"
       state: absent
 
-  when: 
+  when:
     - ocmirror == True
-    - ansible_architecture in ["x86_64", "arm64"]
+    - ansible_facts["architecture"] in ["x86_64", "arm64"]
     - not app_installed.stat.exists

@@ -4,7 +4,7 @@
   ansible.builtin.set_fact:
     app: "openshift-install"
     app_name: "OpenShift installer"
-    version: "4.21.0"
+    version: "4.21.1"
     install_dir: "/home/{{ user_ansible }}/install/oc"
 
 # Verify installed version
@@ -21,18 +21,18 @@
 
     - name: Extract and clean version
       set_fact:
-        installed_version: "{{ install_result.stdout | regex_search('openshift-install ([\\d.]+)', '\\1', multiline=True) | default(['']) | first }}"  
+        installed_version: "{{ install_result.stdout | regex_search('openshift-install ([\\d.]+)', '\\1', multiline=True) | default(['']) | first }}"
   when: app_installed.stat.exists
 
 # View the latest stable version
 - name: Detect platform
   ansible.builtin.set_fact:
-    platform: "{{ ansible_system | lower }}"
+    platform: "{{ ansible_facts['system'] | lower }}"
 
 - name: Detect architecture
   ansible.builtin.set_fact:
-    arch: "{{ ansible_architecture }}"
-    
+    arch: "{{ ansible_facts['architecture'] }}"
+
 - name: Define download URL
   ansible.builtin.set_fact:
     download_url: "https://mirror.openshift.com/pub/openshift-v4/{{ arch }}/clients/ocp"
@@ -66,7 +66,7 @@
 - name: Compare versions
   ansible.builtin.debug:
     msg: "A new version {{ latest_version }} is available! Consider updating."
-  when: latest_version is version(version, '>') 
+  when: latest_version is version(version, '>')
 
 - name: Install {{ app_name }}
   block:
@@ -135,7 +135,7 @@
       mode: '0755'
       remote_src: yes
 
-  # Generate completion script 
+  # Generate completion script
   - name: Generate completion script
     command: "{{ app_dir }}/{{ app }} completion bash"
     register: completion_script
@@ -155,7 +155,7 @@
 
   - name: Extract and clean version
     set_fact:
-      new_version: "{{ install_result.stdout | regex_search('openshift-install ([\\d.]+)', '\\1', multiline=True) | default(['']) | first }}"  
+      new_version: "{{ install_result.stdout | regex_search('openshift-install ([\\d.]+)', '\\1', multiline=True) | default(['']) | first }}"
 
   - name: Show {{ app_name }} version
     ansible.builtin.debug:
@@ -169,5 +169,5 @@
 
   when:
     - ocpinstall == True
-    - ansible_architecture in ["x86_64", "arm64"]
+    - ansible_facts["architecture"] in ["x86_64", "arm64"]
     - installed_version is not defined or installed_version != version

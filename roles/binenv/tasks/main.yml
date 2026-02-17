@@ -35,7 +35,4 @@
       - always
 
   when:
-    # # Also works on RedHat - we can simplify it
-    # - ansible_distribution == "Ubuntu"
-    # - ansible_distribution_release == "jammy" or ansible_distribution_release == "noble"
     - binenv == true

@@ -6,7 +6,7 @@
       community.general.ufw:
         state: enabled
         policy: allow
-      when: ansible_os_family | lower != "debian"
+      when: ansible_facts["os_family"] | lower != "debian"
 
     # Sometimes it is desirable to let the sender know when traffic is
     # being denied, rather than simply ignoring it. In these cases, use
@@ -37,7 +37,7 @@
         name: OpenSSH
         src: 0.0.0.0/0
         comment: Allow SSH from anywhere
-      when: ansible_os_family | lower != "redhat"
+      when: ansible_facts["os_family"] | lower != "redhat"
 
     - name: Allow Prometheus Node Exporter
       community.general.ufw:

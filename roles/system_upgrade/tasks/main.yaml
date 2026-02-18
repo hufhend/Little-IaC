@@ -1,4 +1,4 @@
 ---
 - name: System family selection
   include_tasks:
-    file: "{{ role_path }}/tasks/{{ ansible_os_family | lower }}.yaml"
+    file: "{{ role_path }}/tasks/{{ ansible_facts['os_family'] | lower }}.yaml"

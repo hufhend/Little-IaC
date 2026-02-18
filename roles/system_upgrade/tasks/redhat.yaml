@@ -59,17 +59,17 @@
 
     - name: Enable CodeReady Builder repository
       rhsm_repository:
-        name: codeready-builder-for-rhel-{{ ansible_distribution_major_version }}-{{ architecture.stdout }}-rpms
+        name: codeready-builder-for-rhel-{{ ansible_facts['distribution_major_version'] }}-{{ architecture.stdout }}-rpms
         state: enabled
 
     - name: Import EPEL GPG key
       ansible.builtin.rpm_key:
         state: present
-        key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-{{ ansible_distribution_major_version }}
+        key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-{{ ansible_facts['distribution_major_version'] }}
         
     - name: Install EPEL to RedHat
       ansible.builtin.dnf:
-        name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm
+        name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_facts['distribution_major_version'] }}.noarch.rpm
         state: latest
 
     - name: Refresh the repo cache
@@ -88,8 +88,8 @@
       ansible.builtin.debug:
         var: epel_repo_check.stdout_lines
   when:
-    - ansible_distribution == "RedHat"
-    - ansible_distribution_major_version in ["9", "10"]
+    - ansible_facts["distribution"] == "RedHat"
+    - ansible_facts['distribution_major_version'] in ["9", "10"]
 
 
 - name: Install EPEL packages for CentOS and Rocky
@@ -106,8 +106,8 @@
     #       - subscription-manager
     #     state: latest
   when: 
-    - ansible_distribution == "CentOS" or ansible_distribution == "Rocky"
-    - ansible_distribution_major_version == "9"
+    - ansible_facts["distribution"] == "CentOS" or ansible_facts["distribution"] == "Rocky"
+    - ansible_facts['distribution_major_version'] | == "9"
 
 - name: Update all system packages
   ansible.builtin.dnf:

@@ -19,7 +19,7 @@
       when:
         - orange | default(false)
         - role not in ['combi', 'master', 'worker']
-  when: ansible_os_family == "Debian"
+  when: ansible_facts["os_family"] == "Debian"
 
 - name: Set up crontab for RedHat family
   block:
@@ -42,4 +42,4 @@
       when:
         - orange | default(false)
         - role not in ['combi', 'master', 'worker']
-  when: ansible_os_family == "RedHat"
+  when: ansible_facts["os_family"] == "RedHat"

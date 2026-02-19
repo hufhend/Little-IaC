@@ -1,10 +1,10 @@
 ---
 #   ***************************************
-#   Ansible Desktop playbook - Ubuntu 22.04
+#   Ansible Desktop playbook - Ubuntu 24.04
 #   begin     : Tue 7 May 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: desktop.yaml, v1.20 09/11/2025
+#   $Id: desktop.yaml, v1.22 19/02/2026
 #   ***************************************
 
 #   --------------------------------------------------------------------
@@ -27,3 +27,7 @@
     - role: crontab
     - role: binenv
     - role: cloud_tools
+  # environment:
+  #   LC_ALL: en_US.UTF-8
+  #   LANG: en_US.UTF-8
+  #   LANGUAGE: en_US.UTF-8

@@ -36,7 +36,7 @@
     - bash-completion
     - bind9-dnsutils
 
-# We delete files created in earlier versions and now obsolete 
+# We delete files created in earlier versions and now obsolete
 - name: Remove specific files
   ansible.builtin.file:
     path: "{{ item }}"
@@ -64,7 +64,7 @@
   ansible.builtin.file:
     path: "{{ item.path }}"
     state: absent
-  loop: "{{ found_files.files }}"    
+  loop: "{{ found_files.files }}"
 
 - name: Enable sysstat service
   ansible.builtin.lineinfile:
@@ -86,7 +86,7 @@
     enabled: true
 
 - name: Register the system release
-  raw: cat /etc/issue
+  ansible.builtin.command: cat /etc/issue
   register: system_release
   changed_when: no
   check_mode: no

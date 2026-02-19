@@ -26,7 +26,7 @@
     ansible.builtin.yum_repository:
       name: docker-ce
       description: Docker CE Stable
-      baseurl: https://download.docker.com/linux/rhel/{{ ansible_distribution_major_version }}/x86_64/stable
+      baseurl: https://download.docker.com/linux/rhel/{{ ansible_facts['distribution_major_version'] }}/x86_64/stable
       gpgcheck: yes
       gpgkey: https://download.docker.com/linux/rhel/gpg
       enabled: yes
@@ -89,9 +89,9 @@
     ansible.builtin.debug:
       msg:
       - "Docker client: {{ docker_client_version }}"
-      - "Docker engine: {{ docker_engine_version }}, containerd: {{ containerd_version }}, runc: {{ runc_version }}, docker-init: {{ docker_init_version }}, compose: {{ docker_compose_version }}"  
+      - "Docker engine: {{ docker_engine_version }}, containerd: {{ containerd_version }}, runc: {{ runc_version }}, docker-init: {{ docker_init_version }}, compose: {{ docker_compose_version }}"
 
-  when: 
+  when:
     - role not in ['combi', 'master', 'worker']
-    - ansible_os_family | lower == "redhat"
-    - ansible_distribution_major_version == "9"
+    - ansible_facts["os_family"] | lower == "redhat"
+    - ansible_facts['distribution_major_version']== "9" 

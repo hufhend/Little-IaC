@@ -31,7 +31,7 @@
               - gnome-software                    # Software center
               - gnome-tweaks                      # GNOME customization tool
             state: present
-          when: ansible_os_family == "Debian"
+          when: ansible_facts["os_family"] == "Debian"
 
         # RedHat/CentOS/Rocky specific applications
         - name: Install RedHat-specific packages
@@ -45,7 +45,7 @@
               - gnome-tweaks                      # GNOME customization tool
               - gnome-control-center              # System settings
             state: present
-          when: ansible_os_family == "RedHat"
+          when: ansible_facts["os_family"] == "RedHat"
 
     # Full GNOME desktop installation for RedHat (Ubuntu has GNOME by default)
     - name: Install GNOME desktop on RedHat
@@ -82,7 +82,7 @@
             name: gdm
             state: started
             enabled: yes
-      when: ansible_os_family == "RedHat"
+      when: ansible_facts["os_family"] == "RedHat"
 
     # Create directory for additional software installations
     - name: Create a install directory
@@ -120,7 +120,7 @@
       ansible.builtin.systemd_service:
         name: gdm
       register: gdm_service_status
-      when: ansible_os_family == "RedHat"
+      when: ansible_facts["os_family"] == "RedHat"
 
     # Reboot only if GDM is not running (GUI not active)
     - name: Reboot system to start GUI (RedHat only) - if GDM not running
@@ -131,16 +131,17 @@
         pre_reboot_delay: 0
         post_reboot_delay: 30
         test_command: whoami
-      when: 
-        - ansible_os_family == "RedHat"
+      when:
+        - ansible_facts["os_family"] == "RedHat"
         - gdm_service_status is defined
         - not gdm_service_status.status.ActiveState == "active"
 
   # Conditions for when this role should run
   when:
     - desktop == true
-    # Ubuntu 22.04 (jammy) or 24.04 (noble) OR RedHat 8+
-    - |
-      (ansible_distribution == "Ubuntu" and 
-       (ansible_distribution_release == "jammy" or ansible_distribution_release == "noble")) or
-      (ansible_os_family == "RedHat" and ansible_distribution_major_version | int >= 8)
+    - >
+      (ansible_facts["distribution"] == "Ubuntu" and
+      ansible_facts["distribution_release"] in ["jammy", "noble"])
+      or
+      (ansible_facts["os_family"] == "RedHat" and
+      ansible_facts["distribution_major_version"] | int >= 8)

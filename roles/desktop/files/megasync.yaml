@@ -9,13 +9,13 @@
   block:
   - name: Add {{ app_name }} GPG key
     ansible.builtin.apt_key:
-      url: https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/Release.key
+      url: https://mega.nz/linux/repo/xUbuntu_{{ ansible_facts['distribution_version'] }}/Release.key
       keyring: /usr/share/keyrings/meganz-archive-keyring.gpg
       state: present
-      
+
   - name: Add {{ app_name }} repository
     ansible.builtin.apt_repository:
-      repo: deb [signed-by=/usr/share/keyrings/meganz-archive-keyring.gpg] https://mega.nz/linux/repo/xUbuntu_{{ ansible_distribution_version }}/ ./
+      repo: deb [signed-by=/usr/share/keyrings/meganz-archive-keyring.gpg] https://mega.nz/linux/repo/xUbuntu_{{ ansible_facts['distribution_version'] }}/ ./
       state: present
       filename: megasync
 

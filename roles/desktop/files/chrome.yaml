@@ -25,7 +25,7 @@
           ansible.builtin.apt:
             name: google-chrome-stable
             state: present
-      when: ansible_os_family == "Debian"
+      when: ansible_facts["os_family"] == "Debian"
 
     # RedHat installation block
     - name: Install {{ app_name }} on RedHat
@@ -43,6 +43,6 @@
           ansible.builtin.dnf:
             name: google-chrome-stable
             state: present
-      when: ansible_os_family == "RedHat"
+      when: ansible_facts["os_family"] == "RedHat"
 
   when: chrome == True

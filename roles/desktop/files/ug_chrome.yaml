@@ -15,7 +15,7 @@
     #     name: flatpak
     #     state: present
     #   when: 
-    #     - ansible_os_family == "Debian"
+    #     - ansible_facts["os_family"] == "Debian"
     #     - "'flatpak' not in ansible_facts.packages"
 
     # - name: Install Flatpak if not present (RedHat)
@@ -23,7 +23,7 @@
     #     name: flatpak
     #     state: present
     #   when: 
-    #     - ansible_os_family == "RedHat"
+    #     - ansible_facts["os_family"] == "RedHat"
     #     - "'flatpak' not in ansible_facts.packages"
 
     # - name: Add Flathub repository
@@ -40,4 +40,4 @@
 
   when: 
     - ungoogled_chromium == True
-    - ansible_os_family in ["Debian", "RedHat"]
+    - ansible_facts["os_family"] in ["Debian", "RedHat"]

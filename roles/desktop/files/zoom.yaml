@@ -41,7 +41,7 @@
       when: install_result is failed
   when: 
     - zoom
-    - ansible_distribution == "Ubuntu"
+    - ansible_facts["distribution"] == "Ubuntu"
 
 # The change from snap installation was necessary because Zoom snap did not work 
 # properly during automatic installation.

@@ -15,9 +15,9 @@
 
   - name: Add {{ app_name }} repository
     ansible.builtin.apt_repository:
-      repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/ubuntu/{{ ansible_lsb.release }}/prod {{ ansible_distribution_release }} main"
+      repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/ubuntu/{{ ansible_facts['distribution_release'] }}/prod {{ ansible_facts['distribution_release'] }} main"
       state: present
-      filename: microsoft-ubuntu-{{ ansible_distribution_release }}-prod
+      filename: "microsoft-ubuntu-{{ ansible_facts['distribution_release'] }}-prod"
 
   - name: Install {{ app_name }}
     ansible.builtin.apt:
@@ -36,5 +36,5 @@
 # 6. **No File Access or Monitoring** - The employer *cannot* view personal files, browser history, or general device usage.
 # 7. **MDM (Mobile Device Management) Only** - Linux support is limited to compliance enforcement, with no deep system access.
 
-# **Important**: If using a personal laptop, enrolling in Intune means the organization can enforce security policies 
+# **Important**: If using a personal laptop, enrolling in Intune means the organization can enforce security policies
 # and potentially limit access to corporate services unless the device is managed.

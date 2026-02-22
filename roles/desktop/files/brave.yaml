@@ -24,9 +24,9 @@
         name: "{{ app }}"
         state: present
         update_cache: yes
-  when: 
+  when:
     - brave == True
-    - ansible_os_family == "Debian"
+    - ansible_facts["os_family"] == "Debian"
 
 - name: Install {{ app_name }} browser (RedHat)
   block:
@@ -39,7 +39,7 @@
       ansible.builtin.yum_repository:
         name: "{{ app }}"
         description: "{{ app_name }} browser repository"
-        baseurl: https://brave-browser-rpm-release.s3.brave.com/brave-browser/{{ ansible_distribution_major_version }}/$basearch/
+        baseurl: https://brave-browser-rpm-release.s3.brave.com/brave-browser/{{ ansible_facts['distribution_major_version'] }}/$basearch/
         gpgcheck: yes
         gpgkey: https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
         enabled: yes
@@ -52,4 +52,4 @@
         disable_gpg_check: no
   when:
     - brave == True
-    - ansible_os_family == "RedHat"
+    - ansible_facts["os_family"] == "RedHat"

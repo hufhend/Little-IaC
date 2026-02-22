@@ -28,7 +28,7 @@
             state: present
             update_cache: yes
       
-      when: ansible_os_family == "Debian"
+      when: ansible_facts["os_family"] == "Debian"
 
     # RedHat/Fedora/CentOS/Rocky/AlmaLinux installation block
     - name: Install {{ app_name }} on RedHat
@@ -54,7 +54,7 @@
             state: present
             disable_gpg_check: no
       
-      when: ansible_os_family == "RedHat"
+      when: ansible_facts["os_family"] == "RedHat"
 
     # Arch Linux installation
     - name: Install {{ app_name }} on Arch Linux
@@ -66,7 +66,7 @@
             update_cache: yes
           when: not vscode_use_aur | default(true)
       
-      when: ansible_os_family == "Archlinux"
+      when: ansible_facts["os_family"] == "Archlinux"
 
     # openSUSE installation
     - name: Install {{ app_name }} on openSUSE
@@ -92,7 +92,7 @@
             name: code
             state: present
       
-      when: ansible_distribution == "openSUSE"
+      when: ansible_facts["distribution"] == "openSUSE"
 
     # Flatpak installation (universal fallback)
     - name: Install {{ app_name }} via Flatpak (universal)

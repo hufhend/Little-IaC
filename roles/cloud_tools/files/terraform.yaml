@@ -15,7 +15,7 @@
 
   - name: Add {{ app_name }} repository
     ansible.builtin.apt_repository:
-      repo: deb [arch=amd64 signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main
+      repo: deb [arch=amd64 signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_facts['distribution_release'] }} main
       state: present
       filename: hashicorp
 
@@ -48,6 +48,6 @@
     debug:
       msg: "{{ app_name }} version is {{ new_version }}"
 
-  when: 
+  when:
     - terraform == True
-    - ansible_distribution == "Ubuntu"
+    - ansible_facts["distribution"] == "Ubuntu"

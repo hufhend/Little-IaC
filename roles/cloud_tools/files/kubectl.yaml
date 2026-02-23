@@ -4,7 +4,7 @@
     app: "kubectl"
     app_name: "Kubectl"
 
-- name: Set up cloud management utilities 
+- name: Set up cloud management utilities
   block:
   # Kubernetes command-line tool
   - name: Install {{ app_name }}
@@ -17,10 +17,10 @@
       src: /usr/local/bin/kubectl
       dest: /usr/bin/kubectl
       state: link
-    when: role == 'master' or role == 'combi' or ansible_distribution == "RedHat"
+    when: role == 'master' or role == 'combi' or ansible_facts["distribution"] == "RedHat"
     ignore_errors: true
 
-  # Generate completion script 
+  # Generate completion script
   - name: Check if completion script exists
     stat:
       path: "/etc/bash_completion.d/{{ app }}"
@@ -45,7 +45,7 @@
       path: "/home/{{ ansible_user }}/.bashrc"
       line: "alias k='/usr/bin/kubectl'"
       state: absent
-  
+
   - name: Add alias for {{ app_name }}
     ansible.builtin.lineinfile:
       path: "/home/{{ ansible_user }}/.bashrc"
@@ -56,7 +56,7 @@
     ansible.builtin.lineinfile:
       path: "/home/{{ ansible_user }}/.bashrc"
       line: "complete -F __start_kubectl k"
-      create: yes  
+      create: true
 
   - name: Create a kube directory
     ansible.builtin.file:
@@ -89,16 +89,16 @@
       group: "{{ ansible_user }}"
       mode: '0600'
       remote_src: false
-    when: 
-      - local_hostname.stdout != ansible_hostname
+    when:
+      - local_hostname.stdout != ansible_facts["hostname"]
       - kubeconfig_src_check.stat.exists | default(false)
 
   # - name: Remove kubeconfig from remote servers
   #   ansible.builtin.file:
   #     path: "/home/{{ ansible_user }}/.kube/config"
   #     state: absent
-  #   when: 
-  #     - local_hostname.stdout != ansible_hostname
+  #   when:
+  #     - local_hostname.stdout != ansible_facts["hostname"]
   #   ignore_errors: yes
   #   register: kubeconfig_removed
 
@@ -119,10 +119,10 @@
 
   - name: Show {{ app_name }} versions
     ansible.builtin.debug:
-      msg: 
+      msg:
       - "{{ app_name }} version is {{ kubectl_version }}"
       - "Kustomize: {{ kustomize_version }}"
 
-  when: 
+  when:
     - (role in ['combi', 'master', 'worker']) or kubectl
     - kubectl and (binenv | default(false))

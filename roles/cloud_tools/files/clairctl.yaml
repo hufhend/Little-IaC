@@ -52,19 +52,19 @@
 - name: Compare versions
   ansible.builtin.debug:
     msg: "A new version {{ latest_version }} is available! Consider updating."
-  when: latest_version is version(version, '>') 
+  when: latest_version is version(version, '>')
 
 - name: Install {{ app_name }}
   block:
   # Download and verification steps
   - name: Detect platform
     ansible.builtin.set_fact:
-      platform: "{{ ansible_system | lower }}"
+      platform: "{{ ansible_facts['system'] | lower }}"
 
   - name: Detect architecture
     ansible.builtin.set_fact:
-      arch: "{{ 'amd64' if '64' in ansible_architecture else '386' }}"
-      
+      arch: "{{ 'amd64' if '64' in ansible_facts['architecture'] else '386' }}"
+
   # Manual installation of a binary app
   - name: Download {{ app_name }} binary
     ansible.builtin.get_url:
@@ -88,8 +88,8 @@
     ansible.builtin.debug:
       msg: "{{ app_name }} version is {{ clair_version }}"
 
-  when: 
+  when:
     - clairctl == True
-    - ansible_system in ["Linux", "Darwin"]
-    - ansible_architecture in ["x86_64", "amd64"]
+    - ansible_facts["system"] in ["Linux", "Darwin"]
+    - ansible_facts["architecture"] in ["x86_64", "amd64"]
     - installed_version is not defined or installed_version != version

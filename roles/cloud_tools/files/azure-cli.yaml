@@ -15,10 +15,10 @@
 
   - name: Add {{ app_name }} repository
     ansible.builtin.apt_repository:
-      repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_distribution_release }} main"
+      repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_facts['distribution_release'] }} main"
       state: present
       filename: azure-cli
-      
+
   - name: Install {{ app_name }}
     ansible.builtin.apt:
       name: azure-cli=2.69*
@@ -45,7 +45,7 @@
       cmd: apt-mark hold azure-cli
     changed_when: false
 
-  when: 
+  when:
     - azcli == True
-    - ansible_distribution == "Ubuntu"
+    - ansible_facts["distribution"] == "Ubuntu"
 

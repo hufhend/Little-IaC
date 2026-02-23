@@ -1,4 +1,4 @@
-# roxctl is a command-line interface (CLI) for running commands on Red Hat 
+# roxctl is a command-line interface (CLI) for running commands on Red Hat
 # Advanced Cluster Security for Kubernetes.
 ---
 - name: Package Variable Setting
@@ -45,12 +45,12 @@
 
   - name: Detect platform
     ansible.builtin.set_fact:
-      platform: "{{ ansible_system }}"
+      platform: "{{ ansible_facts['system'] }}"
 
   - name: Define architecture map
     ansible.builtin.set_fact:
       arch_map:
-        x86_64: 
+        x86_64:
         arm64: -arm64
         aarch64: -arm64
         ppc64le: -ppc64le
@@ -58,8 +58,8 @@
 
   - name: Detect architecture
     ansible.builtin.set_fact:
-      arch: "{{ arch_map.get(ansible_architecture, 'unknown') }}"
-      
+      arch: "{{ arch_map.get(ansible_facts['architecture'], 'unknown') }}"
+
   - name: Define download URL
     ansible.builtin.set_fact:
       download_url: "https://mirror.openshift.com/pub/rhacs/assets/{{ version }}/bin/{{ platform }}"
@@ -109,7 +109,7 @@
       content: "{{ completion_script.stdout }}"
       dest: "/etc/bash_completion.d/{{ app }}"
       mode: "0644"
-  
+
   # Show installed version
   - name: Verify {{ app_name }} version
     ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
@@ -119,7 +119,7 @@
   - name: Extract and clean version
     set_fact:
       new_version: "{{ install_result.stdout | regex_replace('^.*(\\d+\\.\\d+\\.\\d+).*$', '\\1') }}"
-      
+
   - name: Show {{ app_name }} version
     ansible.builtin.debug:
       msg: "{{ app_name }} version is {{ new_version }}"
@@ -130,7 +130,7 @@
       path: "{{ install_dir }}"
       state: absent
 
-  when: 
+  when:
     - roxctl == True
-    - ansible_architecture == "x86_64"
+    - ansible_facts["architecture"] == "x86_64"
     - installed_version is not defined or installed_version != version

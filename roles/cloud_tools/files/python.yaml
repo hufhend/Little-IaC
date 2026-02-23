@@ -15,7 +15,7 @@
 
   - name: Add {{ app_name }} repository
     ansible.builtin.apt_repository:
-      repo: deb [signed-by=/usr/share/keyrings/deadsnakes.gpg] https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu/ {{ ansible_distribution_release }} main
+      repo: deb [signed-by=/usr/share/keyrings/deadsnakes.gpg] https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu/ {{ ansible_facts['distribution_release'] }} main
       state: present
       filename: python
 
@@ -24,9 +24,9 @@
       name: "{{ app }}"
       state: present
 
-  when: 
+  when:
     - python == True
-    - ansible_distribution == "Ubuntu"
+    - ansible_facts["distribution"] == "Ubuntu"
 
 # Show installed version
 - name: Verify {{ app_name }} version

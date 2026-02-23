@@ -37,7 +37,7 @@
 - name: Compare versions
   ansible.builtin.debug:
     msg: "A new version {{ latest_version }} is available! Consider updating."
-  when: latest_version is version(version, '>') 
+  when: latest_version is version(version, '>')
 
 - name: Install {{ app_name }}
   block:
@@ -60,11 +60,11 @@
 
     - name: Detect architecture
       set_fact:
-        arch: "{{ arch_map.get(ansible_architecture, 'unknown') }}"
+        arch: "{{ arch_map.get(ansible_facts['architecture'], 'unknown') }}"
 
     - name: Detect platform
       ansible.builtin.set_fact:
-        platform: "{{ ansible_system }}"
+        platform: "{{ ansible_facts['system'] }}"
 
     - name: Define download URL
       ansible.builtin.set_fact:
@@ -77,7 +77,7 @@
         mode: '0755'
 
     # Manual installation
-    - name: Extract {{ app }} binary  
+    - name: Extract {{ app }} binary
       ansible.builtin.unarchive:
         src: "{{ install_dir }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
         dest: "{{ install_dir }}"
@@ -109,8 +109,8 @@
         path: "{{ install_dir }}"
         state: absent
 
-  when: 
+  when:
     - ksops == True
-    - ansible_system in ["Linux", "Darwin"]
-    - ansible_architecture in ["x86_64", "amd64"]
+    - ansible_facts["system"] in ["Linux", "Darwin"]
+    - ansible_facts["architecture"] in ["x86_64", "amd64"]
     - latest_version != version or app_installed.stat.exists == False

@@ -31,4 +31,4 @@
 
   when: 
     - cephadm == True
-    - ansible_distribution == "RedHat"
+    - ansible_facts["distribution"] == "RedHat"

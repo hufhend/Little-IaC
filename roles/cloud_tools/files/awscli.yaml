@@ -79,5 +79,5 @@
 
   when: 
     - awscli == True
-    - ansible_distribution == "Ubuntu"
+    - ansible_facts["distribution"] == "Ubuntu"
 

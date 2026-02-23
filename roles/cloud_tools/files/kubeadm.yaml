@@ -65,4 +65,4 @@
 
   when: 
     - kubeadm and (role not in ['combi', 'master', 'worker'])
-    - ansible_distribution == "Ubuntu"
+    - ansible_facts["distribution"] == "Ubuntu"

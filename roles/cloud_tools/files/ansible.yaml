@@ -13,7 +13,7 @@
     update_cache: yes
   when: 
   - ansible == True
-  - ansible_distribution == "Ubuntu"
+  - ansible_facts["distribution"] == "Ubuntu"
 
 # Installation for Ubuntu and RedHat
 - name: Install {{ app_name }}

@@ -53,7 +53,7 @@
 - name: Compare versions
   ansible.builtin.debug:
     msg: "A new version {{ latest_version }} is available! Consider updating."
-  when: latest_version is version(version, '>') 
+  when: latest_version is version(version, '>')
 
 - name: Install {{ app_name }}
   block:
@@ -67,7 +67,7 @@
 
   - name: Detect platform
     ansible.builtin.set_fact:
-      platform: "{{ ansible_system | lower }}"
+      platform: "{{ ansible_facts['system'] | lower }}"
 
   - name: Define architecture map
     ansible.builtin.set_fact:
@@ -79,7 +79,7 @@
 
   - name: Detect architecture
     ansible.builtin.set_fact:
-      arch: "{{ arch_map.get(ansible_architecture, 'unknown') }}"
+      arch: "{{ arch_map.get(ansible_facts['architecture'], 'unknown') }}"
 
   - name: Define download URL
     ansible.builtin.set_fact:
@@ -132,7 +132,7 @@
   #   ansible.builtin.debug:
   #     msg: "{{ checksum_result.stdout_lines | select('search', app ) | list }}"
 
-  # Manual installation 
+  # Manual installation
   - name: Move {{ app }} to local bin
     ansible.builtin.copy:
       src: "{{ install_dir }}/{{ app }}_{{ platform }}_{{ arch }}"
@@ -171,9 +171,9 @@
     ansible.builtin.file:
       path: "{{ install_dir }}"
       state: absent
-      
-  when: 
+
+  when:
     - operatorsdk == True
-    - ansible_system in ["Linux", "Darwin"]
-    - ansible_architecture in ["x86_64", "amd64"]
+    - ansible_facts["system"] in ["Linux", "Darwin"]
+    - ansible_facts["architecture"] in ["x86_64", "amd64"]
     - installed_version is not defined or installed_version != version

@@ -27,7 +27,7 @@
 # View the latest stable version
 - name: Detect platform
   ansible.builtin.set_fact:
-    platform: "{{ ansible_system | lower }}"
+    platform: "{{ ansible_facts['system'] | lower }}"
 
 - name: Define architecture map
   ansible.builtin.set_fact:
@@ -39,7 +39,7 @@
 
 - name: Detect architecture
   ansible.builtin.set_fact:
-    arch: "{{ arch_map.get(ansible_architecture, 'unknown') }}"
+    arch: "{{ arch_map.get(ansible_facts['architecture'], 'unknown') }}"
 
 # View the latest stable version
 - name: Get latest version from GitHub
@@ -76,7 +76,7 @@
 - name: Compare versions
   ansible.builtin.debug:
     msg: "A new version {{ latest_version }} is available! Consider updating."
-  when: latest_version is version(version, '>') 
+  when: latest_version is version(version, '>')
 
 - name: Install {{ app_name }}
   block:
@@ -108,7 +108,7 @@
       register: checksum_result
 
     # Manual installation
-    - name: Extract {{ app }} binary  
+    - name: Extract {{ app }} binary
       ansible.builtin.unarchive:
         src: "{{ install_dir }}/{{ app }}-operator-v{{ version }}-{{ platform }}-{{ arch }}.tar.gz"
         dest: "{{ install_dir }}"
@@ -154,8 +154,8 @@
         path: "{{ install_dir }}"
         state: absent
 
-  when: 
+  when:
     - noobaa == True
-    - ansible_system in ["Linux", "Darwin"]
-    - ansible_architecture in ["x86_64", "amd64"]
+    - ansible_facts["system"] in ["Linux", "Darwin"]
+    - ansible_facts["architecture"] in ["x86_64", "amd64"]
     - installed_version is not defined or installed_version != version

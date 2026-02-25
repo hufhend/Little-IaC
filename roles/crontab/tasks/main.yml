@@ -23,23 +23,13 @@
 
 - name: Set up crontab for RedHat family
   block:
-    - name: Add Kubernetes crontab (RedHat)
+    - name: Add common crontab for RedHat
       ansible.builtin.template:
-        src: templates/crontab.j2
+        src: templates/crontab-toolbox.j2
         dest: "/var/spool/cron/{{ ansible_user }}"
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
         mode: '0600'
-      when: role in ['combi', 'master', 'worker']
+      when: cron
 
-    - name: Add OrangePi crontab (RedHat)
-      ansible.builtin.template:
-        src: templates/crontab-orange.j2
-        dest: "/var/spool/cron/{{ ansible_user }}"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
-        mode: '0600'
-      when:
-        - orange | default(false)
-        - role not in ['combi', 'master', 'worker']
   when: ansible_facts["os_family"] == "RedHat"

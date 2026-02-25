@@ -1,8 +1,8 @@
 # For more information see the manual pages of crontab(5) and cron(8)
 # m h dom mon dow   command
 
-# This file is maintained by Ansible
-# Any changes can be overwritten
+# {{ ansible_managed_header }}
+# {{ ansible_managed_warning }}
 
 # Complete system update
 {{ mntm }} 02   *  *   *     sudo apt -f install && sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y && sudo apt autoremove -y

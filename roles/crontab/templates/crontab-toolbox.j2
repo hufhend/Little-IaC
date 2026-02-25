@@ -1,0 +1,15 @@
+# {{ ansible_managed_header }}
+# {{ ansible_managed_warning }}
+
+# Complete system update for RedHat
+{{ mntm }} 00   *  *   *     sudo /usr/bin/dnf update -y
+00 03  {{ mntd }}  *   *     sudo /usr/sbin/reboot
+
+{% if addition_cron is defined %}
+# Special tasks only for this machine
+{% for task in addition_cron %}
+
+# {{ task.name }}
+{{ task.minute | default('*') }} {{ task.hour | default('*') }} {{ task.day | default('  *') }} {{ task.month | default(' *') }} {{ task.weekday | default('  *') }}     {{ task.job }}
+{% endfor %}
+{% endif %}

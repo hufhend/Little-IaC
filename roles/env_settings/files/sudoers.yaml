@@ -1,0 +1,21 @@
+---
+- name: Set sudoers parameters
+  ansible.builtin.set_fact:
+    sudoers_group: "root"
+    sudoers_mode: '0440'
+
+- name: Create sudoers files for multiple users
+  ansible.builtin.template:
+    src: templates/sudoers.j2
+    dest: "/etc/sudoers.d/{{ sudo_user.username }}"
+    owner: root
+    group: "{{ sudoers_group }}"
+    mode: "{{ sudoers_mode }}"
+  loop: "{{ sudo_config }}"
+  loop_control:
+    loop_var: sudo_user
+    label: "{{ sudo_user.username }}"
+  when:
+    - ansible_facts['os_family'] != 'Darwin'
+    - sudo_config is defined
+  no_log: false

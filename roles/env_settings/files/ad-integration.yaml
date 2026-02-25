@@ -3,6 +3,11 @@
   ansible.builtin.set_fact:
     ldap_id_use_start_tls: "{{ 'True' if (ldap_uri is defined and ldap_uri.startswith('ldap://')) else 'False' }}"
 
+# - name: Stop SSSD service
+#   ansible.builtin.systemd:
+#     name: sssd
+#     state: stopped
+
 - name: Check if SSSD is already running
   ansible.builtin.systemd:
     name: sssd

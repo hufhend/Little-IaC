@@ -27,3 +27,12 @@ ldap_default_authtok: #OBFUSCATED_PASSWORD#
 
 # uploading internal certificates
 add_certs: false
+
+# Example:
+#   sudo_config:
+#     - username: alice
+#       nopasswd: true
+#       commands: ALL
+#     - username: bob
+#       nopasswd: false
+#       commands: /usr/bin/apt

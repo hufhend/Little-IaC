@@ -1,0 +1,8 @@
+# {{ ansible_managed_header }}
+# {{ ansible_managed_warning }}
+
+{% if sudo_user.nopasswd is defined and sudo_user.nopasswd %}
+{{ sudo_user.username }} ALL=({{ sudo_user.runas | default('ALL') }}) NOPASSWD: {{ sudo_user.commands | default('ALL') }}
+{% else %}
+{{ sudo_user.username }} ALL=({{ sudo_user.runas | default('ALL') }}) {{ sudo_user.commands | default('ALL') }}
+{% endif %}

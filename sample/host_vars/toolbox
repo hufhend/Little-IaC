@@ -1,5 +1,7 @@
 ---
+ad_integration: true
 age: true
+ansible: true
 argocd: true
 binenv: true
 buildx: true
@@ -13,6 +15,7 @@ kubectx: true
 kubens: true
 kustomize: true
 k9s: true
+longhornctl: true
 noobaa: true
 ocmirror: true
 ocpinstall: true

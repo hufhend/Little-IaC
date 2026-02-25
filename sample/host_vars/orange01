@@ -3,9 +3,9 @@
 orange: true
 
 # Deploy conternerized applications
-gitea: true
-pihole: true
-prometheus: true
+docker_gitea: true
+docker_pihole: true
+docker_prometheus: true
 
 # Variables for creating firewall rules
 fw_host_svc:

@@ -13,7 +13,9 @@ ing_auth_pass: 654321
 ingress_ip: 192.168.88.101/24
 ing_priority: 190
 
-keepalived: true
+# The keepalived service is enabled by default
+keepalived: choose
+
 role: computer
 
 # Internal secure network behind the firewall

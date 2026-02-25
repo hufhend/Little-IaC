@@ -1,2 +1,5 @@
+ansible_managed_header: "This file is managed by Ansible Little-IaC project"
+ansible_managed_warning: "Manual changes will be overwritten!"
 private_repo: https://git.private/{{ ansible_user }}/config.git
 git_hosts: "192.168.9.9 git.private"
+# github_token: 

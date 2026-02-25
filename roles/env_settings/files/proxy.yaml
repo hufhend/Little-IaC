@@ -1,52 +1,13 @@
----
-- name: Set proxy configuration variables
-  ansible.builtin.set_fact:
-    proxy_host: "{{ proxy_host | default('proxy.example.com') }}"
-    proxy_port: "{{ proxy_port | default('3128') }}"
-    proxy_url: "{{ proxy_url | default('http://proxy.example.com:3128') }}"
-    no_proxy: "{{ no_proxy | default('localhost,127.0.0.1,::1,.localdomain,192.168.0.0/16,10.0.0.0/8,172.16.0.0/12') }}"
-
 - name: Universal proxy configuration for all systems
   block:
     - name: Configure system-wide proxy in /etc/environment
-      block:
-        - name: Configure HTTP proxy (lowercase)
-          ansible.builtin.lineinfile:
-            path: /etc/environment
-            regexp: '^http_proxy='
-            line: "http_proxy={{ proxy_url }}"
-            state: present
-            create: yes
+      ansible.builtin.template:
+        src: environment.j2
+        dest: /etc/environment
+        mode: '0644'
+      when: proxy_config | default(false)
 
-        - name: Configure HTTPS proxy (lowercase)
-          ansible.builtin.lineinfile:
-            path: /etc/environment
-            regexp: '^https_proxy='
-            line: "https_proxy={{ proxy_url }}"
-            state: present
-
-        - name: Configure no_proxy (lowercase)
-          ansible.builtin.lineinfile:
-            path: /etc/environment
-            regexp: '^no_proxy='
-            line: "no_proxy={{ no_proxy }}"
-            state: present
-
-        - name: Configure uppercase proxies
-          ansible.builtin.lineinfile:
-            path: /etc/environment
-            regexp: '^{{ proxy_item.name }}='
-            line: "{{ proxy_item.name }}={{ proxy_item.value }}"
-            state: present
-          loop:
-            - { name: 'HTTP_PROXY', value: "{{ proxy_url }}" }
-            - { name: 'HTTPS_PROXY', value: "{{ proxy_url }}" }
-            - { name: 'FTP_PROXY', value: "{{ proxy_url }}" }
-            - { name: 'NO_PROXY', value: "{{ no_proxy }}" }
-          loop_control:
-            loop_var: proxy_item  # ← DŮLEŽITÉ: přejmenování loop variable
-
-    - name: Configure dirmngr proxy for GPG (all systems)
+    - name: Configure dirmngr proxy for GPG
       block:
         - name: Ensure GPG directory exists
           ansible.builtin.file:
@@ -55,52 +16,23 @@
             mode: '0700'
 
         - name: Configure dirmngr proxy
-          ansible.builtin.lineinfile:
-            path: /root/.gnupg/dirmngr.conf
-            regexp: '^http-proxy '
-            line: "http-proxy {{ proxy_host }}:{{ proxy_port }}"
-            state: present
-            create: yes
+          ansible.builtin.template:
+            src: dirmngr.conf.j2
+            dest: /root/.gnupg/dirmngr.conf
+            mode: '0644'
 
-    - name: Configure package manager proxy for Debian family
-      block:
-        - name: Configure APT proxy
-          ansible.builtin.lineinfile:
-            path: /etc/apt/apt.conf.d/95proxy
-            regexp: '^Acquire::http::Proxy'
-            line: 'Acquire::http::Proxy "{{ proxy_url }}";'
-            state: present
-            create: yes
-
-        - name: Configure APT HTTPS proxy
-          ansible.builtin.lineinfile:
-            path: /etc/apt/apt.conf.d/95proxy
-            regexp: '^Acquire::https::Proxy'
-            line: 'Acquire::https::Proxy "{{ proxy_url }}";'
-            state: present
+    - name: Configure APT proxy for Debian family
+      ansible.builtin.template:
+        src: 95proxy.j2
+        dest: /etc/apt/apt.conf.d/95proxy
+        mode: '0644'
       when: ansible_facts["os_family"] == "Debian"
 
-    - name: Configure package manager proxy for RedHat family
-      block:
-        - name: Configure DNF proxy (RHEL 8+)
-          ansible.builtin.lineinfile:
-            path: /etc/dnf/dnf.conf
-            regexp: '^proxy='
-            line: 'proxy={{ proxy_url }}'
-            state: present
-            insertafter: '[main]'
-          when: ansible_facts['distribution_major_version'] | int >= 8
-
-        - name: Configure YUM proxy (RHEL 7 and older)
-          ansible.builtin.lineinfile:
-            path: /etc/yum.conf
-            regexp: '^proxy='
-            line: 'proxy={{ proxy_url }}'
-            state: present
-            insertafter: '[main]'
-          when: ansible_facts['distribution_major_version'] | int < 8
-
+    - name: Configure DNF/YUM proxy for RedHat family
+      ansible.builtin.template:
+        src: dnf-proxy.conf.j2
+        dest: "{{ '/etc/dnf/dnf.conf' if ansible_facts['distribution_major_version'] | int >= 8 else '/etc/yum.conf' }}"
+        mode: '0644'
       when: ansible_facts["os_family"] == "RedHat"
 
   when: proxy_config | default(false)
-  

@@ -17,6 +17,9 @@
       ansible.builtin.copy:
         dest: /etc/systemd/system/docker.service.d/http-proxy.conf
         content: |
+          # {{ ansible_managed_header }}
+          # {{ ansible_managed_warning }}
+
           [Service]
           Environment="HTTP_PROXY={{ proxy_url }}"
           Environment="HTTPS_PROXY={{ proxy_url }}"

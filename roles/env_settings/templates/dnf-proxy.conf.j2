@@ -1,0 +1,10 @@
+# {{ ansible_managed_header }}
+# {{ ansible_managed_warning }}
+
+[main]
+gpgcheck=1
+installonly_limit=3
+clean_requirements_on_remove=True
+best=True
+skip_if_unavailable=False
+proxy={{ proxy_url }}

@@ -1,0 +1,6 @@
+# {{ ansible_managed_header }}
+# {{ ansible_managed_warning }}
+
+{# APT proxy settings #}
+Acquire::http::Proxy "{{ proxy_url }}";
+Acquire::https::Proxy "{{ proxy_url }}";

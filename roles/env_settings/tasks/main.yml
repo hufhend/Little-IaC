@@ -75,6 +75,9 @@
   include_tasks: ../files/subscription.yaml
   when: ansible_facts["os_family"] == "RedHat"
 
+- name: Include Active Directory integration
+  include_tasks: ../files/ad-integration.yaml
+
 # This is where everything else is installed
 - name: Add other software
   include_tasks:
@@ -83,7 +86,8 @@
   # Vynecháme proxy.yaml a subscription.yaml
   when: >-
     'proxy.yaml' not in item and
-    'subscription.yaml' not in item
+    'subscription.yaml' not in item and
+    'ad-integration.yaml' not in item
   no_log: true
 
 - name: "Check if font Sacramento exists"

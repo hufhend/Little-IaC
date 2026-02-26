@@ -1,0 +1,6 @@
+# {{ ansible_managed_header }}
+# {{ ansible_managed_warning }}
+
+{% for mapping in ad_group_mappings | default([]) %}
+{{ mapping.ad_group }} = {{ mapping.local_group }}
+{% endfor %}

@@ -1,0 +1,54 @@
+---
+- name: Ensure scr directory exists for {{ user_ansible }}
+  ansible.builtin.file:
+    path: "/home/{{ user_ansible }}/scr"
+    state: directory
+    owner: "{{ user_ansible }}"
+    group: "{{ user_ansible }}"
+    mode: '0755'
+
+- name: Configure AD group synchronization
+  block:
+    - name: Deploy AD group sync script
+      ansible.builtin.template:
+        src: ad-group-sync.sh.j2
+        dest: "/home/{{ user_ansible }}/scr/ad-group-sync.sh"
+        owner: "{{ user_ansible }}"
+        group: "{{ user_ansible }}"
+        mode: '0755'
+
+    - name: Deploy AD group sync configuration
+      ansible.builtin.template:
+        src: ad-group-sync.conf.j2
+        dest: "/etc/ad-group-sync.conf"
+        owner: root
+        group: root
+        mode: '0644'
+      become: yes
+
+    - name: Ensure log file exists
+      ansible.builtin.file:
+        path: /var/log/ad-group-sync.log
+        state: touch
+        owner: root
+        group: root
+        mode: '0644'
+      become: yes
+
+    - name: Perform initial synchronization
+      ansible.builtin.command:
+        cmd: "/home/{{ user_ansible }}/scr/ad-group-sync.sh"
+      become: yes
+      changed_when: true
+      register: sync_result
+      failed_when: sync_result.rc != 0 and "ERROR" not in sync_result.stderr
+
+    - name: Show synchronization summary
+      ansible.builtin.debug:
+        msg: "{{ sync_result.stdout_lines[-5:] if sync_result.stdout_lines else 'Initial sync completed' }}"
+      when: sync_result.stdout_lines is defined
+      
+  when: 
+    - ad_integration | default(false)
+    - ad_group_mappings is defined
+  tags: ad_sync

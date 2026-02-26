@@ -1,0 +1,150 @@
+#!/bin/bash
+
+#   ***************************************
+#   Active Directory synchronization script
+#   begin     : Tue 24 Feb 2026
+#   copyright : (c) 2026 Václav Dvorský
+#   email     : hufhendr@gmail.com
+#   $Id: ad-group-sync.sh, v1.00 25/02/2026
+#   ***************************************
+#
+#   --------------------------------------------------------------------
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public Licence as published by
+#   the Free Software Foundation; either version 2 of the Licence, or
+#   (at your option) any later version.
+#   --------------------------------------------------------------------
+#
+#   Synchronize Active Directory groups to local POSIX groups
+#   This script syncs members from AD groups to local Linux groups
+#   Protected users (like Ansible user) are never removed from groups
+#
+#   This script exists solely because of the absolute incompatibility between
+#   Windows and Linux caused by Microsoft's 20-year war against open source
+#   software
+#
+#   {{ ansible_managed_header }}
+#   {{ ansible_managed_warning }}
+
+CONFIG_FILE="/etc/ad-group-sync.conf"
+LOG_FILE="/var/log/ad-group-sync.log"
+TEMP_DIR="/tmp/ad-sync-$$"
+
+# List of users who will NEVER be removed from any group
+# (even if they are not in the AD group anymore)
+PROTECTED_USERS=(
+    "{{ user_ansible }}"
+    "root"
+    {% for user in additional_protected_users | default([]) %}
+    "{{ user }}"
+    {% endfor %}
+)
+
+# Check if config file exists
+if [[ ! -f "$CONFIG_FILE" ]]; then
+    echo "ERROR: Config file $CONFIG_FILE not found!"
+    exit 1
+fi
+
+# Create temp directory and set cleanup trap
+mkdir -p "$TEMP_DIR"
+trap "rm -rf $TEMP_DIR" EXIT
+
+# Logging function
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+# Function to check if user is protected
+is_protected_user() {
+    local username="$1"
+    for protected in "${PROTECTED_USERS[@]}"; do
+        if [[ "$username" == "$protected" ]]; then
+            return 0  # true - user is protected
+        fi
+    done
+    return 1  # false - user is not protected
+}
+
+# Main script start
+log "Starting AD group sync with cleanup"
+
+# Read config file line by line
+while IFS= read -r line || [[ -n "$line" ]]; do
+    # Skip empty lines and comments
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+
+    # Split by = (allowing spaces)
+    ad_group=$(echo "$line" | cut -d'=' -f1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    local_group=$(echo "$line" | cut -d'=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+    log "Processing: '$ad_group' -> '$local_group'"
+
+    # Get members from AD group
+    current_members_file="$TEMP_DIR/$(echo "$ad_group" | tr ' ' '_')_current.txt"
+
+    if getent group "$ad_group" >/dev/null 2>&1; then
+        getent group "$ad_group" | cut -d: -f4 | tr ',' '\n' | grep -v '^$' | sort > "$current_members_file"
+        member_count=$(wc -l < "$current_members_file")
+        log "  Found $member_count members in AD group"
+
+        if [[ $member_count -eq 0 ]]; then
+            log "  WARNING: No members found in $ad_group"
+            continue
+        fi
+    else
+        log "  ERROR: AD group '$ad_group' not found via getent"
+        continue
+    fi
+
+    # Check if local group exists
+    if ! getent group "$local_group" >/dev/null 2>&1; then
+        log "  ERROR: Local group '$local_group' does not exist on this system"
+        continue
+    fi
+
+    # Get current members of local group
+    local_members_file="$TEMP_DIR/${local_group}_local.txt"
+    getent group "$local_group" | cut -d: -f4 | tr ',' '\n' | grep -v '^$' | sort > "$local_members_file" 2>/dev/null || true
+
+    # Add missing users (users in AD but not in local group)
+    while read -r username; do
+        [[ -z "$username" ]] && continue
+        if ! grep -q "^$username$" "$local_members_file"; then
+            log "  ADDING: $username to $local_group"
+            if id "$username" >/dev/null 2>&1; then
+                if usermod -a -G "$local_group" "$username" 2>/dev/null; then
+                    log "    SUCCESS: Added $username to $local_group"
+                else
+                    log "    ERROR: Failed to add $username to $local_group (usermod failed)"
+                fi
+            else
+                log "    WARNING: User $username does not exist locally, skipping"
+            fi
+        fi
+    done < "$current_members_file"
+
+    # Remove users no longer in AD group (but protect specified users!)
+    while read -r username; do
+        [[ -z "$username" ]] && continue
+
+        # Skip protected users completely (no logging)
+        if is_protected_user "$username"; then
+            continue
+        fi
+
+        if ! grep -q "^$username$" "$current_members_file"; then
+            log "  REMOVING: $username from $local_group (no longer in AD group)"
+            if id "$username" >/dev/null 2>&1; then
+                if gpasswd -d "$username" "$local_group" >/dev/null 2>&1; then
+                    log "    SUCCESS: Removed $username from $local_group"
+                else
+                    log "    ERROR: Failed to remove $username from $local_group"
+                fi
+            fi
+        fi
+    done < "$local_members_file"
+
+done < "$CONFIG_FILE"
+
+log "Sync completed successfully"

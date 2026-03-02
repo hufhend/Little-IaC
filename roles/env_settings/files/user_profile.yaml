@@ -1,0 +1,92 @@
+- name: Include user profile vars
+  ansible.builtin.include_vars: main.yml
+
+- name: Deploy OpenShift/Kubernetes aliases to users
+  block:
+    - name: Get list of home directories
+      ansible.builtin.find:
+        paths: /home
+        file_type: directory
+        hidden: no
+      register: home_dirs
+
+    - name: Extract usernames from home paths
+      ansible.builtin.set_fact:
+        home_users: "{{ home_dirs.files | map(attribute='path') | map('basename') | list }}"
+
+    - name: Gather user list from passwd database
+      ansible.builtin.getent:
+        database: passwd
+      when: home_users | length > 0
+
+    - name: Create filtered list of real users
+      ansible.builtin.set_fact:
+        target_users: "{{ home_users |
+          intersect(ansible_facts.getent_passwd.keys() | default([])) |
+          reject('in', exclude_users) |
+          list }}"
+
+    - name: Debug - show users that will get aliases
+      ansible.builtin.debug:
+        msg: "Target users: {{ target_users }}"
+
+    - name: Deploy aliases to existing users
+      ansible.builtin.template:
+        src: bash_aliases_ocp.j2
+        dest: "/home/{{ user_item }}/{{ ocp_aliases_dest }}"
+        owner: "{{ user_item }}"
+        group: "{{ user_item }}"
+        mode: '0644'
+      loop: "{{ target_users }}"
+      loop_control:
+        loop_var: user_item
+      register: alias_deploy
+
+    - name: Deploy aliases to /etc/skel for new users
+      ansible.builtin.copy:
+        src: bash_aliases_ocp.skel
+        dest: "{{ skel_dest }}"
+        mode: '0644'
+
+    - name: Ensure aliases are sourced in existing users' .bashrc
+      ansible.builtin.lineinfile:
+        path: "/home/{{ user_item }}/.bashrc"
+        line: '[ -f ~/.bash_aliases_ocp ] && . ~/.bash_aliases_ocp'
+        insertafter: EOF
+        create: yes
+        owner: "{{ user_item }}"
+        group: "{{ user_item }}"
+        mode: '0644'
+      loop: "{{ target_users }}"
+      loop_control:
+        loop_var: user_item
+
+    - name: Ensure aliases are sourced in /etc/skel/.bashrc
+      ansible.builtin.lineinfile:
+        path: /etc/skel/.bashrc
+        line: '[ -f ~/.bash_aliases_ocp ] && . ~/.bash_aliases_ocp'
+        insertafter: EOF
+        create: yes
+        mode: '0644'
+
+    - name: Create .kube directory for users if it doesn't exist
+      ansible.builtin.file:
+        path: "/home/{{ user_item }}/.kube"
+        state: directory
+        owner: "{{ user_item }}"
+        group: "{{ user_item }}"
+        mode: '0700'
+      loop: "{{ target_users }}"
+      loop_control:
+        loop_var: user_item
+
+    - name: Summary of deployed aliases
+      ansible.builtin.debug:
+        msg:
+          - "✅ Aliases deployed to {{ target_users | length }} users"
+          - "📁 Location: ~/.bash_aliases_ocp"
+          - "🆕 New users will get aliases from /etc/skel"
+          - "ℹ️ Run 'source ~/.bashrc' or log out/in to activate"
+      when: alias_deploy.changed
+
+  when: ocp_login | default(false)

@@ -1,31 +1,42 @@
-# ==============================================================================
-# OPENSHIFT CLUSTERS - COMPLETE LOGIN ALIASES
-# ==============================================================================
+#   ****************************************
+#   OpenShift and Kubernetes Cluster Aliases
+#   begin     : Sun 01 Mar 2026
+#   copyright : (c) 2026 Václav Dvorský
+#   email     : hufhendr@gmail.com
+#   $Id: .bash_aliases_ocp, v1.00 02/03/2026
+#   ****************************************
+#
+#   --------------------------------------------------------------------
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public Licence as published by
+#   the Free Software Foundation; either version 2 of the Licence, or
+#   (at your option) any later version.
+#   --------------------------------------------------------------------
 
-# Example: Development OpenShift cluster
+# Development OpenShift cluster
 ocl-dev() {
     export OCP_CLUSTER_URL="https://api.dev-cluster.example.com:6443"
-    export OCP_USERNAME="developer"
+    export OCP_USERNAME=$USER
     export KUBECONFIG=~/.kube/config_ocp_dev
     echo "🔵 Development OpenShift: $OCP_CLUSTER_URL"
     echo "👤 User: $OCP_USERNAME"
     ocp-login
 }
 
-# Example: Staging OpenShift cluster
+# Staging OpenShift cluster
 ocl-staging() {
     export OCP_CLUSTER_URL="https://api.staging-cluster.example.com:6443"
-    export OCP_USERNAME="tester"
+    export OCP_USERNAME=$USER
     export KUBECONFIG=~/.kube/config_ocp_staging
     echo "🟡 Staging OpenShift: $OCP_CLUSTER_URL"
     echo "👤 User: $OCP_USERNAME"
     ocp-login
 }
 
-# Example: Production OpenShift cluster
+# Production OpenShift cluster
 ocl-prod() {
     export OCP_CLUSTER_URL="https://api.prod-cluster.example.com:6443"
-    export OCP_USERNAME="operator"
+    export OCP_USERNAME=$USER
     export KUBECONFIG=~/.kube/config_ocp_prod
     echo "🔴 Production OpenShift: $OCP_CLUSTER_URL"
     echo "👤 User: $OCP_USERNAME"
@@ -35,7 +46,7 @@ ocl-prod() {
 # Quick login versions (non-interactive)
 ocl-dev-quick() {
     export OCP_CLUSTER_URL="https://api.dev-cluster.example.com:6443"
-    export OCP_USERNAME="developer"
+    export OCP_USERNAME=$USER
     export KUBECONFIG=~/.kube/config_ocp_dev
     echo "🔵 Development OpenShift - Quick login"
     ocp-login --quick
@@ -43,9 +54,17 @@ ocl-dev-quick() {
 
 ocl-staging-quick() {
     export OCP_CLUSTER_URL="https://api.staging-cluster.example.com:6443"
-    export OCP_USERNAME="tester"
+    export OCP_USERNAME=$USER
     export KUBECONFIG=~/.kube/config_ocp_staging
     echo "🟡 Staging OpenShift - Quick login"
+    ocp-login --quick
+}
+
+ocl-prod-quick() {
+    export OCP_CLUSTER_URL="https://api.prod-cluster.example.com:6443"
+    export OCP_USERNAME=$USER
+    export KUBECONFIG=~/.kube/config_ocp_prod
+    echo "🔴 Production OpenShift - Quick login"
     ocp-login --quick
 }
 
@@ -57,6 +76,11 @@ ocl-dev-status() {
 
 ocl-staging-status() {
     export KUBECONFIG=~/.kube/config_ocp_staging
+    ocp-login --status
+}
+
+ocl-prod-status() {
+    export KUBECONFIG=~/.kube/config_ocp_prod
     ocp-login --status
 }
 
@@ -76,11 +100,11 @@ set-ocp() {
         echo "Example: set-ocp https://api.example.com:6443 user ~/.kube/config_example"
         return 1
     fi
-    
+
     export OCP_CLUSTER_URL="$1"
     export OCP_USERNAME="$2"
     export KUBECONFIG="$3"
-    
+
     echo "✅ OpenShift cluster set:"
     echo "   URL: $OCP_CLUSTER_URL"
     echo "   User: $OCP_USERNAME"
@@ -91,14 +115,14 @@ set-ocp() {
 # PURE KUBERNETES CLUSTERS (no OpenShift login needed)
 # ==============================================================================
 
-# Example: Internal Kubernetes cluster
+# Internal Kubernetes cluster
 ocl-internal() {
     export KUBECONFIG="${HOME}/.kube/internal_config"
     echo "✅ Internal Kubernetes cluster"
     kubectl cluster-info 2>/dev/null || echo "⚠️  Not connected or cluster unavailable"
 }
 
-# Example: External Kubernetes cluster
+# External Kubernetes cluster
 ocl-external() {
     export KUBECONFIG="${HOME}/.kube/external_config"
     echo "✅ External Kubernetes cluster"
@@ -180,19 +204,19 @@ alias kube-current='echo "📋 Current KUBECONFIG: ${KUBECONFIG:-~/.kube/config}
 # Switch between kubeconfigs
 kube-switch() {
     local configs=($(ls ~/.kube/config_* ~/.kube/config-* 2>/dev/null))
-    
+
     if [ ${#configs[@]} -eq 0 ]; then
         echo "❌ No kubeconfigs found in ~/.kube/"
         return 1
     fi
-    
+
     echo "📋 Available kubeconfigs:"
     for i in "${!configs[@]}"; do
         echo "  $((i+1)). ${configs[$i]##*/}"
     done
-    
+
     read -p "Select config number: " choice
-    
+
     if [[ $choice =~ ^[0-9]+$ ]] && [ $choice -ge 1 ] && [ $choice -le ${#configs[@]} ]; then
         export KUBECONFIG="${configs[$((choice-1))]}"
         echo "✅ Switched to: $KUBECONFIG"
@@ -240,18 +264,28 @@ alias services='kubectl get services -A'
 alias deployments='kubectl get deployments -A'
 alias ingresses='kubectl get ingresses -A'
 alias namespaces='kubectl get namespaces'
+alias kns='kubens'
 
 # OpenShift specific shortcuts
 alias oc-projects='oc get projects'
 alias oc-who='oc whoami'
 alias oc-status='oc status'
 
+# Add namespace completion for kubens
+_kube_namespaces()
+{
+  local curr_arg;
+  curr_arg=${COMP_WORDS[COMP_CWORD]}
+  COMPREPLY=( $(compgen -W "- $(kubectl get namespaces -o=jsonpath='{range .items[*].metadata.name}{@}{"\n"}{end}')" -- $curr_arg ) );
+}
+complete -F _kube_namespaces kubens kns
+
 # ==============================================================================
 # SETUP INSTRUCTIONS (for documentation)
 # ==============================================================================
 
 # To use these aliases:
-# 1. Copy this file to ~/.bash_aliases or source it in your ~/.bashrc
+# 1. Add to your ~/.bashrc: [ -f ~/.bash_aliases_ocp ] && . ~/.bash_aliases_ocp
 # 2. Install the ocp-login script: sudo install ocp-login.sh /usr/local/bin/ocp-login
-# 3. Customize the cluster URLs, usernames, and kubeconfig paths above
+# 3. Customize the cluster URLs and kubeconfig paths above if needed
 # 4. Source your bash configuration: source ~/.bashrc

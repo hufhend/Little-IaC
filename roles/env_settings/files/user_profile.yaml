@@ -14,15 +14,9 @@
       ansible.builtin.set_fact:
         home_users: "{{ home_dirs.files | map(attribute='path') | map('basename') | list }}"
 
-    - name: Gather user list from passwd database
-      ansible.builtin.getent:
-        database: passwd
-      when: home_users | length > 0
-
     - name: Create filtered list of real users
       ansible.builtin.set_fact:
         target_users: "{{ home_users |
-          intersect(ansible_facts.getent_passwd.keys() | default([])) |
           reject('in', exclude_users) |
           list }}"
 
@@ -35,8 +29,7 @@
         src: bash_aliases_ocp.j2
         dest: "/home/{{ user_item }}/{{ ocp_aliases_dest }}"
         owner: "{{ user_item }}"
-        group: "{{ user_item }}"
-        mode: '0644'
+        mode: '0600'
       loop: "{{ target_users }}"
       loop_control:
         loop_var: user_item
@@ -46,7 +39,7 @@
       ansible.builtin.copy:
         src: bash_aliases_ocp.skel
         dest: "{{ skel_dest }}"
-        mode: '0644'
+        mode: '0600'
 
     - name: Ensure aliases are sourced in existing users' .bashrc
       ansible.builtin.lineinfile:
@@ -55,8 +48,7 @@
         insertafter: EOF
         create: yes
         owner: "{{ user_item }}"
-        group: "{{ user_item }}"
-        mode: '0644'
+        mode: '0600'
       loop: "{{ target_users }}"
       loop_control:
         loop_var: user_item
@@ -67,14 +59,13 @@
         line: '[ -f ~/.bash_aliases_ocp ] && . ~/.bash_aliases_ocp'
         insertafter: EOF
         create: yes
-        mode: '0644'
+        mode: '0600'
 
     - name: Create .kube directory for users if it doesn't exist
       ansible.builtin.file:
         path: "/home/{{ user_item }}/.kube"
         state: directory
         owner: "{{ user_item }}"
-        group: "{{ user_item }}"
         mode: '0700'
       loop: "{{ target_users }}"
       loop_control:
@@ -84,9 +75,9 @@
       ansible.builtin.debug:
         msg:
           - "✅ Aliases deployed to {{ target_users | length }} users"
-          - "📁 Location: ~/.bash_aliases_ocp"
-          - "🆕 New users will get aliases from /etc/skel"
-          - "ℹ️ Run 'source ~/.bashrc' or log out/in to activate"
+          - "   Location: ~/.bash_aliases_ocp"
+          - "   New users will get aliases from /etc/skel"
+          - "   Run 'source ~/.bashrc' or log out/in to activate"
       when: alias_deploy.changed
 
   when: ocp_login | default(false)

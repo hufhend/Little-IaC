@@ -1,3 +1,4 @@
+{% raw %}
 #   ****************************************
 #   OpenShift and Kubernetes Cluster Aliases
 #   begin     : Sun 01 Mar 2026
@@ -12,6 +13,7 @@
 #   the Free Software Foundation; either version 2 of the Licence, or
 #   (at your option) any later version.
 #   --------------------------------------------------------------------
+{% endraw %}
 
 # {{ ansible_managed_header }}
 # {{ ansible_managed_warning }}
@@ -64,6 +66,7 @@ ocl-staging-quick() {
     ocp-login --quick
 }
 
+{% raw %}
 ocl-prod-quick() {
     export OCP_CLUSTER_URL="https://api.prod-cluster.example.com:6443"
     export OCP_USERNAME="{{ user_item }}"
@@ -280,7 +283,7 @@ _kube_namespaces()
 {
   local curr_arg;
   curr_arg=${COMP_WORDS[COMP_CWORD]}
-  COMPREPLY=( $(compgen -W "- $(kubectl get namespaces -o=jsonpath='{range .items[*].metadata.name}{@}{"\n"}{end}')" -- $curr_arg ) );
+  COMPREPLY=( $(compgen -W "- $(kubectl get namespaces -o=jsonpath='{range .items[*].metadata.name}{@}{\"\\n\"}{end}')" -- $curr_arg ) );
 }
 complete -F _kube_namespaces kubens kns
 
@@ -293,3 +296,4 @@ complete -F _kube_namespaces kubens kns
 # 2. Install the ocp-login script: sudo install ocp-login.sh /usr/local/bin/ocp-login
 # 3. Customize the cluster URLs and kubeconfig paths above if needed
 # 4. Source your bash configuration: source ~/.bashrc
+{% endraw %}

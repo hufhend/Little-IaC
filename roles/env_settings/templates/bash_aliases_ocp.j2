@@ -4,7 +4,7 @@
 #   begin     : Sun 01 Mar 2026
 #   copyright : (c) 2026 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: .bash_aliases_ocp, v1.00 02/03/2026
+#   $Id: .bash_aliases_ocp, v1.20 04/03/2026
 #   ****************************************
 #
 #   --------------------------------------------------------------------
@@ -15,82 +15,46 @@
 #   --------------------------------------------------------------------
 {% endraw %}
 
-# {{ ansible_managed_header }}
-# {{ ansible_managed_warning }}
-# Generated for user: {{ user_item }}
+#   {{ ansible_managed_header }}
+#   {{ ansible_managed_warning }}
+#   Generated for user: {{ user_item }}
 
-# Development OpenShift cluster
-ocl-dev() {
-    export OCP_CLUSTER_URL="https://api.dev-cluster.example.com:6443"
+{% for cluster_id, cluster in ocp_clusters.items() %}
+
+ocl-{{ cluster_id }}() {
+    export OCP_CLUSTER_URL="{{ cluster.url }}"
     export OCP_USERNAME="{{ user_item }}"
-    export KUBECONFIG=~/.kube/config_ocp_dev
-    echo "🔵 Development OpenShift: $OCP_CLUSTER_URL"
+    export KUBECONFIG=~/.kube/{{ cluster.config }}
+    echo "{{ cluster.emoji }} {{ cluster.name }} OpenShift: $OCP_CLUSTER_URL"
     echo "👤 User: $OCP_USERNAME"
+    {% if cluster.region is defined %}
+    echo "🌍 Region: {{ cluster.region }}"
+    {% endif %}
+    {% if cluster.environment is defined %}
+    echo "🏷️  Environment: {{ cluster.environment }}"
+    {% endif %}
     ocp-login
 }
 
-# Staging OpenShift cluster
-ocl-staging() {
-    export OCP_CLUSTER_URL="https://api.staging-cluster.example.com:6443"
+ocl-{{ cluster_id }}-quick() {
+    export OCP_CLUSTER_URL="{{ cluster.url }}"
     export OCP_USERNAME="{{ user_item }}"
-    export KUBECONFIG=~/.kube/config_ocp_staging
-    echo "🟡 Staging OpenShift: $OCP_CLUSTER_URL"
-    echo "👤 User: $OCP_USERNAME"
-    ocp-login
-}
-
-# Production OpenShift cluster
-ocl-prod() {
-    export OCP_CLUSTER_URL="https://api.prod-cluster.example.com:6443"
-    export OCP_USERNAME="{{ user_item }}"
-    export KUBECONFIG=~/.kube/config_ocp_prod
-    echo "🔴 Production OpenShift: $OCP_CLUSTER_URL"
-    echo "👤 User: $OCP_USERNAME"
-    ocp-login
-}
-
-# Quick login versions (non-interactive)
-ocl-dev-quick() {
-    export OCP_CLUSTER_URL="https://api.dev-cluster.example.com:6443"
-    export OCP_USERNAME="{{ user_item }}"
-    export KUBECONFIG=~/.kube/config_ocp_dev
-    echo "🔵 Development OpenShift - Quick login"
+    export KUBECONFIG=~/.kube/{{ cluster.config }}
+    echo "{{ cluster.emoji }} {{ cluster.name }} OpenShift - Quick login"
+    {% if cluster.region is defined %}
+    echo "🌍 Region: {{ cluster.region }}"
+    {% endif %}
     ocp-login --quick
 }
 
-ocl-staging-quick() {
-    export OCP_CLUSTER_URL="https://api.staging-cluster.example.com:6443"
-    export OCP_USERNAME="{{ user_item }}"
-    export KUBECONFIG=~/.kube/config_ocp_staging
-    echo "🟡 Staging OpenShift - Quick login"
-    ocp-login --quick
+ocl-{{ cluster_id }}-status() {
+    export KUBECONFIG=~/.kube/{{ cluster.config }}
+    echo "{{ cluster.emoji }} {{ cluster.name }} OpenShift - Status check"
+    ocp-login --status
 }
 
+{% endfor %}
 {% raw %}
-ocl-prod-quick() {
-    export OCP_CLUSTER_URL="https://api.prod-cluster.example.com:6443"
-    export OCP_USERNAME="{{ user_item }}"
-    export KUBECONFIG=~/.kube/config_ocp_prod
-    echo "🔴 Production OpenShift - Quick login"
-    ocp-login --quick
-}
-
-# Status check only
-ocl-dev-status() {
-    export KUBECONFIG=~/.kube/config_ocp_dev
-    ocp-login --status
-}
-
-ocl-staging-status() {
-    export KUBECONFIG=~/.kube/config_ocp_staging
-    ocp-login --status
-}
-
-ocl-prod-status() {
-    export KUBECONFIG=~/.kube/config_ocp_prod
-    ocp-login --status
-}
-
 # ==============================================================================
 # GENERIC OPENSHIFT FUNCTIONS
 # ==============================================================================
@@ -283,7 +247,7 @@ _kube_namespaces()
 {
   local curr_arg;
   curr_arg=${COMP_WORDS[COMP_CWORD]}
-  COMPREPLY=( $(compgen -W "- $(kubectl get namespaces -o=jsonpath='{range .items[*].metadata.name}{@}{\"\\n\"}{end}')" -- $curr_arg ) );
+  COMPREPLY=( $(compgen -W "- $(kubectl get namespaces -o=jsonpath='{range .items[*].metadata.name}{@}{"\n"}{end}')" -- $curr_arg ) );
 }
 complete -F _kube_namespaces kubens kns
 

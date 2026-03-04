@@ -36,3 +36,55 @@ add_certs: false
 #     - username: bob
 #       nopasswd: false
 #       commands: /usr/bin/apt
+
+
+ocp_clusters:
+  # Development environment
+  dev:
+    emoji: '🔵'
+    name: 'Development'
+    url: 'https://api.dev-cluster.example.com:6443'
+    config: 'config_ocp_dev'
+    environment: 'development'
+    region: 'eu-central-1'
+    description: 'Development cluster for testing'
+
+  # Test environment
+  test:
+    emoji: '🟢'
+    name: 'Test'
+    url: 'https://api.test-cluster.example.com:6443'
+    config: 'config_ocp_test'
+    environment: 'testing'
+    region: 'eu-central-1'
+    description: 'Experimental features and testing'
+
+  # Staging environment
+  staging:
+    emoji: '🟡'
+    name: 'Staging'
+    url: 'https://api.staging-cluster.example.com:6443'
+    config: 'config_ocp_staging'
+    environment: 'staging'
+    region: 'eu-central-1'
+    description: 'Pre-production validation'
+
+  # Production environment
+  prod:
+    emoji: '🔴'
+    name: 'Production'
+    url: 'https://api.prod-cluster.example.com:6443'
+    config: 'config_ocp_prod'
+    environment: 'production'
+    region: 'eu-central-1'
+    description: 'Live production traffic'
+
+  # # Disaster Recovery
+  # dr:
+  #   emoji: '🟣'
+  #   name: 'Disaster Recovery'
+  #   url: 'https://api.dr-cluster.example.com:6443'
+  #   config: 'config_ocp_dr'
+  #   environment: 'dr'
+  #   region: 'eu-west-1'
+  #   description: 'Backup and DR site'

@@ -3,5 +3,6 @@ ocp_aliases_dest: ".bash_aliases_ocp"
 skel_dest: "/etc/skel/.bash_aliases_ocp"
 exclude_users:
   - root
-  - "{{ user_ansible }}"
+  # - "{{ user_ansible }}"
   - lost+found
+  - ubuntu

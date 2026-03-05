@@ -1,3 +1,4 @@
+---
 - name: Include user profile vars
   ansible.builtin.include_vars: main.yml
 
@@ -7,7 +8,7 @@
       ansible.builtin.find:
         paths: /home
         file_type: directory
-        hidden: no
+        hidden: false
       register: home_dirs
 
     - name: Extract usernames from home paths
@@ -24,11 +25,35 @@
       ansible.builtin.debug:
         msg: "Target users: {{ target_users }}"
 
+    # Get UID/GID from home directory for LDAP/AD users without local accounts
+    - name: Get ownership info for each user
+      ansible.builtin.stat:
+        path: "/home/{{ username }}"
+      register: home_owner_info
+      loop: "{{ target_users }}"
+      loop_control:
+        loop_var: username
+
+    # Store both UID and GID in a dictionary for later use
+    - name: Set fact with correct UIDs and GIDs
+      ansible.builtin.set_fact:
+        user_owners: "{{ user_owners | default({}) | combine({owner_item.username: {
+          'uid': owner_item.stat.uid,
+          'gid': owner_item.stat.gid
+        }}) }}"
+      loop: "{{ home_owner_info.results }}"
+      loop_control:
+        loop_var: owner_item
+      when: owner_item.stat.exists
+      no_log: true
+
+    # Deploy main alias file with correct owner/group from home directory
     - name: Deploy aliases to existing users
       ansible.builtin.template:
         src: bash_aliases_ocp.j2
         dest: "/home/{{ user_item }}/{{ ocp_aliases_dest }}"
-        owner: "{{ user_item }}"
+        owner: "{{ user_owners[user_item].uid | default(user_item) }}"
+        group: "{{ user_owners[user_item].gid | default(user_item) }}"
         mode: '0600'
       loop: "{{ target_users }}"
       loop_control:
@@ -41,13 +66,15 @@
         dest: "{{ skel_dest }}"
         mode: '0600'
 
+    # Ensure .bashrc sources our alias file
     - name: Ensure aliases are sourced in existing users' .bashrc
       ansible.builtin.lineinfile:
         path: "/home/{{ user_item }}/.bashrc"
         line: '[ -f ~/.bash_aliases_ocp ] && . ~/.bash_aliases_ocp'
         insertafter: EOF
-        create: yes
-        owner: "{{ user_item }}"
+        create: true
+        owner: "{{ user_owners[user_item].uid | default(user_item) }}"
+        group: "{{ user_owners[user_item].gid | default(user_item) }}"
         mode: '0600'
       loop: "{{ target_users }}"
       loop_control:
@@ -58,14 +85,16 @@
         path: /etc/skel/.bashrc
         line: '[ -f ~/.bash_aliases_ocp ] && . ~/.bash_aliases_ocp'
         insertafter: EOF
-        create: yes
+        create: true
         mode: '0600'
 
+    # Create .kube directory with same ownership as home directory
     - name: Create .kube directory for users if it doesn't exist
       ansible.builtin.file:
         path: "/home/{{ user_item }}/.kube"
         state: directory
-        owner: "{{ user_item }}"
+        owner: "{{ user_owners[user_item].uid | default(user_item) }}"
+        group: "{{ user_owners[user_item].gid | default(user_item) }}"
         mode: '0700'
       loop: "{{ target_users }}"
       loop_control:

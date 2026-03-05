@@ -4,7 +4,7 @@
 #   begin     : Sun 01 Mar 2026
 #   copyright : (c) 2026 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: .bash_aliases_ocp, v1.20 04/03/2026
+#   $Id: .bash_aliases_ocp, v1.22 05/03/2026
 #   ****************************************
 #
 #   --------------------------------------------------------------------
@@ -25,7 +25,7 @@ ocl-{{ cluster_id }}() {
     export OCP_CLUSTER_URL="{{ cluster.url }}"
     export OCP_USERNAME="{{ user_item }}"
     export KUBECONFIG=~/.kube/{{ cluster.config }}
-    echo "{{ cluster.emoji }} {{ cluster.name }} OpenShift: $OCP_CLUSTER_URL"
+    echo "{{ cluster.emoji }} OpenShift {{ cluster.name }}: $OCP_CLUSTER_URL"
     echo "👤 User: $OCP_USERNAME"
     {% if cluster.region is defined %}
     echo "🌍 Region: {{ cluster.region }}"
@@ -40,7 +40,7 @@ ocl-{{ cluster_id }}-quick() {
     export OCP_CLUSTER_URL="{{ cluster.url }}"
     export OCP_USERNAME="{{ user_item }}"
     export KUBECONFIG=~/.kube/{{ cluster.config }}
-    echo "{{ cluster.emoji }} {{ cluster.name }} OpenShift - Quick login"
+    echo "{{ cluster.emoji }} OpenShift {{ cluster.name }} - Quick login"
     {% if cluster.region is defined %}
     echo "🌍 Region: {{ cluster.region }}"
     {% endif %}
@@ -49,7 +49,7 @@ ocl-{{ cluster_id }}-quick() {
 
 ocl-{{ cluster_id }}-status() {
     export KUBECONFIG=~/.kube/{{ cluster.config }}
-    echo "{{ cluster.emoji }} {{ cluster.name }} OpenShift - Status check"
+    echo "{{ cluster.emoji }} OpenShift {{ cluster.name }} - Status check"
     ocp-login --status
 }
 

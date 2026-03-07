@@ -4,7 +4,7 @@
 #   begin     : Sun 01 Mar 2026
 #   copyright : (c) 2026 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: .bash_aliases_ocp, v1.22 05/03/2026
+#   $Id: .bash_aliases_ocp, v1.25 06/03/2026
 #   ****************************************
 #
 #   --------------------------------------------------------------------
@@ -27,12 +27,12 @@ ocl-{{ cluster_id }}() {
     export KUBECONFIG=~/.kube/{{ cluster.config }}
     echo "{{ cluster.emoji }} OpenShift {{ cluster.name }}: $OCP_CLUSTER_URL"
     echo "👤 User: $OCP_USERNAME"
-    {% if cluster.region is defined %}
+{% if cluster.region is defined %}
     echo "🌍 Region: {{ cluster.region }}"
-    {% endif %}
-    {% if cluster.environment is defined %}
+{% endif %}
+{% if cluster.environment is defined %}
     echo "🏷️  Environment: {{ cluster.environment }}"
-    {% endif %}
+{% endif %}
     ocp-login
 }
 
@@ -41,9 +41,9 @@ ocl-{{ cluster_id }}-quick() {
     export OCP_USERNAME="{{ user_item }}"
     export KUBECONFIG=~/.kube/{{ cluster.config }}
     echo "{{ cluster.emoji }} OpenShift {{ cluster.name }} - Quick login"
-    {% if cluster.region is defined %}
+{% if cluster.region is defined %}
     echo "🌍 Region: {{ cluster.region }}"
-    {% endif %}
+{% endif %}
     ocp-login --quick
 }
 
@@ -64,89 +64,89 @@ alias ocl='ocp-login'
 alias oclq='ocp-login --quick'
 alias ocls='ocp-login --status'
 
-# Set cluster without login (for manual control)
-set-ocp() {
-    if [ $# -ne 3 ]; then
-        echo "Usage: set-ocp <url> <username> <kubeconfig>"
-        echo "Example: set-ocp https://api.example.com:6443 user ~/.kube/config_example"
-        return 1
-    fi
+# # Set cluster without login (for manual control)
+# set-ocp() {
+#     if [ $# -ne 3 ]; then
+#         echo "Usage: set-ocp <url> <username> <kubeconfig>"
+#         echo "Example: set-ocp https://api.example.com:6443 user ~/.kube/config_example"
+#         return 1
+#     fi
 
-    export OCP_CLUSTER_URL="$1"
-    export OCP_USERNAME="$2"
-    export KUBECONFIG="$3"
+#     export OCP_CLUSTER_URL="$1"
+#     export OCP_USERNAME="$2"
+#     export KUBECONFIG="$3"
 
-    echo "✅ OpenShift cluster set:"
-    echo "   URL: $OCP_CLUSTER_URL"
-    echo "   User: $OCP_USERNAME"
-    echo "   Config: $KUBECONFIG"
-}
+#     echo "✅ OpenShift cluster set:"
+#     echo "   URL: $OCP_CLUSTER_URL"
+#     echo "   User: $OCP_USERNAME"
+#     echo "   Config: $KUBECONFIG"
+# }
 
-# ==============================================================================
-# PURE KUBERNETES CLUSTERS (no OpenShift login needed)
-# ==============================================================================
+# # ==============================================================================
+# # PURE KUBERNETES CLUSTERS (no OpenShift login needed)
+# # ==============================================================================
 
-# Internal Kubernetes cluster
-ocl-internal() {
-    export KUBECONFIG="${HOME}/.kube/internal_config"
-    echo "✅ Internal Kubernetes cluster"
-    kubectl cluster-info 2>/dev/null || echo "⚠️  Not connected or cluster unavailable"
-}
+# # Internal Kubernetes cluster
+# ocl-internal() {
+#     export KUBECONFIG="${HOME}/.kube/internal_config"
+#     echo "✅ Internal Kubernetes cluster"
+#     kubectl cluster-info 2>/dev/null || echo "⚠️  Not connected or cluster unavailable"
+# }
 
-# External Kubernetes cluster
-ocl-external() {
-    export KUBECONFIG="${HOME}/.kube/external_config"
-    echo "✅ External Kubernetes cluster"
-    kubectl cluster-info 2>/dev/null || echo "⚠️  Not connected or cluster unavailable"
-}
+# # External Kubernetes cluster
+# ocl-external() {
+#     export KUBECONFIG="${HOME}/.kube/external_config"
+#     echo "✅ External Kubernetes cluster"
+#     kubectl cluster-info 2>/dev/null || echo "⚠️  Not connected or cluster unavailable"
+# }
 
-# ==============================================================================
-# CLOUD PROVIDER CLUSTERS (example templates)
-# ==============================================================================
+# # ==============================================================================
+# # CLOUD PROVIDER CLUSTERS (example templates)
+# # ==============================================================================
 
-# Azure AKS cluster example
-ocl-aks-dev() {
-    echo "⚠️  Placeholder: Add your AKS login script here"
-    echo "Example: az aks get-credentials --resource-group rg-dev --name aks-dev"
-    export KUBECONFIG=~/.kube/config_aks_dev
-}
+# # Azure AKS cluster example
+# ocl-aks-dev() {
+#     echo "⚠️  Placeholder: Add your AKS login script here"
+#     echo "Example: az aks get-credentials --resource-group rg-dev --name aks-dev"
+#     export KUBECONFIG=~/.kube/config_aks_dev
+# }
 
-# AWS EKS cluster example
-ocl-eks-prod() {
-    echo "⚠️  Placeholder: Add your EKS login script here"
-    echo "Example: aws eks update-kubeconfig --region us-east-1 --name eks-prod"
-    export KUBECONFIG=~/.kube/config_eks_prod
-}
+# # AWS EKS cluster example
+# ocl-eks-prod() {
+#     echo "⚠️  Placeholder: Add your EKS login script here"
+#     echo "Example: aws eks update-kubeconfig --region us-east-1 --name eks-prod"
+#     export KUBECONFIG=~/.kube/config_eks_prod
+# }
 
-# Google GKE cluster example
-ocl-gke-test() {
-    echo "⚠️  Placeholder: Add your GKE login script here"
-    echo "Example: gcloud container clusters get-credentials gke-test --region europe-west1"
-    export KUBECONFIG=~/.kube/config_gke_test
-}
+# # Google GKE cluster example
+# ocl-gke-test() {
+#     echo "⚠️  Placeholder: Add your GKE login script here"
+#     echo "Example: gcloud container clusters get-credentials gke-test --region europe-west1"
+#     export KUBECONFIG=~/.kube/config_gke_test
+# }
 
-# ==============================================================================
-# LEGACY/EXISTING SCRIPT INTEGRATION (example)
-# ==============================================================================
+# # ==============================================================================
+# # LEGACY/EXISTING SCRIPT INTEGRATION (example)
+# # ==============================================================================
 
-# Example integration with existing login scripts
-ocl-legacy-cluster1() {
-    if [ -f ~/scr/login-cluster1.sh ]; then
-        ~/scr/login-cluster1.sh
-        export KUBECONFIG=~/.kube/config_cluster1
-    else
-        echo "❌ Login script not found: ~/scr/login-cluster1.sh"
-    fi
-}
+# # Example integration with existing login scripts
+# ocl-legacy-cluster1() {
+#     if [ -f ~/scr/login-cluster1.sh ]; then
+#         ~/scr/login-cluster1.sh
+#         export KUBECONFIG=~/.kube/config_cluster1
+#     else
+#         echo "❌ Login script not found: ~/scr/login-cluster1.sh"
+#     fi
+# }
 
-ocl-legacy-cluster2() {
-    if [ -f ~/scr/login-cluster2.sh ]; then
-        ~/scr/login-cluster2.sh
-        export KUBECONFIG=~/.kube/config_cluster2
-    else
-        echo "❌ Login script not found: ~/scr/login-cluster2.sh"
-    fi
-}
+# ocl-legacy-cluster2() {
+#     if [ -f ~/scr/login-cluster2.sh ]; then
+#         ~/scr/login-cluster2.sh
+#         export KUBECONFIG=~/.kube/config_cluster2
+#     else
+#         echo "❌ Login script not found: ~/scr/login-cluster2.sh"
+#     fi
+# }
 
 # ==============================================================================
 # UTILITY FUNCTIONS
@@ -236,6 +236,8 @@ alias deployments='kubectl get deployments -A'
 alias ingresses='kubectl get ingresses -A'
 alias namespaces='kubectl get namespaces'
 alias kns='kubens'
+alias k='/usr/local/bin/kubectl'
+complete -F __start_kubectl k
 
 # OpenShift specific shortcuts
 alias oc-projects='oc get projects'

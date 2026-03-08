@@ -37,10 +37,7 @@
     # Store both UID and GID in a dictionary for later use
     - name: Set fact with correct UIDs and GIDs
       ansible.builtin.set_fact:
-        user_owners: "{{ user_owners | default({}) | combine({owner_item.username: {
-          'uid': owner_item.stat.uid,
-          'gid': owner_item.stat.gid
-        }}) }}"
+        user_owners: "{{ user_owners | default({}) | combine({owner_item.username: {'uid': owner_item.stat.uid, 'gid': owner_item.stat.gid}}) }}"
       loop: "{{ home_owner_info.results }}"
       loop_control:
         loop_var: owner_item
@@ -110,3 +107,61 @@
       when: alias_deploy.changed
 
   when: ocp_login | default(false)
+
+- name: Debug starship variable
+  debug:
+    var: starship
+  when: inventory_hostname == 'tp01.kn.akira.cz'
+
+# ==============================================================================
+# STARSIP PROMPT CONFIGURATION
+# ==============================================================================
+
+- name: Deploy Starship prompt configuration
+  block:
+    - name: Ensure .config directory exists for users
+      ansible.builtin.file:
+        path: "/home/{{ user_item }}/.config"
+        state: directory
+        owner: "{{ user_owners[user_item].uid | default(user_item) }}"
+        group: "{{ user_owners[user_item].gid | default(user_item) }}"
+        mode: '0750'
+      loop: "{{ target_users }}"
+      loop_control:
+        loop_var: user_item
+
+    - name: Deploy Starship config to users
+      ansible.builtin.template:
+        src: starship.toml.j2
+        dest: "/home/{{ user_item }}/.config/starship.toml"
+        owner: "{{ user_owners[user_item].uid | default(user_item) }}"
+        group: "{{ user_owners[user_item].gid | default(user_item) }}"
+        mode: '0640'
+      loop: "{{ target_users }}"
+      loop_control:
+        loop_var: user_item
+      register: starship_deploy
+
+    - name: Deploy Starship config to /etc/skel for new users
+      ansible.builtin.file:
+        path: /etc/skel/.config
+        state: directory
+        mode: '0750'
+      when: skel_dest is defined
+
+    - name: Deploy Starship config to /etc/skel
+      ansible.builtin.copy:
+        src: starship.toml.skel
+        dest: /etc/skel/.config/starship.toml
+        mode: '0640'
+      when: skel_dest is defined
+
+    - name: Summary of deployed Starship config
+      ansible.builtin.debug:
+        msg:
+          - "✅ Starship config deployed to {{ target_users | length }} users"
+          - "   Location: ~/.config/starship.toml"
+          - "   New users will get config from /etc/skel"
+      when: starship_deploy.changed
+
+  when: starship_config

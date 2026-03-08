@@ -1,0 +1,83 @@
+#   ************************************
+#   Generated config for Starship prompt
+#   begin     : Sat 07 Mar 2026
+#   copyright : (c) 2026 Václav Dvorský
+#   email     : hufhendr@gmail.com
+#   $Id: starship.toml, v1.00 07/03/2026
+#   ************************************
+#
+#   --------------------------------------------------------------------
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public Licence as published by
+#   the Free Software Foundation; either version 2 of the Licence, or
+#   (at your option) any later version.
+#   --------------------------------------------------------------------
+
+#   {{ ansible_managed_header }}
+#   {{ ansible_managed_warning }}
+#   Personalized for: {{ user_item }}
+#   Based on cluster definitions: {{ ocp_clusters | length }} clusters
+
+# Inserts a blank line between shell prompts
+add_newline = true
+
+# Replace the "❯" symbol in the prompt with "➜"
+[character]
+success_symbol = "[➜](bold green)"
+
+# Disable the package module
+[package]
+disabled = true
+
+# Use custom format
+format = """
+[┌───────────────────>](bold green)
+[│](bold green)$directory$kubernetes$hostname
+[└─>](bold green) """
+
+# Wait 10 milliseconds for starship to check files under the current directory.
+scan_timeout = 10
+
+# Disable the blank line at the start of the prompt
+add_newline = false
+
+# ==============================================================================
+# KUBERNETES MODULE
+# ==============================================================================
+
+[kubernetes]
+format = 'on $symbol[\($context\) \($namespace\)]($style) '
+disabled = false
+symbol = "⛵ "
+style = "dimmed green"
+
+# ==============================================================================
+# DYNAMICALLY GENERATED CLUSTER CONTEXTS
+# ==============================================================================
+# Each cluster from the definition gets its own context for Starship prompt
+# Color and symbol are controlled by starship.style and starship.symbol in
+# cluster definition
+
+{% for cluster_id, cluster in ocp_clusters.items() %}
+# {{ cluster.name }} ({{ cluster_id }})
+[[kubernetes.contexts]]
+context_pattern = ".*{{ cluster.url | replace('https://api.', '') | replace(':6443', '') | split('.') | first }}.*"
+context_alias = "{{ cluster.name }}"
+style = "{{ cluster.starship.style }}"
+symbol = "{{ cluster.starship.symbol | default('⛵ ') }}"
+
+{% endfor %}
+# ==============================================================================
+# GIT MODULES
+# ==============================================================================
+
+[git_branch]
+symbol = "🌱 "
+truncation_length = 8
+truncation_symbol = ""
+
+[git_commit]
+tag_disabled = true
+
+[helm]
+format = "via [⎈ $version](bold white) "

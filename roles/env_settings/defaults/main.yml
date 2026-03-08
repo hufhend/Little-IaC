@@ -37,6 +37,19 @@ add_certs: false
 #       nopasswd: false
 #       commands: /usr/bin/apt
 
+ocp_aliases_dest: ".bash_aliases_ocp"
+skel_dest: "/etc/skel/.bash_aliases_ocp"
+exclude_users:
+  - root
+  # - "{{ user_ansible }}"
+  - lost+found
+  - ubuntu
+  - data
+
+# Starship prompt
+starship_config: false
+starship_config_dest: ".config/starship.toml"
+starship_skel_dest: "/etc/skel/.config/starship.toml"
 
 ocp_clusters:
   # Development environment
@@ -48,6 +61,9 @@ ocp_clusters:
     environment: 'development'
     region: 'eu-central-1'
     description: 'Development cluster for testing'
+    starship:
+      style: 'blue'
+      # symbol: '⛵ '
 
   # Test environment
   test:
@@ -58,6 +74,9 @@ ocp_clusters:
     environment: 'testing'
     region: 'eu-central-1'
     description: 'Experimental features and testing'
+    starship:
+      style: 'green'
+      # symbol: '⛵ '
 
   # Staging environment
   staging:
@@ -68,6 +87,9 @@ ocp_clusters:
     environment: 'staging'
     region: 'eu-central-1'
     description: 'Pre-production validation'
+    starship:
+      style: 'yellow'
+      # symbol: '⛵ '
 
   # Production environment
   prod:
@@ -78,6 +100,9 @@ ocp_clusters:
     environment: 'production'
     region: 'eu-central-1'
     description: 'Live production traffic'
+    starship:
+      style: 'red'
+      # symbol: '⛵ '
 
   # # Disaster Recovery
   # dr:
@@ -88,3 +113,7 @@ ocp_clusters:
   #   environment: 'dr'
   #   region: 'eu-west-1'
   #   description: 'Backup and DR site'
+  #   starship:
+  #     style: 'magenta'
+  #     # symbol: '⛵ '
+

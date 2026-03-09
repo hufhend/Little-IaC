@@ -3,6 +3,10 @@
     path: /etc/environment
     regexp: '^BINENV_GLOBAL='
     line: BINENV_GLOBAL=true
+    create: true
+    mode: '0644'
+    owner: root
+    group: root
 
 - name: Installs completion for binenv
   ansible.builtin.lineinfile:

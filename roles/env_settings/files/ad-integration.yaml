@@ -26,6 +26,16 @@
           - oddjob-mkhomedir
         state: present
 
+    - name: Install additional packages for Ubuntu
+      ansible.builtin.apt:
+        name:
+          - libpam-sss
+          - libnss-sss
+          - libpam-modules
+        state: present
+        update_cache: yes
+      when: ansible_facts["os_family"] == "Debian"
+
     - name: Create SSSD configuration from template
       ansible.builtin.template:
         src: sssd.conf.j2
@@ -34,10 +44,24 @@
         owner: root
         group: root
 
-    - name: Enable home directory creation
+    - name: Enable home directory creation (RedHat)
       command: authselect select sssd with-mkhomedir --force
       args:
         creates: /etc/authselect/current
+      when: ansible_facts["os_family"] == "RedHat"
+
+    - name: Enable home directory creation (Ubuntu)
+      block:
+        - name: Configure PAM for automatic home directories
+          ansible.builtin.lineinfile:
+            path: "/etc/pam.d/{{ item }}"
+            regexp: '^session\s+required\s+pam_mkhomedir.so'
+            line: 'session required pam_mkhomedir.so skel=/etc/skel umask=0022'
+            insertafter: '^session.*pam_unix.so'
+          loop:
+            - common-session
+            - common-session-noninteractive
+      when: ansible_facts["os_family"] == "Debian"
 
     - name: Start oddjobd service
       systemd:
@@ -51,12 +75,13 @@
         state: started
         enabled: yes
 
-    - name: Show current authentication configuration
+    - name: Show current authentication configuration (RedHat)
       command: authselect current
       register: auth_status
       changed_when: false
+      when: ansible_facts["os_family"] == "RedHat"
 
-    - name: Display authentication status with details
+    - name: Display authentication status with details (RedHat)
       block:
         - name: Extract authselect profile
           ansible.builtin.set_fact:
@@ -75,6 +100,20 @@
               - "│ Profile  :  {{ auth_profile }}"
               - "│ Features :  {{ auth_features }}"
               - "└─────────────────────────────────┘"
+      when: ansible_facts["os_family"] == "RedHat" and auth_status is defined
+
+    - name: Display authentication status for Ubuntu
+      ansible.builtin.debug:
+        msg:
+          - "┌─────────────────────────────────┐"
+          - "│      AUTHENTICATION STATUS      │"
+          - "├─────────────────────────────────┤"
+          - "│ System    :  Ubuntu             │"
+          - "│ Method    :  PAM + SSSD         │"
+          - "│ Home dirs :  mkhomedir enabled  │"
+          - "│ PAM files :  common-session     │"
+          - "└─────────────────────────────────┘"
+      when: ansible_facts["os_family"] == "Debian"
 
     - name: Display configuration instructions
       ansible.builtin.debug:
@@ -86,7 +125,7 @@
         # - "  1. Generate password  :  sss_obfuscate -d {{ ad_domain }}"
         # - "  2. Restart service    :  systemctl restart sssd"
 
-  when: 
-    - ad_integration | default(false)
-    - ansible_facts["os_family"] == "RedHat"
+  when:
+    - ad_integration | default(false) | bool
+    - ansible_facts["os_family"] in ["RedHat", "Debian"]
     - sssd_service.status.ActiveState != "active"

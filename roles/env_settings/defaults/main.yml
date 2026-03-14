@@ -51,6 +51,8 @@ starship_config: false
 starship_config_dest: ".config/starship.toml"
 starship_skel_dest: "/etc/skel/.config/starship.toml"
 
+ocp_login: false
+# default sample values for ocp_login
 ocp_clusters:
   # Development environment
   dev:
@@ -64,6 +66,7 @@ ocp_clusters:
     starship:
       style: 'blue'
       # symbol: '⛵ '
+    type: 'openshift'
 
   # Test environment
   test:
@@ -77,6 +80,7 @@ ocp_clusters:
     starship:
       style: 'green'
       # symbol: '⛵ '
+    type: 'openshift'
 
   # Staging environment
   staging:
@@ -90,6 +94,7 @@ ocp_clusters:
     starship:
       style: 'yellow'
       # symbol: '⛵ '
+    type: 'openshift'
 
   # Production environment
   prod:
@@ -103,6 +108,7 @@ ocp_clusters:
     starship:
       style: 'red'
       # symbol: '⛵ '
+    type: 'openshift'
 
   # # Disaster Recovery
   # dr:
@@ -116,4 +122,4 @@ ocp_clusters:
   #   starship:
   #     style: 'magenta'
   #     # symbol: '⛵ '
-
+  #   type: 'kubernetes'

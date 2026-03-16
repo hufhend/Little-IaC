@@ -1,9 +1,10 @@
+{% raw %}
 #   ************************************
 #   Generated config for Starship prompt
 #   begin     : Sat 07 Mar 2026
 #   copyright : (c) 2026 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: starship.toml, v1.00 07/03/2026
+#   $Id: starship.toml, v1.20 16/03/2026
 #   ************************************
 #
 #   --------------------------------------------------------------------
@@ -12,11 +13,20 @@
 #   the Free Software Foundation; either version 2 of the Licence, or
 #   (at your option) any later version.
 #   --------------------------------------------------------------------
+{% endraw %}
+{# Check if variables exist, set to empty dict if not defined #}
+{% if ocp_clusters is not defined %}
+    {% set ocp_clusters = {} %}
+{% endif %}
+{% if k8s_clusters is not defined %}
+    {% set k8s_clusters = {} %}
+{% endif %}
 
 #   {{ ansible_managed_header }}
 #   {{ ansible_managed_warning }}
 #   Personalized for: {{ user_item }}
-#   Based on cluster definitions: {{ ocp_clusters | length }} clusters
+#   Based on cluster definitions: {{ ocp_clusters | length + k8s_clusters | length }} clusters total
+#   OpenShift: {{ ocp_clusters | length }}, Kubernetes: {{ k8s_clusters | length }}
 
 # Inserts a blank line between shell prompts
 add_newline = true
@@ -57,16 +67,25 @@ style = "dimmed green"
 # Each cluster from the definition gets its own context for Starship prompt
 # Color and symbol are controlled by starship.style and starship.symbol in
 # cluster definition
-
 {% for cluster_id, cluster in ocp_clusters.items() %}
-# {{ cluster.name }} ({{ cluster_id }})
+
+# {{ cluster.name }} ({{ cluster_id }}) - OpenShift
 [[kubernetes.contexts]]
 context_pattern = ".*{{ cluster.url | replace('https://api.', '') | replace(':6443', '') | split('.') | first }}.*"
 context_alias = "{{ cluster.name }}"
 style = "{{ cluster.starship.style }}"
 symbol = "{{ cluster.starship.symbol | default('⛵ ') }}"
-
 {% endfor %}
+{% for cluster_id, cluster in k8s_clusters.items() %}
+
+# {{ cluster.name }} ({{ cluster_id }}) - K8s
+[[kubernetes.contexts]]
+context_pattern = ".*{{ cluster.url | replace('https://api.', '') | replace(':6443', '') | split('.') | first }}.*"
+context_alias = "{{ cluster.name }}"
+style = "{{ cluster.starship.style }}"
+symbol = "{{ cluster.starship.symbol | default('⛵ ') }}"
+{% endfor %}
+
 # ==============================================================================
 # GIT MODULES
 # ==============================================================================

@@ -53,73 +53,73 @@ starship_skel_dest: "/etc/skel/.config/starship.toml"
 
 ocp_login: false
 # default sample values for ocp_login
-ocp_clusters:
-  # Development environment
-  dev:
-    emoji: '🔵'
-    name: 'Development'
-    url: 'https://api.dev-cluster.example.com:6443'
-    config: 'config_ocp_dev'
-    environment: 'development'
-    region: 'eu-central-1'
-    description: 'Development cluster for testing'
-    starship:
-      style: 'blue'
-      # symbol: '⛵ '
-    type: 'openshift'
+# ocp_clusters:
+#   # Development environment
+#   dev:
+#     emoji: '🔵'
+#     name: 'Development'
+#     url: 'https://api.dev-cluster.example.com:6443'
+#     config: 'config_ocp_dev'
+#     environment: 'development'
+#     region: 'eu-central-1'
+#     description: 'Development cluster for testing'
+#     starship:
+#       style: 'blue'
+#       # symbol: '⛵ '
+#     type: 'openshift'
 
-  # Test environment
-  test:
-    emoji: '🟢'
-    name: 'Test'
-    url: 'https://api.test-cluster.example.com:6443'
-    config: 'config_ocp_test'
-    environment: 'testing'
-    region: 'eu-central-1'
-    description: 'Experimental features and testing'
-    starship:
-      style: 'green'
-      # symbol: '⛵ '
-    type: 'openshift'
+#   # Test environment
+#   test:
+#     emoji: '🟢'
+#     name: 'Test'
+#     url: 'https://api.test-cluster.example.com:6443'
+#     config: 'config_ocp_test'
+#     environment: 'testing'
+#     region: 'eu-central-1'
+#     description: 'Experimental features and testing'
+#     starship:
+#       style: 'green'
+#       # symbol: '⛵ '
+#     type: 'openshift'
 
-  # Staging environment
-  staging:
-    emoji: '🟡'
-    name: 'Staging'
-    url: 'https://api.staging-cluster.example.com:6443'
-    config: 'config_ocp_staging'
-    environment: 'staging'
-    region: 'eu-central-1'
-    description: 'Pre-production validation'
-    starship:
-      style: 'yellow'
-      # symbol: '⛵ '
-    type: 'openshift'
+#   # Staging environment
+#   staging:
+#     emoji: '🟡'
+#     name: 'Staging'
+#     url: 'https://api.staging-cluster.example.com:6443'
+#     config: 'config_ocp_staging'
+#     environment: 'staging'
+#     region: 'eu-central-1'
+#     description: 'Pre-production validation'
+#     starship:
+#       style: 'yellow'
+#       # symbol: '⛵ '
+#     type: 'openshift'
 
-  # Production environment
-  prod:
-    emoji: '🔴'
-    name: 'Production'
-    url: 'https://api.prod-cluster.example.com:6443'
-    config: 'config_ocp_prod'
-    environment: 'production'
-    region: 'eu-central-1'
-    description: 'Live production traffic'
-    starship:
-      style: 'red'
-      # symbol: '⛵ '
-    type: 'openshift'
+#   # Production environment
+#   prod:
+#     emoji: '🔴'
+#     name: 'Production'
+#     url: 'https://api.prod-cluster.example.com:6443'
+#     config: 'config_ocp_prod'
+#     environment: 'production'
+#     region: 'eu-central-1'
+#     description: 'Live production traffic'
+#     starship:
+#       style: 'red'
+#       # symbol: '⛵ '
+#     type: 'openshift'
 
-  # # Disaster Recovery
-  # dr:
-  #   emoji: '🟣'
-  #   name: 'Disaster Recovery'
-  #   url: 'https://api.dr-cluster.example.com:6443'
-  #   config: 'config_ocp_dr'
-  #   environment: 'dr'
-  #   region: 'eu-west-1'
-  #   description: 'Backup and DR site'
-  #   starship:
-  #     style: 'magenta'
-  #     # symbol: '⛵ '
-  #   type: 'kubernetes'
+#   # Disaster Recovery
+#   dr:
+#     emoji: '🟣'
+#     name: 'Disaster Recovery'
+#     url: 'https://api.dr-cluster.example.com:6443'
+#     config: 'config_ocp_dr'
+#     environment: 'dr'
+#     region: 'eu-west-1'
+#     description: 'Backup and DR site'
+#     starship:
+#       style: 'magenta'
+#       # symbol: '⛵ '
+#     type: 'kubernetes'

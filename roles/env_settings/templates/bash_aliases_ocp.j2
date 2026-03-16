@@ -4,7 +4,7 @@
 #   begin     : Sun 01 Mar 2026
 #   copyright : (c) 2026 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: .bash_aliases_ocp, v1.26 14/03/2026
+#   $Id: .bash_aliases_ocp, v1.27 16/03/2026
 #   ****************************************
 #
 #   --------------------------------------------------------------------
@@ -20,9 +20,18 @@
 #   Generated for user: {{ user_item }}
 
 #   If your .bash_aliases file is added later, you can override these settings
-
+{# Check if variables exist, set to empty dict if not defined #}
+{% if ocp_clusters is not defined %}
+    {% set ocp_clusters = {} %}
+{% endif %}
+{% if k8s_clusters is not defined %}
+    {% set k8s_clusters = {} %}
+{% endif %}
+{# ========================================================================== #}
+{# OPENSHIFT CLUSTERS - require login via ocp-login                           #}
+{# ========================================================================== #}
 {% for cluster_id, cluster in ocp_clusters.items() %}
-{% if cluster.type == 'openshift' or cluster.type is not defined %}
+
 # ==============================================================================
 # OPENSHIFT CLUSTER {{ cluster_id }} (with logging into the cluster)
 # ==============================================================================
@@ -58,8 +67,13 @@ ocl-{{ cluster_id }}-status() {
     echo "{{ cluster.emoji }} OpenShift {{ cluster.name }} - Status check"
     ocp-login --status
 }
+{% endfor %}
 
-{% elif cluster.type == 'kubernetes' %}
+{# ========================================================================== #}
+{# KUBERNETES CLUSTERS - direct kubeconfig access                             #}
+{# ========================================================================== #}
+{% for cluster_id, cluster in k8s_clusters.items() %}
+
 # ==============================================================================
 # KUBERNETES CLUSTER {{ cluster_id }} (classic via kubeconfig)
 # ==============================================================================
@@ -82,9 +96,8 @@ ocl-{{ cluster_id }}-status() {
     echo "{{ cluster.emoji }} Kubernetes {{ cluster.name }} - Status check"
     kubectl cluster-info 2>/dev/null || echo "⚠️  Not connected or cluster unavailable"
 }
-
-{% endif %}
 {% endfor %}
+
 {% raw %}
 # ==============================================================================
 # UTILITY FUNCTIONS

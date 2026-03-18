@@ -1,72 +1,97 @@
-- name: Install and configure XRDP for remote desktop access
+- name: Manage XRDP for remote desktop access
   block:
-    - name: Install xrdp package
-      ansible.builtin.package:
-        name: 
-          - xrdp
-          - xorgxrdp
-          - gnome-session
-          - gnome-terminal
-          - nautilus
-          - gnome-software
-        state: present
+    # --- INSTALLATION (when rdp_server is true) ---
+    - name: "Install and configure XRDP (rdp_server == true)"
+      when: rdp_server | default(false) | bool == true
+      block:
+        - name: Install xrdp packages
+          ansible.builtin.package:
+            name: 
+              - xrdp
+              - xorgxrdp
+              - gnome-session
+              - gnome-terminal
+              - nautilus
+              - gnome-software
+            state: present
 
-    # - name: Configure XRDP for modern Gnome
-    #   ansible.builtin.copy:
-    #     content: |
-    #       [globals]
-    #       bitmap_cache=yes
-    #       bitmap_compression=yes
-    #       port=3389
-    #       crypt_level=low
-    #       channel_code=1
+        - name: Create custom Xsession
+          ansible.builtin.copy:
+            content: |
+              #!/bin/sh
+              export GNOME_SHELL_SESSION_MODE=classic
+              export XDG_CURRENT_DESKTOP="GNOME-classic:GNOME"
+              export XDG_MENU_PREFIX="gnome-"
+              exec /usr/bin/gnome-session --session=gnome-classic
+            dest: /etc/xrdp/startwm.sh
+            mode: '0755'
+            backup: yes
+          notify: restart xrdp
 
-    #       [xrdp1]
-    #       name=sesman-X11rdp
-    #       lib=libxup.so
-    #       username=ask
-    #       password=ask
-    #       ip=127.0.0.1
-    #       port=-1
-    #       code=20
-    #     dest: /etc/xrdp/xrdp.ini
-    #     backup: yes
-    #   notify: restart xrdp
+        - name: Enable and start xrdp service
+          ansible.builtin.systemd:
+            name: xrdp
+            state: started
+            enabled: yes
 
-    - name: Create custom Xsession
-      ansible.builtin.copy:
-        content: |
-          #!/bin/sh
-          export GNOME_SHELL_SESSION_MODE=classic
-          export XDG_CURRENT_DESKTOP="GNOME-classic:GNOME"
-          export XDG_MENU_PREFIX="gnome-"
-          exec /usr/bin/gnome-session --session=gnome-classic
-        dest: /etc/xrdp/startwm.sh
-        mode: '0755'
-        backup: yes
-      notify: restart xrdp
+        - name: Ensure xrdp-sesman is also enabled
+          ansible.builtin.systemd:
+            name: xrdp-sesman
+            state: started
+            enabled: yes
 
-    - name: Enable and start xrdp service
-      ansible.builtin.systemd:
-        name: xrdp
-        state: started
-        enabled: yes
+        # Firewall configuration
+        - name: Open RDP port in firewall (RedHat)
+          ansible.builtin.firewalld:
+            port: 3389/tcp
+            state: enabled
+            permanent: yes
+            immediate: yes
+          when: ansible_facts["os_family"] == "RedHat"
 
-    - name: Ensure xrdp socket is also enabled
-      ansible.builtin.systemd:
-        name: xrdp-sesman
-        state: started
-        enabled: yes
+    # --- UNINSTALLATION (when rdp_server is false) ---
+    - name: "Uninstall and disable XRDP (rdp_server == false)"
+      when: rdp_server | default(false) | bool == false
+      block:
+        - name: Stop and disable xrdp services
+          ansible.builtin.systemd:
+            name: "{{ service_item }}"
+            state: stopped
+            enabled: no
+          loop:
+            - xrdp
+            - xrdp-sesman
+          loop_control:
+            loop_var: service_item
+          # Ignore errors if services were never installed/don't exist
+          failed_when: false
 
-    # Firewall configuration
-    - name: Open RDP port in firewall (RedHat)
-      ansible.builtin.firewalld:
-        port: 3389/tcp
-        state: enabled
-        permanent: yes
-        immediate: yes
-      when: ansible_facts["os_family"] == "RedHat"
+        - name: Remove xrdp packages
+          ansible.builtin.package:
+            name: 
+              - xrdp
+              - xorgxrdp
+              - gnome-session
+              - gnome-terminal
+              - nautilus
+              - gnome-software
+            state: absent
+
+        - name: Remove custom Xsession configuration
+          ansible.builtin.file:
+            path: /etc/xrdp/startwm.sh
+            state: absent
+
+        # Optional firewall cleanup
+        - name: Close RDP port in firewall (RedHat) if desired
+          ansible.builtin.firewalld:
+            port: 3389/tcp
+            state: disabled
+            permanent: yes
+            immediate: yes
+          when: 
+            - ansible_facts["os_family"] == "RedHat"
+            - close_rdp_firewall_on_uninstall | default(true) | bool
 
   when: 
-    - desktop == true
-    - rdp_server == true
+    - desktop | default(false) | bool == true

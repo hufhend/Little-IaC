@@ -1,0 +1,12 @@
+---
+- name: Deploy dynamic MOTD
+  template:
+    src: motd.sh.j2
+    dest: /etc/profile.d/motd.sh
+    mode: '0755'
+    owner: root
+    group: root
+  tags:
+    - motd
+    - always
+  when: motd | default(false)

@@ -123,3 +123,13 @@ ocp_login: false
 #       style: 'magenta'
 #       # symbol: '⛵ '
 #     type: 'kubernetes'
+
+# Message of the Day (MOTD) settings
+motd: false
+motd_support_line1: "Best Effort for Everyone"
+# motd_support_line2: "Premium Support for Cloud Department members only"
+motd_ascii_logo: "{{ lookup('file', 'defaults/ascii_logo.txt') }}"
+motd_news: "Welcome to our server! Stay tuned for updates and news."
+
+# Logo color (default: RED, can be changed to: GREEN, BLUE, CYAN, YELLOW, WHITE, GRAY)
+# motd_logo_color: BLUE  # Example for blue

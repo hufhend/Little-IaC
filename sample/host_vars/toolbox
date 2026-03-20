@@ -1,5 +1,5 @@
 ---
-ad_integration: true
+# Adding software packages
 age: true
 ansible: true
 argocd: true
@@ -13,6 +13,7 @@ ksops: true
 kubectl: true
 kubectx: true
 kubens: true
+kubeseal: true
 kustomize: true
 k9s: true
 longhornctl: true
@@ -23,9 +24,30 @@ oc: true
 operatorsdk: true
 oras: true
 roxctl: true
+s3cmd: true
+skopeo: true
 slu: true
 sops: true
 starship: true
 trivy: true
+vault: true
 velero: true
 yajsv: true
+
+# Settings for an Air Gap
+proxy_config: true
+add_certs: true
+
+# Features for User Management
+ad_integration: true
+ocp_login: true
+starship_config: true
+
+# This isn't officially possible
+addition_cron:
+  - name: "Synchronize Active Directory groups to local POSIX groups"
+    minute: "59"
+    hour: " *"
+    job: "sudo /home/{{ ansible_user }}/scr/ad-group-sync.sh"
+    user: "{{ ansible_user }}"
+    state: present

@@ -119,11 +119,7 @@
       ansible.builtin.debug:
         msg:
           - "LDAP/AD integration configured successfully!"
-          - "Domain: {{ ad_domain }}"
-          - "LDAP URI: {{ ldap_uri }}"
-        # - "Required manual steps:"
-        # - "  1. Generate password  :  sss_obfuscate -d {{ ad_domain }}"
-        # - "  2. Restart service    :  systemctl restart sssd"
+          - "Configured domains: {{ sssd_domains.keys() | join(', ') }}"
 
   when:
     - ad_integration | default(false) | bool

@@ -1,36 +1,116 @@
 # {{ ansible_managed_header }}
 # {{ ansible_managed_warning }}
+{# Check if variables exist, set defaults if not defined #}
+{% if sssd_domains is not defined %}
+    {% set sssd_domains = {} %}
+{% endif %}
+{% if sssd_services is not defined %}
+    {% set sssd_services = 'nss, pam' %}
+{% endif %}
 
 [sssd]
-domains = {{ ad_domain }}
+domains = {% if sssd_domains %}{% for domain_name in sssd_domains.keys() %}{{ domain_name }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
+
 services = {{ sssd_services }}
 config_file_version = 2
 
 [nss]
 homedir_substring = /home
 
-[domain/{{ ad_domain }}]
-simple_allow_groups = {{ allowed_groups }}
+{# ========================================================================== #}
+{# GENERATE DOMAIN SECTIONS                                                   #}
+{# ========================================================================== #}
+{% for domain_name, domain in sssd_domains.items() %}
+
+[domain/{{ domain_name }}]
+{% if domain.allowed_groups is defined %}simple_allow_groups = {{ domain.allowed_groups }}
+{% endif %}{% if domain.access_provider is defined %}
+access_provider = {{ domain.access_provider }}
+{% else %}
 access_provider = simple
+{% endif %}{% if domain.id_provider is defined %}
+id_provider = {{ domain.id_provider }}
+{% else %}
 id_provider = ldap
+{% endif %}{% if domain.auth_provider is defined %}
+auth_provider = {{ domain.auth_provider }}
+{% else %}
 auth_provider = ldap
+{% endif %}{% if domain.sudo_provider is defined %}
+sudo_provider = {{ domain.sudo_provider }}
+{% else %}
 sudo_provider = ldap
+{% endif %}{% if domain.chpass_provider is defined %}
+chpass_provider = {{ domain.chpass_provider }}
+{% endif %}{% if domain.autofs_provider is defined %}
+autofs_provider = {{ domain.autofs_provider }}
+{% endif %}{% if domain.resolver_provider is defined %}
+resolver_provider = {{ domain.resolver_provider }}
+{% endif %}{% if domain.cache_credentials is defined %}
+cache_credentials = {{ domain.cache_credentials }}
+{% else %}
 cache_credentials = True
+{% endif %}{% if domain.ldap_schema is defined %}
+ldap_schema = {{ domain.ldap_schema }}
+{% else %}
 ldap_schema = ad
+{% endif %}{% if domain.ldap_id_mapping is defined %}
+ldap_id_mapping = {{ domain.ldap_id_mapping }}
+{% else %}
 ldap_id_mapping = True
-ldap_uri = {{ ldap_uri }}
-ldap_service_port = {{ ldap_service_port }}
-ldap_id_use_start_tls = {{ ldap_id_use_start_tls }}
-ldap_tls_cacertdir = {{ ldap_tls_cacertdir }}
-ldap_tls_cacert = {{ ca_cert_path }}
+{% endif %}{% if domain.ldap_uri is defined %}
+ldap_uri = {{ domain.ldap_uri }}
+{% endif %}{% if domain.ldap_service_port is defined %}
+ldap_service_port = {{ domain.ldap_service_port }}
+{% endif %}{% if domain.ldap_id_use_start_tls is defined %}
+ldap_id_use_start_tls = {{ domain.ldap_id_use_start_tls }}
+{% endif %}{% if domain.ldap_tls_cacertdir is defined %}
+ldap_tls_cacertdir = {{ domain.ldap_tls_cacertdir }}
+{% endif %}{% if domain.ca_cert_path is defined %}
+ldap_tls_cacert = {{ domain.ca_cert_path }}
+{% endif %}{% if domain.ldap_tls_cacert is defined %}
+ldap_tls_cacert = {{ domain.ldap_tls_cacert }}
+{% endif %}{% if domain.ldap_tls_reqcert is defined %}
+ldap_tls_reqcert = {{ domain.ldap_tls_reqcert }}
+{% else %}
 ldap_tls_reqcert = allow
-ldap_default_bind_dn = {{ bind_dn }}
+{% endif %}{% if domain.bind_dn is defined %}
+ldap_default_bind_dn = {{ domain.bind_dn }}
+{% endif %}{% if domain.ldap_default_authtok_type is defined %}
+ldap_default_authtok_type = {{ domain.ldap_default_authtok_type }}
+{% else %}
 ldap_default_authtok_type = obfuscated_password
-ldap_default_authtok = {{ ldap_default_authtok }}
-ldap_search_base = {{ search_base }}
-ldap_user_search_base = {{ user_search_base }}
-ldap_group_search_base = {{ group_search_base }}
-fallback_homedir = {{ fallback_homedir }}
-default_shell = {{ default_shell }}
-override_gid = {{ override_gid }}
-debug_level = {{ debug_level }}
+{% endif %}{% if domain.ldap_default_authtok is defined %}
+ldap_default_authtok = {{ domain.ldap_default_authtok }}
+{% endif %}{% if domain.search_base is defined %}
+ldap_search_base = {{ domain.search_base }}
+{% endif %}{% if domain.user_search_base is defined %}
+ldap_user_search_base = {{ domain.user_search_base }}
+{% endif %}{% if domain.group_search_base is defined %}
+ldap_group_search_base = {{ domain.group_search_base }}
+{% endif %}{% if domain.ldap_user_object_class is defined %}
+ldap_user_object_class = {{ domain.ldap_user_object_class }}
+{% endif %}{% if domain.ldap_user_name is defined %}
+ldap_user_name = {{ domain.ldap_user_name }}
+{% endif %}{% if domain.ldap_user_uid_number is defined %}
+ldap_user_uid_number = {{ domain.ldap_user_uid_number }}
+{% endif %}{% if domain.ldap_user_fullname is defined %}
+ldap_user_fullname = {{ domain.ldap_user_fullname }}
+{% endif %}{% if domain.ldap_user_email is defined %}
+ldap_user_email = {{ domain.ldap_user_email }}
+{% endif %}{% if domain.ldap_group_object_class is defined %}
+ldap_group_object_class = {{ domain.ldap_group_object_class }}
+{% endif %}{% if domain.ldap_group_member is defined %}
+ldap_group_member = {{ domain.ldap_group_member }}
+{% endif %}{% if domain.ldap_group_name is defined %}
+ldap_group_name = {{ domain.ldap_group_name }}
+{% endif %}{% if domain.fallback_homedir is defined %}
+fallback_homedir = {{ domain.fallback_homedir }}
+{% endif %}{% if domain.default_shell is defined %}
+default_shell = {{ domain.default_shell }}
+{% endif %}{% if domain.override_gid is defined %}
+override_gid = {{ domain.override_gid }}
+{% endif %}{% if domain.debug_level is defined %}
+debug_level = {{ domain.debug_level }}
+{% endif %}
+{% endfor %}

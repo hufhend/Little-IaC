@@ -11,38 +11,36 @@ lang: cs_CZ.UTF-8
 sssd_domains:
   # First AD domain
   example.com:
-    ad_domain: "example.com"
     ldap_uri: "ldaps://ldap.example.com/"
-    bind_dn: "cn=service-account,OU=ServiceAccounts,DC=example,DC=com"
-    user_search_base: "ou=Users,DC=example,DC=com"
-    group_search_base: "ou=Groups,DC=example,DC=com"
-    search_base: "DC=example,DC=com"
-    allowed_groups: "APP-Linux-Users,APP-Linux-Admins"
+    ldap_default_bind_dn: "cn=service-account,OU=ServiceAccounts,DC=example,DC=com"
+    ldap_user_search_base: "ou=Users,DC=example,DC=com"
+    ldap_group_search_base: "ou=Groups,DC=example,DC=com"
+    ldap_search_base: "DC=example,DC=com"
+    simple_allow_groups: "APP-Linux-Users,APP-Linux-Admins"
     fallback_homedir: "/home/%u"
     default_shell: "/bin/bash"
     override_gid: 100
     ldap_service_port: 636
     ldap_tls_cacertdir: "/etc/openldap/cacerts"
-    ca_cert_path: "/etc/ssl/certs/ca-certificates.crt"
+    ldap_tls_cacert: "/etc/ssl/certs/ca-certificates.crt"
     sssd_services: "nss, pam"
     debug_level: 0
     ldap_default_authtok: "AAAQAFagcckAB9RAXCcpLfkirsgvzuHFQDe+KNWdDRuAOuPtGYBr1S9xwFVZ640KZLXzrnooFhanL+YGDTXulLhs/F8AAQID"
 
   # Second AD domain (example)
   domain2.com:
-    ad_domain: "domain2.com"
     ldap_uri: "ldaps://ldap.domain2.com/"
-    bind_dn: "cn=service-account,OU=ServiceAccounts,DC=domain2,DC=com"
-    user_search_base: "ou=Users,DC=domain2,DC=com"
-    group_search_base: "ou=Groups,DC=domain2,DC=com"
-    search_base: "DC=domain2,DC=com"
-    allowed_groups: "APP-Linux-Users,APP-Linux-Admins,APP-External-Users"
+    ldap_default_bind_dn: "cn=service-account,OU=ServiceAccounts,DC=domain2,DC=com"
+    ldap_user_search_base: "ou=Users,DC=domain2,DC=com"
+    ldap_group_search_base: "ou=Groups,DC=domain2,DC=com"
+    ldap_search_base: "DC=domain2,DC=com"
+    simple_allow_groups: "APP-Linux-Users,APP-Linux-Admins,APP-External-Users"
     fallback_homedir: "/home/%u"
     default_shell: "/bin/bash"
     override_gid: 100
     ldap_service_port: 636
     ldap_tls_cacertdir: "/etc/openldap/cacerts"
-    ca_cert_path: "/etc/ssl/certs/ca-certificates2.crt"
+    ldap_tls_cacert: "/etc/ssl/certs/ca-certificates2.crt"
     sssd_services: "nss, pam"
     debug_level: 5
     ldap_default_authtok: "AAAgAPYlstO/1HdL4w/xp1gcrVvNTaXkwG06ZGRm3f8x/1Xcc+X6TJdgXegJBblAxBTjv47RZATHPkke+T1GoeSFBi6C7/CX4ixLWNFRZnq3S3TrAAECAw=="

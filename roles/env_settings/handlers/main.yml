@@ -17,3 +17,9 @@
     state: restarted
   when: "'docker' in ansible_facts.services"
   listen: "restart-docker"
+
+- name: Restart SSSD
+  systemd:
+    name: sssd
+    state: restarted
+    daemon_reload: yes

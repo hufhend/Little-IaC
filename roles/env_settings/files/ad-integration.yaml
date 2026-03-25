@@ -3,18 +3,6 @@
   ansible.builtin.set_fact:
     ldap_id_use_start_tls: "{{ 'True' if (ldap_uri is defined and ldap_uri.startswith('ldap://')) else 'False' }}"
 
-# - name: Stop SSSD service
-#   ansible.builtin.systemd:
-#     name: sssd
-#     state: stopped
-
-- name: Check if SSSD is already running
-  ansible.builtin.systemd:
-    name: sssd
-  register: sssd_service
-  changed_when: false
-  check_mode: false
-
 - name: Install and configure LDAP/AD authentication
   block:
     - name: Install required packages
@@ -43,6 +31,10 @@
         mode: 0600
         owner: root
         group: root
+      notify: Restart SSSD
+
+    - name: Apply configuration changes
+      meta: flush_handlers
 
     - name: Enable home directory creation (RedHat)
       command: authselect select sssd with-mkhomedir --force
@@ -124,4 +116,3 @@
   when:
     - ad_integration | default(false) | bool
     - ansible_facts["os_family"] in ["RedHat", "Debian"]
-    - sssd_service.status.ActiveState != "active"

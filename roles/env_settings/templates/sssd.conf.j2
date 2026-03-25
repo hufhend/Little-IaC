@@ -1,11 +1,27 @@
-# {{ ansible_managed_header }}
-# {{ ansible_managed_warning }}
+{% raw %}
+#   ***********************************
+#   SSSD IaC config with free overrides
+#   begin     : Tue 09 Dec 2025
+#   copyright : (c) 2026 Václav Dvorský
+#   email     : hufhendr@gmail.com
+#   $Id: sssd.conf, v2.00 25/03/2026
+#   ***********************************
+#
+#   --------------------------------------------------------------------
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public Licence as published by
+#   the Free Software Foundation; either version 2 of the Licence, or
+#   (at your option) any later version.
+#   --------------------------------------------------------------------
+{% endraw %}
+
+#   {{ ansible_managed_header }}
+#   {{ ansible_managed_warning }}
 
 {# Merge base configuration with host-specific overrides #}
 {% set sssd_domains_base = sssd_domains | default({}) %}
 {% set sssd_domains_overrides = sssd_domains_overrides | default({}) %}
 {% set sssd_domains = sssd_domains_base | combine(sssd_domains_overrides, recursive=True) %}
-
 [sssd]
 domains = {{ sssd_domains.keys() | join(', ') }}
 services = {{ sssd_services | default('nss, pam') }}
@@ -13,7 +29,6 @@ config_file_version = 2
 
 [nss]
 homedir_substring = /home
-
 {% for domain_name, domain in sssd_domains.items() %}
 
 [domain/{{ domain_name }}]

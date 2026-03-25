@@ -142,7 +142,7 @@
         loop_var: user_item
       register: starship_deploy
 
-    - name: Deploy Starship config to /etc/skel for new users
+    - name: Create skel config directory
       ansible.builtin.file:
         path: /etc/skel/.config
         state: directory

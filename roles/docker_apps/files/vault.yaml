@@ -3,7 +3,7 @@
   ansible.builtin.set_fact:
     app: "vault-cluster"
     app_name: "Vault Cluster"
-    vault_version: "1.21.3"
+    vault_version: "1.21.4"
 
 - name: Install Python requests library
   ansible.builtin.package:
@@ -27,8 +27,15 @@
       - name: Update version in docker-compose.yaml
         ansible.builtin.replace:
           path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/docker-compose.yaml
-          regexp: 'hashicorp/vault:.*'
+          regexp: 'hashicorp/vault.*'
           replace: 'hashicorp/vault:{{ vault_version }}'
+
+      - name: Update version in docker-compose.override.yaml
+        ansible.builtin.replace:
+          path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/docker-compose.override.yaml
+          regexp: 'hashicorp/vault.*'
+          replace: 'hashicorp/vault:{{ vault_version }}'
+        ignore_errors: true
 
       - name: Create and start {{ app_name }}
         community.docker.docker_compose_v2:

@@ -10,6 +10,7 @@
         name:
           - sssd
           - sssd-tools
+          - sssd-idp
           - oddjob
           - oddjob-mkhomedir
         state: present

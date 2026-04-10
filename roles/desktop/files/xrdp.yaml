@@ -6,7 +6,7 @@
       block:
         - name: Install xrdp packages
           ansible.builtin.package:
-            name: 
+            name:
               - xrdp
               - xorgxrdp
               - gnome-session
@@ -68,7 +68,7 @@
 
         - name: Remove xrdp packages
           ansible.builtin.package:
-            name: 
+            name:
               - xrdp
               - xorgxrdp
               - gnome-session
@@ -76,6 +76,7 @@
               - nautilus
               - gnome-software
             state: absent
+          when: ansible_facts["os_family"] == "RedHat"
 
         - name: Remove custom Xsession configuration
           ansible.builtin.file:
@@ -89,9 +90,9 @@
             state: disabled
             permanent: yes
             immediate: yes
-          when: 
+          when:
             - ansible_facts["os_family"] == "RedHat"
             - close_rdp_firewall_on_uninstall | default(true) | bool
 
-  when: 
+  when:
     - desktop | default(false) | bool == true

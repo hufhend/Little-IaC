@@ -4,7 +4,7 @@
 #   begin     : Sat 07 Mar 2026
 #   copyright : (c) 2026 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: starship.toml, v1.20 16/03/2026
+#   $Id: starship.toml, v1.30 11/04/2026
 #   ************************************
 #
 #   --------------------------------------------------------------------
@@ -24,7 +24,11 @@
 
 #   {{ ansible_managed_header }}
 #   {{ ansible_managed_warning }}
+{% if user_item is defined and user_item != "" %}
 #   Personalized for: {{ user_item }}
+{% else %}
+#   Generated for skeleton
+{% endif %}
 #   Based on cluster definitions: {{ ocp_clusters | length + k8s_clusters | length }} clusters total
 #   OpenShift: {{ ocp_clusters | length }}, Kubernetes: {{ k8s_clusters | length }}
 

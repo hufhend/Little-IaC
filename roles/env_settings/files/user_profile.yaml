@@ -63,7 +63,7 @@
         dest: "{{ skel_dest }}"
         mode: '0600'
       vars:
-        user_item: "" 
+        user_item: ""
 
     # Ensure .bashrc sources our alias file
     - name: Ensure aliases are sourced in existing users' .bashrc
@@ -110,11 +110,6 @@
 
   when: ocp_login | default(false)
 
-- name: Debug starship variable
-  debug:
-    var: starship
-  when: inventory_hostname == 'tp01.kn.akira.cz'
-
 # ==============================================================================
 # STARSIP PROMPT CONFIGURATION
 # ==============================================================================
@@ -132,7 +127,7 @@
       loop_control:
         loop_var: user_item
 
-    - name: Deploy Starship config to users
+    - name: Deploy Starship config to existing users
       ansible.builtin.template:
         src: starship.toml.j2
         dest: "/home/{{ user_item }}/.config/starship.toml"
@@ -149,14 +144,12 @@
         path: /etc/skel/.config
         state: directory
         mode: '0750'
-      when: skel_dest is defined
 
-    - name: Deploy Starship config to /etc/skel
-      ansible.builtin.copy:
-        src: starship.toml.skel
+    - name: Deploy Starship config to /etc/skel for new users
+      ansible.builtin.template:
+        src: starship.toml.j2
         dest: /etc/skel/.config/starship.toml
         mode: '0640'
-      when: skel_dest is defined
 
     - name: Summary of deployed Starship config
       ansible.builtin.debug:

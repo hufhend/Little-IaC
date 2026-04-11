@@ -58,10 +58,12 @@
       register: alias_deploy
 
     - name: Deploy aliases to /etc/skel for new users
-      ansible.builtin.copy:
-        src: bash_aliases_ocp.skel
+      ansible.builtin.template:
+        src: bash_aliases_ocp.j2
         dest: "{{ skel_dest }}"
         mode: '0600'
+      vars:
+        user_item: "" 
 
     # Ensure .bashrc sources our alias file
     - name: Ensure aliases are sourced in existing users' .bashrc

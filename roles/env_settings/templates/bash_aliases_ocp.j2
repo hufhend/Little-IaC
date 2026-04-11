@@ -4,7 +4,7 @@
 #   begin     : Sun 01 Mar 2026
 #   copyright : (c) 2026 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: .bash_aliases_ocp, v1.27 16/03/2026
+#   $Id: .bash_aliases_ocp, v1.30 11/04/2026
 #   ****************************************
 #
 #   --------------------------------------------------------------------
@@ -17,7 +17,11 @@
 
 #   {{ ansible_managed_header }}
 #   {{ ansible_managed_warning }}
+{% if user_item and user_item != "" %}
 #   Generated for user: {{ user_item }}
+{% else %}
+#   Generated for skeleton
+{% endif %}
 
 #   If your .bash_aliases file is added later, you can override these settings
 {# Check if variables exist, set to empty dict if not defined #}
@@ -27,6 +31,14 @@
 {% if k8s_clusters is not defined %}
     {% set k8s_clusters = {} %}
 {% endif %}
+
+{# For skeleton, use placeholder instead of actual username #}
+{% if user_item and user_item != "" %}
+    {% set actual_username = user_item %}
+{% else %}
+    {% set actual_username = "$USER" %}
+{% endif %}
+
 {# ========================================================================== #}
 {# OPENSHIFT CLUSTERS - require login via ocp-login                           #}
 {# ========================================================================== #}
@@ -38,7 +50,7 @@
 
 ocl-{{ cluster_id }}() {
     export OCP_CLUSTER_URL="{{ cluster.url }}"
-    export OCP_USERNAME="{{ user_item }}"
+    export OCP_USERNAME="{{ actual_username }}"
     export KUBECONFIG=~/.kube/{{ cluster.config }}
     echo "{{ cluster.emoji }} OpenShift {{ cluster.name }}: $OCP_CLUSTER_URL"
     echo "👤 User: $OCP_USERNAME"
@@ -53,7 +65,7 @@ ocl-{{ cluster_id }}() {
 
 ocl-{{ cluster_id }}-quick() {
     export OCP_CLUSTER_URL="{{ cluster.url }}"
-    export OCP_USERNAME="{{ user_item }}"
+    export OCP_USERNAME="{{ actual_username }}"
     export KUBECONFIG=~/.kube/{{ cluster.config }}
     echo "{{ cluster.emoji }} OpenShift {{ cluster.name }} - Quick login"
 {% if cluster.region is defined %}

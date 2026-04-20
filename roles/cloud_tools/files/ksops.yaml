@@ -4,7 +4,7 @@
   ansible.builtin.set_fact:
     app: "ksops"
     app_name: "Ksops"
-    version: "4.4.0"
+    version: "4.5.1"
     install_dir: "/home/{{ user_ansible }}/install/ksops"
 
 # Verify installed version

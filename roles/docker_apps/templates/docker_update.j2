@@ -4,7 +4,7 @@
 #   begin     : Fri 28 Jun 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : Vaclav.Dvorsky@aricoma.com
-#   $Id: docker_update.sh, v1.10 22/12/2024
+#   $Id: docker_update.sh, v1.20 25/04/2026
 #   ***************************************
 
 #   --------------------------------------------------------------------
@@ -14,44 +14,46 @@
 #   (at your option) any later version.
 #   --------------------------------------------------------------------
 
+#   {{ ansible_managed_header }}
+#   {{ ansible_managed_warning }}
 
-{% if pihole is defined and pihole != 'false' and pihole != false %}
+{% if docker_pihole is defined and docker_pihole != 'false' and docker_pihole != false %}
 # Refresh the Pi-hole
 cd ~/docker/pi-hole;        docker compose pull && docker compose build && docker compose up -d
 sleep 30
 
 {% endif %}
-{% if prometheus is defined and prometheus != 'false' and prometheus != false %}
+{% if docker_prometheus is defined and docker_prometheus != 'false' and docker_prometheus != false %}
 # Refresh the Prometheus
 cd ~/docker/prometheus;     docker compose pull && docker compose build && docker compose up -d
 sleep 30
 
 {% endif %}
-{% if unify is defined and unify != 'false' and unify != false %}
+{% if docker_unify is defined and docker_unify != 'false' and docker_unify != false %}
 # Refresh the Unify
 cd ~/docker/unifi;          docker compose pull && docker compose build && docker compose up -d
 sleep 30
 
 {% endif %}
-{% if torproject is defined and torproject != 'false' and torproject != false %}
+{% if docker_torproject is defined and docker_torproject != 'false' and docker_torproject != false %}
 # Refresh the Tor
 cd ~/docker/torproject;     docker compose pull && docker compose build && docker compose up -d
 sleep 30
 
 {% endif %}
-{% if openvpn is defined and openvpn != 'false' and openvpn != false %}
+{% if docker_openvpn is defined and docker_openvpn != 'false' and docker_openvpn != false %}
 # Refresh the Openvpn
 cd ~/docker/openvpn;        docker compose pull && docker compose build && docker compose up -d
 sleep 30
 
 {% endif %}
-{% if gitea is defined and gitea != 'false' and gitea != false %}
+{% if docker_gitea is defined and docker_gitea != 'false' and docker_gitea != false %}
 # Refresh the Gitea
 cd ~/docker/gitea;          docker compose pull && docker compose build && docker compose up -d
 sleep 30
 
 {% endif %}
-{% if homeassistant is defined and homeassistant != 'false' and homeassistant != false %}
+{% if docker_homeassistant is defined and docker_homeassistant != 'false' and docker_homeassistant != false %}
 # Refresh the Home Assistant
 cd ~/docker/home-assistant; docker compose pull && docker compose build && docker compose up -d
 sleep 30

@@ -111,7 +111,7 @@
     ansible.builtin.set_fact:
       "pihole_installed": true
 
-  # Start the application 
+  # Start the application
   - name: Create and start {{ app_name }}
     community.docker.docker_compose_v2:
       project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
@@ -122,46 +122,79 @@
 
 - name: Configuration {{ app_name }}
   block:
-  # Split the configuration into two parts
-  # Master and slave separately so they don't go at the same time
-  - name: Include slave config tasks
-    ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
-    when: inventory_hostname in groups['slave']
+    - name: Change ownership of bind directory
+      ansible.builtin.file:
+        path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/bind
+        owner: 100
+        group: 101
+        mode: '0750'
+        recurse: yes
+      become: true
+      become_user: root
 
-  # Start the application 
-  - name: Create and start {{ app_name }}
-    community.docker.docker_compose_v2:
-      project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+    # Split the configuration into two parts
+    # Master and slave separately so they don't go at the same time
+    - name: Configure slave
+      block:
+        - name: Include slave config tasks
+          ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
 
-  - name: Wait for DNS response
-    ansible.builtin.wait_for:
-      host: 127.0.0.1
-      port: 53
-      state: started
-      timeout: 120
-    when: inventory_hostname in groups['slave']
+        # Start the application
+        - name: Create and start {{ app_name }}
+          community.docker.docker_compose_v2:
+            project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
-  - name: Simple connectivity verification
-    ansible.builtin.command: ping -c 1 google.com
+        - name: Wait for DNS response
+          ansible.builtin.wait_for:
+            host: 127.0.0.1
+            port: 53
+            state: started
+            timeout: 120
 
-  - name: Include master config tasks
-    ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
-    when: inventory_hostname in groups['master']
+        - name: Wait for DNS response from Pi-hole
+          ansible.builtin.command:
+            cmd: docker exec pihole nslookup google.com 127.0.0.1
+          register: dns_response
+          retries: 15
+          delay: 4
+          until:
+            - dns_response is success
+            - dns_response.rc == 0
+          changed_when: false
 
-  - name: Change ownership of bind directory
-    ansible.builtin.file:
-      path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}/bind
-      owner: 100
-      group: 101
-      mode: '0750'
-      recurse: yes
-    become: true
-    become_user: root
+      when: inventory_hostname in groups['slave']
 
-  # Start the application 
-  - name: Create and start {{ app_name }}
-    community.docker.docker_compose_v2:
-      project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+    - name: Configure master
+      block:
+        - name: Include master config tasks
+          ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
+
+        # Start the application
+        - name: Create and start {{ app_name }}
+          community.docker.docker_compose_v2:
+            project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+
+        - name: Wait for DNS response
+          ansible.builtin.wait_for:
+            host: 127.0.0.1
+            port: 53
+            state: started
+            timeout: 120
+
+        - name: Wait for DNS response from Pi-hole
+          ansible.builtin.command:
+            cmd: docker exec pihole nslookup google.com 127.0.0.1
+          register: dns_response
+          retries: 15
+          delay: 4
+          until:
+            - dns_response is success
+            - dns_response.rc == 0
+          changed_when: false
+      when: inventory_hostname in groups['master']
+
+    - name: Simple connectivity verification
+      ansible.builtin.command: ping -c 1 google.com
 
   when: docker_pihole == true and pihole_installed | default(false) != true
 

@@ -4,7 +4,7 @@
 #   begin     : Fri 28 Jun 2024
 #   copyright : (c) 2024 Václav Dvorský
 #   email     : Vaclav.Dvorsky@aricoma.com
-#   $Id: docker_update.sh, v1.20 25/04/2026
+#   $Id: docker_update.sh, v1.22 26/04/2026
 #   ***************************************
 
 #   --------------------------------------------------------------------
@@ -16,6 +16,9 @@
 
 #   {{ ansible_managed_header }}
 #   {{ ansible_managed_warning }}
+
+# Back everything up before any changes
+sudo rsync -ra --delete /home/{{ docker_user }}/{{ docker_home }}/ /home/{{ docker_user }}/backup/{{ docker_home }}
 
 {% if docker_pihole is defined and docker_pihole != 'false' and docker_pihole != false %}
 # Refresh the Pi-hole

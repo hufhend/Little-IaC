@@ -5,6 +5,14 @@
     app: "pi-hole"
     app_name: "Pi-hole"
 
+- name: Install Python requests library
+  ansible.builtin.package:
+    name: python3-requests
+    state: present
+  become: true
+  become_user: root
+  when: docker_pihole
+
 - name: Check if {{ app_name }} exists
   ansible.builtin.stat:
     path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
@@ -151,17 +159,23 @@
             state: started
             timeout: 120
 
-        - name: Wait for DNS response from Pi-hole
-          ansible.builtin.command:
-            cmd: docker exec pihole nslookup google.com 127.0.0.1
-          register: dns_response
-          retries: 15
-          delay: 4
-          until:
-            - dns_response is success
-            - dns_response.rc == 0
+        - name: Wait for Pi-hole to be fully operational
+          community.docker.docker_container_exec:
+            container: pihole
+            command: >
+              sh -c "(pihole status 2>&1 | grep -q 'Pi-hole blocking is enabled') &&
+              nslookup google.com 127.0.0.1 > /dev/null 2>&1 && echo 'OK'"
+          register: pihole_status
+          retries: 30
+          delay: 5
+          until: pihole_status.stdout | trim == "OK"
           changed_when: false
+          timeout: 120
 
+        # - name: Debug result
+        #   debug:
+        #     var: pihole_status
+        #   when: pihole_status is defined
       when: inventory_hostname in groups['slave']
 
     - name: Configure master
@@ -181,16 +195,18 @@
             state: started
             timeout: 120
 
-        - name: Wait for DNS response from Pi-hole
-          ansible.builtin.command:
-            cmd: docker exec pihole nslookup google.com 127.0.0.1
-          register: dns_response
-          retries: 15
-          delay: 4
-          until:
-            - dns_response is success
-            - dns_response.rc == 0
+        - name: Wait for Pi-hole to be fully operational
+          community.docker.docker_container_exec:
+            container: pihole
+            command: >
+              sh -c "(pihole status 2>&1 | grep -q 'Pi-hole blocking is enabled') &&
+              nslookup google.com 127.0.0.1 > /dev/null 2>&1 && echo 'OK'"
+          register: pihole_status
+          retries: 30
+          delay: 5
+          until: pihole_status.stdout | trim == "OK"
           changed_when: false
+          timeout: 120
       when: inventory_hostname in groups['master']
 
     - name: Simple connectivity verification

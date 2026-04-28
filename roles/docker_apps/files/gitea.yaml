@@ -1,6 +1,6 @@
 ---
 # Self-hosted Git service
-- name: Set a app variable
+- name: Set Gitea variable
   ansible.builtin.set_fact:
     app: "gitea"
     app_name: "Gitea"
@@ -36,7 +36,7 @@
       copy:
         content: "{{ pg_dump_output.stdout }}"
         dest: "{{ backup_path }}/{{ app }}/gitea-sqlbkp_{{ ansible_date_time.date }}.bak"
-      when: pg_dump_output is succeeded    
+      when: pg_dump_output is succeeded
 
     - name: Compress the backup file
       ansible.builtin.archive:
@@ -59,4 +59,18 @@
       community.docker.docker_compose_v2:
         project_src: /home/{{ docker_user }}/{{ docker_home }}/gitea
       # register: output
+
+    - name: Wait for Gitea to be ready
+      community.docker.docker_container_exec:
+        container: gitea
+        command: curl -s http://localhost:3000/api/v1/version
+      register: health_check
+      until: health_check.stdout != ""
+      retries: 30
+      delay: 5
+
+    - name: Display Gitea version
+      ansible.builtin.debug:
+        msg: "Gitea is running in version: {{ (health_check.stdout | from_json).version }}"
+
   when: docker_gitea == true

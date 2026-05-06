@@ -5,6 +5,13 @@
     app: "gitea"
     app_name: "Gitea"
 
+- name: Install Python's Requests Library
+  ansible.builtin.apt:
+    name: python3-requests
+    state: present
+  become: true
+  become_user: root
+
 - name: Check if {{ app_name }} exists
   ansible.builtin.stat:
     path: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
@@ -13,38 +20,31 @@
 - name: Deploy {{ app_name }}
   block:
     # Required for backup
-    - name: Install Python's Requests Library
-      ansible.builtin.apt:
-        name: python3-requests
-        state: present
-      become: true
-      become_user: root
+    - name: Backup existing database
+      block:
+        - name: Run dump in PostgreSQL container
+          community.docker.docker_container_exec:
+            container: gitea-db
+            command: bash -c "PGPASSWORD='{{ git_db_password }}' pg_dump {{ git_db_name }} -h localhost -U {{ git_db_user }}"
+          register: pg_dump_output
 
-    - name: Run dump in PostgreSQL container
-      community.docker.docker_container_exec:
-        container: gitea-db
-        command: bash -c "PGPASSWORD='{{ git_db_password }}' pg_dump {{ git_db_name }} -h localhost -U {{ git_db_user }}"
-      register: pg_dump_output
+        - name: Ensure backup directory exists
+          file:
+            path: "{{ backup_path }}/{{ app }}"
+            state: directory
+
+        - name: Save database backup to file
+          copy:
+            content: "{{ pg_dump_output.stdout }}"
+            dest: "{{ backup_path }}/{{ app }}/gitea-sqlbkp_{{ ansible_date_time.date }}.bak"
+
+        - name: Compress the backup file
+          ansible.builtin.archive:
+            path: "{{ backup_path }}/{{ app }}/gitea-sqlbkp_{{ ansible_date_time.date }}.bak"
+            dest: "{{ backup_path }}/{{ app }}/gitea-sqlbkp_{{ ansible_date_time.date }}.tar.gz"
+            format: gz
+            remove: true
       when: gitea_dir_check.stat.exists
-
-    - name: Ensure backup directory exists
-      file:
-        path: "{{ backup_path }}/{{ app }}"
-        state: directory
-
-    - name: Save database backup to file
-      copy:
-        content: "{{ pg_dump_output.stdout }}"
-        dest: "{{ backup_path }}/{{ app }}/gitea-sqlbkp_{{ ansible_date_time.date }}.bak"
-      when: pg_dump_output is succeeded
-
-    - name: Compress the backup file
-      ansible.builtin.archive:
-        path: "{{ backup_path }}/{{ app }}/gitea-sqlbkp_{{ ansible_date_time.date }}.bak"
-        dest: "{{ backup_path }}/{{ app }}/gitea-sqlbkp_{{ ansible_date_time.date }}.tar.gz"
-        format: gz
-        remove: true
-      when: pg_dump_output is succeeded
 
     - name: Git clone {{ app_name }}
       ansible.builtin.git:
@@ -58,7 +58,6 @@
     - name: Create and start {{ app_name }}
       community.docker.docker_compose_v2:
         project_src: /home/{{ docker_user }}/{{ docker_home }}/gitea
-      # register: output
 
     - name: Wait for Gitea to be ready
       community.docker.docker_container_exec:

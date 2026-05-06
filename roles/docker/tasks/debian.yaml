@@ -18,8 +18,18 @@
       state: present
 
   - name: Map architecture
-    set_fact:
-      docker_arch: "{{ 'amd64' if ansible_facts['architecture'] == 'x86_64' else ansible_facts['architecture'] }}"
+    ansible.builtin.set_fact:
+      arch_map:
+        x86_64: amd64
+        amd64: amd64
+        aarch64: arm64
+        arm64: arm64
+        armv7l: armhf
+        armv6l: armhf
+
+  - name: Set Docker architecture
+    ansible.builtin.set_fact:
+      docker_arch: "{{ arch_map.get(ansible_facts['architecture'], ansible_facts['architecture']) }}"
 
   - name: Add Docker repository
     ansible.builtin.apt_repository:

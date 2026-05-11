@@ -2,7 +2,7 @@
   block:
     - name: Add Kubernetes crontab (Debian)
       ansible.builtin.template:
-        src: templates/crontab.j2
+        src: templates/crontab-k8s.j2
         dest: "/var/spool/cron/crontabs/{{ ansible_user }}"
         owner: "{{ ansible_user }}"
         group: crontab
@@ -21,15 +21,14 @@
         - role not in ['combi', 'master', 'worker']
   when: ansible_facts["os_family"] == "Debian"
 
-- name: Set up crontab for RedHat family
-  block:
-    - name: Add common crontab for RedHat
-      ansible.builtin.template:
-        src: templates/crontab-toolbox.j2
-        dest: "/var/spool/cron/{{ ansible_user }}"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
-        mode: '0600'
-      when: cron
-
-  when: ansible_facts["os_family"] == "RedHat"
+- name: Set up universal crontab
+  ansible.builtin.template:
+    src: "{{ cron_template | default('templates/crontab-default.j2') }}"
+    dest: "/var/spool/cron/{{ 'crontabs/' if ansible_facts['os_family'] == 'Debian' else '' }}{{ ansible_user }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ 'crontab' if ansible_facts['os_family'] == 'Debian' else ansible_user }}"
+    mode: '0600'
+  when:
+    - cron | default(false)
+    - ansible_facts["os_family"] == "RedHat" or
+      (ansible_facts["os_family"] == "Debian" and role not in ['combi', 'master', 'worker'] and not (orange | default(false)))

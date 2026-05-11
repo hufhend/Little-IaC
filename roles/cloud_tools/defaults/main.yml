@@ -38,7 +38,6 @@ vault: false
 velero: false
 yajsv: false
 
-
 # only if you're sure what you're doing
 k8s_version: "1.33"
 
@@ -46,7 +45,9 @@ k8s_version: "1.33"
 app_dir: "/usr/local/bin"
 install_dir: "/home/{{ user_ansible }}/install"
 
-# OCP Login Script
-cluster_url: "https://api.example.com:6443"
-ocp_username: "username"
-ocp_login: false
+# # OCP Login Script
+# cluster_url: "https://api.example.com:6443"
+# ocp_username: "username"
+# ocp_login: false
+
+role: computer

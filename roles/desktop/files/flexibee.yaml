@@ -1,0 +1,28 @@
+---
+# ABRA Flexi Accounting Software
+- name: Flexibee Variable Setting
+  ansible.builtin.set_fact:
+    app: "flexibee"
+    app_name: "Flexibee"
+
+- name: Install {{ app_name }}
+  block:
+  - name: Add {{ app_name }} GPG key from a public server
+    ansible.builtin.get_url:
+      url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x70E18E2B&options=mr
+      dest: /usr/share/keyrings/flexibee.gpg
+      mode: '0644'
+
+  - name: Add {{ app_name }} repository
+    ansible.builtin.apt_repository:
+      repo: deb [signed-by=/usr/share/keyrings/flexibee.gpg] http://download.flexibee.eu/download/deb-repository/ flexibee non-free
+      state: present
+      filename: flexibee
+
+  - name: Install {{ app_name }}
+    ansible.builtin.apt:
+      name: flexibee
+      state: present
+  when:
+    - flexibee | default(false)
+    - ansible_facts["os_family"] == "Debian"

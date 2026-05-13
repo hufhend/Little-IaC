@@ -15,6 +15,7 @@ brave: false
 datovka: false
 discord: false
 edge: false
+flexibee: false
 horizon: false
 chrome: false
 chromium: false

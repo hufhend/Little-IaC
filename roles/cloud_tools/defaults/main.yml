@@ -6,6 +6,7 @@ argocd: false
 awscli: false
 azcli: false
 buildx: false
+calicoctl: false
 cephadm: false
 clairctl: false
 helm: false

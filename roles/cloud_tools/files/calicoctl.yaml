@@ -1,0 +1,136 @@
+# tool to manage Calico resources
+---
+- name: Calicoctl Variable Setting
+  ansible.builtin.set_fact:
+    app: "calicoctl"
+    app_name: "Calicoctl"
+    version: "3.32.0"
+    install_dir: "/home/{{ user_ansible }}/install/calicoctl"
+
+# Verify installed version
+- name: Check if {{ app_name }} is installed
+  stat:
+    path: "{{ app_dir }}/{{ app }}"
+  register: app_installed
+
+- block:
+    - name: Verify {{ app_name }} version
+      ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+      register: install_result
+      changed_when: false
+
+    - name: Extract and clean version
+      set_fact:
+        installed_version: "{{ (install_result.stdout | regex_search('Client Version:\\s+v?(\\S+)', '\\1', multiline=True)) | first }}"
+  when: app_installed.stat.exists
+
+# View the latest stable version
+- name: Get latest version from GitHub
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/projectcalico/calico/releases/latest"
+    headers: '{{ ({"Authorization": "token " + github_token} if github_token is defined and github_token | length > 0 else {}) | to_json }}'
+    return_content: yes
+    timeout: 30
+  register: github_release
+  changed_when: false
+  run_once: yes
+
+- name: Set latest version
+  ansible.builtin.set_fact:
+    latest_version: "{{ github_release.json.name | regex_replace('^v', '') }}"
+
+- name: Show {{ app_name }} version
+  ansible.builtin.debug:
+    msg:
+    - "The installed version was detected: {{ installed_version }}"
+    - "The currently installed version is: {{ version }}"
+  when:
+    - installed_version is defined
+    - app_installed.stat.exists
+
+- name: Compare versions
+  ansible.builtin.debug:
+    msg: "A new version {{ latest_version }} is available! Consider updating."
+  when: latest_version is version(version, '>')
+
+- name: Install {{ app_name }}
+  block:
+    # Download and verification steps
+    - name: Create a install directory
+      ansible.builtin.file:
+        path: "{{ install_dir }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        mode: '0755'
+
+    - name: Detect platform
+      ansible.builtin.set_fact:
+        platform: "{{ ansible_facts['system'] | lower }}"
+
+    - name: Define architecture map
+      ansible.builtin.set_fact:
+        arch_map:
+          x86_64: amd64
+          amd64: amd64
+          aarch64: arm64
+          arm64: arm64
+
+    - name: Detect architecture
+      ansible.builtin.set_fact:
+        arch: "{{ arch_map.get(ansible_facts['architecture'], 'unknown') }}"
+
+    - name: Define download URL
+      ansible.builtin.set_fact:
+        download_url: "https://github.com/projectcalico/calico/releases/download/v{{ version }}"
+
+    - name: Download {{ app_name }} checksum
+      ansible.builtin.get_url:
+        url: "{{ download_url }}/SHA256SUMS"
+        dest: "{{ install_dir }}"
+        mode: '0644'
+        force: yes
+
+    - name: Download {{ app_name }} binary
+      ansible.builtin.get_url:
+        url: "{{ download_url }}/{{ app }}-{{ platform }}-{{ arch }}"
+        dest: "{{ install_dir }}/{{ app }}-{{ platform }}-{{ arch }}"
+        mode: '0755'
+
+    - name: Verify checksum of {{ app_name }}
+      ansible.builtin.command:
+        cmd: sha256sum -c {{ install_dir }}/SHA256SUMS --ignore-missing
+        chdir: "{{ install_dir }}"
+      register: checksum_result
+
+    # Manual installation
+    - name: Move {{ app }} to local bin
+      ansible.builtin.copy:
+        src: "{{ install_dir }}/{{ app }}-{{ platform }}-{{ arch }}"
+        dest: "{{ app_dir }}/{{ app }}"
+        mode: '0755'
+        remote_src: yes
+
+    # Show installed version
+    - name: Verify {{ app_name }} version
+      ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+      register: install_result
+      changed_when: false
+
+    - name: Extract and clean version
+      ansible.builtin.set_fact:
+        calicoctl_version: "{{ (install_result.stdout | regex_search('Client Version:\\s+v?(\\S+)', '\\1', multiline=True)) | first }}"
+
+    - name: Show {{ app_name }} version
+      ansible.builtin.debug:
+        msg: "{{ app_name }} version is {{ calicoctl_version }}"
+
+    - name: Clean up installation files
+      ansible.builtin.file:
+        path: "{{ install_dir }}"
+        state: absent
+
+  when:
+    - calicoctl == True
+    - ansible_facts["system"] in ["Linux", "Darwin"]
+    - ansible_facts["architecture"] in ["x86_64", "amd64"]
+    - installed_version is not defined or installed_version != version

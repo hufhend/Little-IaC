@@ -1,28 +1,58 @@
 ---
 # ABRA Flexi Accounting Software
-- name: Flexibee Variable Setting
-  ansible.builtin.set_fact:
-    app: "flexibee"
-    app_name: "Flexibee"
+- name: Check if Flexibee is already installed
+  ansible.builtin.stat:
+    path: /usr/share/flexibee
+  register: flexibee_installed
 
-- name: Install {{ app_name }}
+- name: Install Flexibee
   block:
-  - name: Add {{ app_name }} GPG key from a public server
-    ansible.builtin.get_url:
-      url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x70E18E2B&options=mr
-      dest: /usr/share/keyrings/flexibee.gpg
-      mode: '0644'
+    - name: Add Flexibee GPG key
+      ansible.builtin.apt_key:
+        url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x13A6F35970E18E2B
+        keyring: /usr/share/keyrings/flexibee.gpg
+        state: present
 
-  - name: Add {{ app_name }} repository
-    ansible.builtin.apt_repository:
-      repo: deb [signed-by=/usr/share/keyrings/flexibee.gpg] http://download.flexibee.eu/download/deb-repository/ flexibee non-free
-      state: present
-      filename: flexibee
+    - name: Add Flexibee repository
+      ansible.builtin.apt_repository:
+        repo: deb [signed-by=/usr/share/keyrings/flexibee.gpg] http://download.flexibee.eu/download/deb-repository/ flexibee non-free
+        state: present
+        filename: flexibee
 
-  - name: Install {{ app_name }}
-    ansible.builtin.apt:
-      name: flexibee
-      state: present
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Set debconf preferences
+      ansible.builtin.debconf:
+        name: flexibee
+        question: "{{ debconf_item.question }}"
+        value: "{{ debconf_item.value }}"
+        vtype: "{{ debconf_item.vtype }}"
+      loop:
+        - { question: "winstrom/server-client", value: "server", vtype: "select" }
+        - { question: "winstrom/local-network", value: "local", vtype: "select" }
+        - { question: "winstrom/remove-db", value: "false", vtype: "boolean" }
+      loop_control:
+        loop_var: debconf_item
+
+    - name: Install Flexibee
+      ansible.builtin.expect:
+        command: apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" flexibee
+        responses:
+          'Přepsat \(a/N\)\?': 'a'
+        timeout: 300
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+
+    - name: Ensure Flexibee service is running
+      ansible.builtin.systemd:
+        name: flexibee
+        state: started
+        enabled: yes
+
   when:
     - flexibee | default(false)
     - ansible_facts["os_family"] == "Debian"
+    - not flexibee_installed.stat.exists

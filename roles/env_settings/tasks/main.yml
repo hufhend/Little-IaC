@@ -95,6 +95,23 @@
     path: "/usr/local/share/fonts/Sacramento/Sacramento-Regular.ttf"
   register: sacramento_font
 
+- name: Ensure script directory exists
+  ansible.builtin.file:
+    path: "/home/{{ user_ansible }}/scr"
+    state: directory
+    owner: "{{ user_ansible }}"
+    group: "{{ user_ansible }}"
+    mode: '0755'
+
+- name: Add script to auto update
+  ansible.builtin.template:
+    src: templates/auto_update.j2
+    dest: "/home/{{ user_ansible }}/scr/auto_update.sh"
+    owner: "{{ user_ansible }}"
+    group: "{{ user_ansible }}"
+    mode: '0760'
+  when: auto_update | default(false)
+
 - name: Install beautiful Central European fonts
   block:
     - name: Download fonts from Github

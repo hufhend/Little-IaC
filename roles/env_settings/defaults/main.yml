@@ -154,3 +154,5 @@ motd_news: "Welcome to our server! Stay tuned for updates and news."
 
 # Logo color (default: RED, can be changed to: GREEN, BLUE, CYAN, YELLOW, WHITE, GRAY)
 # motd_logo_color: BLUE  # Example for blue
+
+repo_path: "/home/{{ user_ansible }}/git/repo"

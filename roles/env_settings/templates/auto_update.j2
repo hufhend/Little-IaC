@@ -1,0 +1,9 @@
+#!/bin/bash
+# {{ ansible_managed_header }}
+# {{ ansible_managed_warning }}
+set -e
+
+cd {{ repo_path }}
+git pull
+git submodule update --remote --merge
+ansible-playbook -l {{ ansible_facts["hostname"] }} desktop.yaml

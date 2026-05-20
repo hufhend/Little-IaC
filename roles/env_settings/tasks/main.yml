@@ -110,6 +110,7 @@
     owner: "{{ user_ansible }}"
     group: "{{ user_ansible }}"
     mode: '0760'
+    become_user: "{{ user_ansible }}"
   when: auto_update | default(false)
 
 - name: Install beautiful Central European fonts

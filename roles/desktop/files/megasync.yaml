@@ -15,9 +15,10 @@
 
   - name: Add {{ app_name }} repository
     ansible.builtin.apt_repository:
-      repo: deb [signed-by=/usr/share/keyrings/meganz-archive-keyring.gpg] https://mega.nz/linux/repo/xUbuntu_{{ ansible_facts['distribution_version'] }}/ ./
+      repo: "deb [signed-by=/usr/share/keyrings/meganz-archive-keyring.gpg] https://mega.nz/linux/repo/xUbuntu_{{ ansible_facts['distribution_version'] }}/ ./"
       state: present
-      filename: megasync
+      filename: megaio
+      update_cache: true
 
   - name: Install {{ app_name }}
     ansible.builtin.apt:

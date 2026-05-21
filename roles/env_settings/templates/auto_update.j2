@@ -1,9 +1,32 @@
 #!/bin/bash
-# {{ ansible_managed_header }}
-# {{ ansible_managed_warning }}
+#
+#   ***************************************
+#   Simple script for automatic maintenance
+#   begin     : Wed 20 May 2026
+#   copyright : (c) 2026 Václav Dvorský
+#   email     : hufhendr@gmail.com
+#   $Id: auto_update.sh, v1.00 21/05/2026
+#   ***************************************
+#
+#   --------------------------------------------------------------------
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public Licence as published by
+#   the Free Software Foundation; either version 2 of the Licence, or
+#   (at your option) any later version.
+#   --------------------------------------------------------------------
+#
+#   This script is designed for very specific use cases in environments with an
+#   Air Gap, where routine maintenance is not possible.
+#   It relies on an internal Git repository that uses Little-IaC as its engine.
+#   It is intended for use via crontab.
+#
+#   {{ ansible_managed_header }}
+#   {{ ansible_managed_warning }}
+
 set -e
 
 cd {{ repo_path }}
 git pull
 git submodule update --remote --merge
+cd Little-IaC
 ansible-playbook -l {{ ansible_facts["hostname"] }} desktop.yaml

@@ -43,11 +43,21 @@ ad_integration: true
 ocp_login: true
 starship_config: true
 
+auto_update: true
+repo_path: /home/{{ user_ansible }}/git/toolbox
+
 # This isn't officially possible
 addition_cron:
   - name: "Synchronize Active Directory groups to local POSIX groups"
     minute: "59"
     hour: " *"
     job: "sudo /home/{{ ansible_user }}/scr/ad-group-sync.sh"
+    user: "{{ ansible_user }}"
+    state: present
+  - name: "Automatic Maintenance via Ansible"
+    minute: "30"
+    hour: "06"
+    weekday: " 02"
+    job: "/home/{{ ansible_user }}/scr/auto_update.sh"
     user: "{{ ansible_user }}"
     state: present

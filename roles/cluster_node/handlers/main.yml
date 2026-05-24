@@ -1,2 +1,13 @@
 ---
-# handlers file for cluster_node
+# Handlers for NVIDIA Container Toolkit
+- name: restart containerd
+  ansible.builtin.systemd:
+    name: containerd
+    state: restarted
+    daemon_reload: yes
+
+- name: restart docker
+  ansible.builtin.systemd:
+    name: docker
+    state: restarted
+    daemon_reload: yes

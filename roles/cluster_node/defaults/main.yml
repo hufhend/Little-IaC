@@ -8,15 +8,15 @@
 
 # Settings for high availability
 # Set state to BACKUP
-ing_state: BACKUP 
+ing_state: BACKUP
 # Set virtual router ID
 ing_vrid: 40
 # Define VRRP instance with name
-ing_vrrp: VI_2 
+ing_vrrp: VI_2
 # Set authentication password
-ing_auth_pass: 1234 
+ing_auth_pass: 1234
 # Specify virtual IP address
-ingress_ip: 192.168.88.254 
+ingress_ip: 192.168.88.254
 # Set priority, lower will be next in order
 ing_priority: 150
 # The keepalived service is enabled by default
@@ -25,3 +25,4 @@ keepalived: choose
 # Usually a cluster node is not a destop or server
 desktop: false
 server: false
+nvidia_toolkit: false

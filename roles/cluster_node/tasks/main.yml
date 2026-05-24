@@ -43,7 +43,7 @@
 
   - name: Include tasks disable desktop services
     include_tasks: "{{ role_path }}/tasks/desktop_services.yaml"
-    when: 
+    when:
       - desktop != True
       - ubuntu_desktop_status.stdout is search("instal")
 
@@ -91,7 +91,7 @@
           name: keepalived.service
           state: reloaded
     when: keepalived != false
-  
+
   # OrangePi can also have enough memory, if they do, we will put it on zram
   - block:
       - name: Get total RAM in kB
@@ -115,5 +115,12 @@
           msg: "RAM is only {{ ram_mb }} MB, SIZE in /etc/default/armbian-ramlog remains unchanged."
         when: ram_mb | int < 3072
     when: orangepi is defined and orangepi == true
+
+  # Include additional software tasks from YAML files
+  - name: Add other software
+    include_tasks:
+      file: "{{ item }}"
+    loop: "{{ query('fileglob', role_path ~ '/files/*.yaml') }}"
+    no_log: true
 
   when: role in ['combi', 'master', 'worker']

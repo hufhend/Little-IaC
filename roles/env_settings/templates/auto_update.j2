@@ -5,7 +5,7 @@
 #   begin     : Wed 20 May 2026
 #   copyright : (c) 2026 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: auto_update.sh, v1.00 21/05/2026
+#   $Id: auto_update.sh, v1.10 25/05/2026
 #   ***************************************
 #
 #   --------------------------------------------------------------------
@@ -23,10 +23,58 @@
 #   {{ ansible_managed_header }}
 #   {{ ansible_managed_warning }}
 
-set -e
+# Logging setup
+LOG_FILE="/var/log/auto-update.log"
+touch "$LOG_FILE" 2>/dev/null || { echo "Cannot write to $LOG_FILE" >&2; exit 1; }
 
+# Logging function
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+# Function to check command status
+check_status() {
+    if [ $? -eq 0 ]; then
+        log "  ✓ SUCCESS: $1"
+        return 0
+    else
+        log "  ✗ FAILED: $1 (exit code: $?)"
+        return 1
+    fi
+}
+
+# Start logging
+log "=== Starting automatic maintenance ==="
+
+# Navigate to repo
 cd {{ repo_path }}
+check_status "Changed to directory {{ repo_path }}" || exit 1
+
+# Git pull
+log "Pulling latest changes from git"
 git pull
+check_status "Git pull" || exit 1
+
+# Update submodules
+log "Updating git submodules"
 git submodule update --remote --merge
+check_status "Submodule update" || exit 1
+
+# Run Ansible playbook
 cd Little-IaC
+check_status "Changed to directory Little-IaC" || exit 1
+
+log "Running Ansible playbook for host: {{ ansible_facts['hostname'] }}"
+log "--- Ansible output start ---"
 ansible-playbook -l {{ ansible_facts["hostname"] }} desktop.yaml
+ANSIBLE_EXIT=$?
+log "--- Ansible output end (exit code: $ANSIBLE_EXIT) ---"
+
+if [ $ANSIBLE_EXIT -eq 0 ]; then
+    log "✓ Ansible playbook completed successfully"
+else
+    log "✗ Ansible playbook FAILED with exit code $ANSIBLE_EXIT"
+    exit $ANSIBLE_EXIT
+fi
+
+log "=== Automatic maintenance completed successfully ==="

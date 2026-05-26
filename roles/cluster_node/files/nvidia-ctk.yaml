@@ -1,160 +1,78 @@
-# NVIDIA Container Toolkit - universal installation
-- name: Set NVIDIA Container Toolkit variables
-  ansible.builtin.set_fact:
-    nvidia_toolkit_app: "nvidia-container-toolkit"
-    nvidia_toolkit_version: "1.19.1-1"
-    container_runtime: "containerd"
+---
+# NVIDIA Container Toolkit - ultra simple installation
 
-# 1. PREREQUISITE CHECK - Verify NVIDIA GPU and driver presence
-- name: Check if NVIDIA driver is installed and GPU is accessible
-  ansible.builtin.command:
-    cmd: nvidia-smi
-  register: nvidia_smi_check
+# 1. CHECK GPU
+- name: Check if NVIDIA driver works
+  ansible.builtin.command: nvidia-smi
+  register: nvidia_check
   failed_when: false
   changed_when: false
 
-- name: Set fact - NVIDIA driver available
-  ansible.builtin.set_fact:
-    nvidia_driver_available: "{{ nvidia_smi_check.rc == 0 }}"
-
-- name: Display warning if no NVIDIA GPU/driver found
-  ansible.builtin.debug:
-    msg: |
-      ⚠️ WARNING: nvidia-smi command failed!
-      NVIDIA driver or GPU not detected.
-      NVIDIA Container Toolkit will NOT be installed.
-      Error output: {{ nvidia_smi_check.stderr | default('') }}
-  when: not nvidia_driver_available
-
-- name: Abort if nvidia_toolkit requested but no GPU available
+- name: Abort if no GPU
   ansible.builtin.fail:
-    msg: |
-      ❌ Installation aborted: nvidia_toolkit=True but no NVIDIA GPU or driver detected.
-      Please install NVIDIA driver first or set nvidia_toolkit=False
+    msg: "No NVIDIA GPU found"
   when:
-    - nvidia_toolkit | default(False) | bool
-    - not nvidia_driver_available
+    - nvidia_toolkit | default(false)
+    - nvidia_check.rc != 0
 
-# 2. INSTALLATION FOR DEBIAN/UBUNTU
-- name: Install NVIDIA Container Toolkit (Debian/Ubuntu)
+# 2. ADD NVIDIA REPOSITORY
+- name: Add NVIDIA repository
   block:
-    - name: Add NVIDIA GPG key
+    - name: Add GPG key
       ansible.builtin.apt_key:
         url: https://nvidia.github.io/libnvidia-container/gpgkey
         keyring: /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
-        state: present
 
-    - name: Add NVIDIA repository
+    - name: Add repo
       ansible.builtin.apt_repository:
         repo: deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/$(ARCH) /
-        state: present
         filename: nvidia-container-toolkit
-        update_cache: no
 
-    - name: Update apt cache
+    - name: Update cache
       ansible.builtin.apt:
         update_cache: yes
-
-    - name: Install {{ nvidia_toolkit_app }} packages
-      ansible.builtin.apt:
-        name:
-          - "nvidia-container-toolkit={{ nvidia_toolkit_version }}"
-          - "nvidia-container-toolkit-base={{ nvidia_toolkit_version }}"
-          - "libnvidia-container-tools={{ nvidia_toolkit_version }}"
-          - "libnvidia-container1={{ nvidia_toolkit_version }}"
-        state: present
   when:
-    - nvidia_toolkit | default(False) | bool
-    - nvidia_driver_available
+    - nvidia_toolkit | default(false)
     - ansible_facts["os_family"] == "Debian"
 
-# 3. INSTALLATION FOR REDHAT/FEDORA
-- name: Install NVIDIA Container Toolkit (RedHat/Fedora)
-  block:
-    - name: Add NVIDIA GPG key (RedHat)
-      ansible.builtin.rpm_key:
-        key: https://nvidia.github.io/libnvidia-container/gpgkey
-        state: present
-
-    - name: Add NVIDIA repository (RedHat)
-      ansible.builtin.yum_repository:
-        name: nvidia-container-toolkit
-        description: NVIDIA Container Toolkit repository
-        baseurl: https://nvidia.github.io/libnvidia-container/stable/rpm/$(ARCH)
-        gpgcheck: yes
-        gpgkey: https://nvidia.github.io/libnvidia-container/gpgkey
-        enabled: yes
-        state: present
-
-    - name: Install {{ nvidia_toolkit_app }} packages (RedHat)
-      ansible.builtin.dnf:
-        name:
-          - "nvidia-container-toolkit-{{ nvidia_toolkit_version }}"
-          - "nvidia-container-toolkit-base-{{ nvidia_toolkit_version }}"
-          - "libnvidia-container-tools-{{ nvidia_toolkit_version }}"
-          - "libnvidia-container1-{{ nvidia_toolkit_version }}"
-        state: present
-        disable_gpg_check: no
+# 3. INSTALL NVIDIA CONTAINER TOOLKIT
+- name: Install NVIDIA Container Toolkit
+  ansible.builtin.apt:
+    name:
+      - nvidia-container-toolkit
+      - nvidia-container-toolkit-base
+      - libnvidia-container-tools
+      - libnvidia-container1
+    state: latest
+    allow_downgrade: yes
   when:
-    - nvidia_toolkit | default(False) | bool
-    - nvidia_driver_available
-    - ansible_facts["os_family"] == "RedHat"
+    - nvidia_toolkit | default(false)
+    - nvidia_check.rc == 0
+    - ansible_facts["os_family"] == "Debian"
 
-# 4. CONFIGURATION FOR CONTAINERD
-- name: Configure NVIDIA Container Toolkit for containerd
-  block:
-    - name: Configure containerd runtime
-      ansible.builtin.command:
-        cmd: nvidia-ctk runtime configure --runtime=containerd
-        creates: /etc/containerd/conf.d/99-nvidia.toml
-      notify: restart containerd
-
-    - name: Enable containerd service
-      ansible.builtin.systemd:
-        name: containerd
-        enabled: yes
-        state: started
-  when:
-    - nvidia_toolkit | default(False) | bool
-    - nvidia_driver_available
-    - container_runtime == "containerd"
-
-# 5. CONFIGURATION FOR DOCKER (OPTIONAL)
-- name: Configure NVIDIA Container Toolkit for Docker
-  block:
-    - name: Configure Docker runtime
-      ansible.builtin.command:
-        cmd: nvidia-ctk runtime configure --runtime=docker
-        creates: /etc/docker/daemon.json
-      notify: restart docker
-
-    - name: Enable Docker service
-      ansible.builtin.systemd:
-        name: docker
-        enabled: yes
-        state: started
-  when:
-    - nvidia_toolkit | default(False) | bool
-    - nvidia_driver_available
-    - container_runtime == "docker"
-
-# 6. FINAL VERIFICATION
-- name: Verify NVIDIA Container Toolkit installation
+# 4. CONFIGURE CONTAINERD
+- name: Configure containerd for GPU
   ansible.builtin.command:
-    cmd: nvidia-ctk --version
-  register: toolkit_version
-  changed_when: false
+    cmd: nvidia-ctk runtime configure --runtime=containerd
+    creates: /etc/containerd/conf.d/99-nvidia.toml
+  notify: restart containerd
   when:
-    - nvidia_toolkit | default(False) | bool
-    - nvidia_driver_available
+    - nvidia_toolkit | default(false)
+    - nvidia_check.rc == 0
 
-- name: Display GPU and toolkit information
-  ansible.builtin.debug:
-    msg:
-      - "✅ NVIDIA GPU detected:"
-      - "{{ nvidia_smi_check.stdout_lines[0:3] | map('trim') | list }}"
-      - "✅ NVIDIA Container Toolkit: {{ (toolkit_version.stdout | split('\n'))[0] }}"
+- name: Enable and start containerd
+  ansible.builtin.systemd:
+    name: containerd
+    enabled: yes
+    state: started
   when:
-    - nvidia_toolkit | default(False) | bool
-    - nvidia_driver_available
-    - toolkit_version is defined
+    - nvidia_toolkit | default(false)
+    - nvidia_check.rc == 0
+
+# 5. VERIFICATION
+- name: Display success message
+  ansible.builtin.debug:
+    msg: "✅ NVIDIA GPU ready for containers"
+  when:
+    - nvidia_toolkit | default(false)
+    - nvidia_check.rc == 0

@@ -25,4 +25,6 @@ keepalived: choose
 # Usually a cluster node is not a destop or server
 desktop: false
 server: false
+
+# Default variables for NVIDIA Container Toolkit
 nvidia_toolkit: false

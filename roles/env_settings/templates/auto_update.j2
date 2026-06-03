@@ -5,7 +5,7 @@
 #   begin     : Wed 20 May 2026
 #   copyright : (c) 2026 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: auto_update.sh, v1.10 25/05/2026
+#   $Id: auto_update.sh, v1.20 03/06/2026
 #   ***************************************
 #
 #   --------------------------------------------------------------------
@@ -43,24 +43,58 @@ check_status() {
     fi
 }
 
+# Function to create hard links
+create_links() {
+    local source="$1"
+    local dest="$2"
+    local name="$3"
+    
+    if [ ! -d "$source" ]; then
+        log "  Warning: Source '$source' does not exist, skipping $name"
+        return 1
+    fi
+    
+    log "  Creating hard links for $name"
+    rm -rf "$dest"
+    cp -al "$source" "$dest"
+    
+    local count=$(find "$dest" -type f 2>/dev/null | wc -l)
+    log "  Created $count hard links for $name"
+}
+
 # Start logging
 log "=== Starting automatic maintenance ==="
 
-# Navigate to repo
-cd {{ repo_path }}
-check_status "Changed to directory {{ repo_path }}" || exit 1
+# ===== 1. FRESH CLONE / RESET =====
+REPO_PATH="{{ repo_path }}"
+cd "$REPO_PATH"
+check_status "Changed to directory $REPO_PATH" || exit 1
 
-# Git pull
-log "Pulling latest changes from git"
-git pull
-check_status "Git pull" || exit 1
+log "Fetching latest changes from git"
+git fetch origin
+check_status "Git fetch" || exit 1
 
-# Update submodules
-log "Updating git submodules"
-git submodule update --remote --merge
-check_status "Submodule update" || exit 1
+log "Hard resetting to origin/main"
+git reset --hard origin/main
+check_status "Git hard reset" || exit 1
 
-# Run Ansible playbook
+log "Cleaning untracked files"
+git clean -fdx
+check_status "Git clean" || exit 1
+# ===== END OF FRESH RESET =====
+
+# ===== 2. SUBMODULE + LINKS =====
+log "Reinitializing Little-IaC submodule"
+rm -rf Little-IaC
+git submodule update --init --recursive
+check_status "Submodule init and update" || exit 1
+
+log "Creating hard links for host/group variables"
+create_links "host_vars" "Little-IaC/host_vars" "host_vars"
+create_links "group_vars" "Little-IaC/group_vars" "group_vars"
+# ===== END OF SUBMODULE + LINKS =====
+
+# ===== 3. RUN ANSIBLE =====
 cd Little-IaC
 check_status "Changed to directory Little-IaC" || exit 1
 
@@ -76,5 +110,12 @@ else
     log "✗ Ansible playbook FAILED with exit code $ANSIBLE_EXIT"
     exit $ANSIBLE_EXIT
 fi
+# ===== END OF ANSIBLE =====
+
+# ===== 4. CLEANUP =====
+log "Cleaning up repository content (keeping .git)"
+cd "$REPO_PATH"
+find . -maxdepth 1 -not -name '.git' -not -name '.' -not -name '..' -exec rm -rf {} +
+check_status "Cleanup of repo/*"
 
 log "=== Automatic maintenance completed successfully ==="

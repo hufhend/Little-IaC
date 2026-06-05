@@ -4,7 +4,7 @@
   ansible.builtin.set_fact:
     app: "longhornctl"
     app_name: "Longhorn CLI"
-    version: "1.11.2"
+    version: "1.12.0"
     install_dir: "/home/{{ user_ansible }}/install/longhornctl"
 
 # Verify installed version

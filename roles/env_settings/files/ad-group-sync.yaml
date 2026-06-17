@@ -35,6 +35,15 @@
         mode: '0644'
       become: yes
 
+    - name: Deploy logrotate configuration
+      ansible.builtin.template:
+        src: ad-group-sync.logrotate.j2
+        dest: /etc/logrotate.d/ad-group-sync
+        owner: root
+        group: root
+        mode: '0644'
+      become: yes
+
     - name: Perform initial synchronization
       ansible.builtin.command:
         cmd: "/home/{{ user_ansible }}/scr/ad-group-sync.sh"
@@ -47,8 +56,8 @@
       ansible.builtin.debug:
         msg: "{{ sync_result.stdout_lines[-5:] if sync_result.stdout_lines else 'Initial sync completed' }}"
       when: sync_result.stdout_lines is defined
-      
-  when: 
+
+  when:
     - ad_integration | default(false)
     - ad_group_mappings is defined
   tags: ad_sync

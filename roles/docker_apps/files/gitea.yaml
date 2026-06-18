@@ -6,7 +6,7 @@
     app_name: "Gitea"
 
 - name: Install Python's Requests Library
-  ansible.builtin.apt:
+  ansible.builtin.package:
     name: python3-requests
     state: present
   become: true

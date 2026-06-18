@@ -22,6 +22,10 @@
     # Required for backup
     - name: Backup existing database
       block:
+        - name: Set date variable
+          set_fact:
+            backup_date: "{{ ansible_facts['date_time']['date'] }}"
+
         - name: Run dump in PostgreSQL container
           community.docker.docker_container_exec:
             container: gitea-db
@@ -36,12 +40,12 @@
         - name: Save database backup to file
           copy:
             content: "{{ pg_dump_output.stdout }}"
-            dest: "{{ backup_path }}/{{ app }}/gitea-sqlbkp_{{ ansible_date_time.date }}.bak"
+            dest: "{{ backup_path }}/{{ app }}/gitea-sqlbkp_{{ backup_date }}.bak"
 
         - name: Compress the backup file
           ansible.builtin.archive:
-            path: "{{ backup_path }}/{{ app }}/gitea-sqlbkp_{{ ansible_date_time.date }}.bak"
-            dest: "{{ backup_path }}/{{ app }}/gitea-sqlbkp_{{ ansible_date_time.date }}.tar.gz"
+            path: "{{ backup_path }}/{{ app }}/gitea-sqlbkp_{{ backup_date }}.bak"
+            dest: "{{ backup_path }}/{{ app }}/gitea-sqlbkp_{{ backup_date }}.tar.gz"
             format: gz
             remove: true
       when: gitea_dir_check.stat.exists

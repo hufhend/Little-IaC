@@ -23,9 +23,13 @@
       path: /etc/hosts
       line: "{{ git_hosts }}"
       state: present
-    ignore_errors: true
     become: true
     become_user: root
+    when: 
+      - git_hosts is defined
+      - git_hosts | length > 0
+      - git_hosts is string
+    ignore_errors: true
 
   - name: Back everything up before any changes
     command: rsync -ra --delete /home/{{ docker_user }}/{{ docker_home }}/ /home/{{ docker_user }}/backup/{{ docker_home }}
@@ -60,10 +64,6 @@
       file: "{{ item }}"
     loop: "{{ query('fileglob', role_path ~ '/files/*.yaml') }}"
     no_log: true
-
-  # - name: Application debugging part
-  #   include_tasks:
-  #     file: "{{ role_path }}/files/openvpn.yaml"
 
   - name: Create a scr directory
     ansible.builtin.file:

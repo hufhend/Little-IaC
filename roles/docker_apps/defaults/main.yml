@@ -14,6 +14,7 @@ docker_openvpn: false
 docker_vault: false
 docker_rancher: false
 docker_homeassistant: false
+docker_proxy: false
 vpn_url: vpn.example.com
 
 # Variables for the Gitea app

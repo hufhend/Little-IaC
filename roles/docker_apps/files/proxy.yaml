@@ -1,0 +1,20 @@
+---
+#  We expect a full deployment in the private repository
+
+- name: Set a app variable
+  ansible.builtin.set_fact:
+    app: "proxy"
+    app_name: "Proxy"
+
+- name: Configuration {{ app_name }}
+  block:
+  - name: Include config tasks
+    ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
+
+  # Start the application
+  - name: Create and start {{ app_name }}
+    community.docker.docker_compose_v2:
+      project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
+
+  when:
+    - docker_proxy == true

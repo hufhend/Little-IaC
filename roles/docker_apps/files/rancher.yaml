@@ -1,7 +1,5 @@
 ---
-# Easy deployment homeassistant from your own Git
-# We copy the whole docker compose files, the directory already exists
-# I will improve it later
+#  We expect a full deployment in the private repository
 
 - name: Set a app variable
   ansible.builtin.set_fact:
@@ -13,10 +11,10 @@
   - name: Include config tasks
     ansible.builtin.include_tasks: "{{ role_path }}/tasks/config.yaml"
 
-  # Start the application 
+  # Start the application
   - name: Create and start {{ app_name }}
     community.docker.docker_compose_v2:
-      project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}    
+      project_src: /home/{{ docker_user }}/{{ docker_home }}/{{ app }}
 
-  when: 
+  when:
     - docker_rancher == true

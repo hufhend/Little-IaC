@@ -5,7 +5,7 @@
     state: directory
     owner: "{{ user_ansible }}"
     group: "{{ user_ansible }}"
-    mode: '0755'
+    mode: '0750'
 
 - name: Configure AD group synchronization
   block:
@@ -15,7 +15,7 @@
         dest: "/home/{{ user_ansible }}/scr/ad-group-sync.sh"
         owner: "{{ user_ansible }}"
         group: "{{ user_ansible }}"
-        mode: '0755'
+        mode: '0750'
 
     - name: Deploy AD group sync configuration
       ansible.builtin.template:
@@ -32,7 +32,7 @@
         state: touch
         owner: root
         group: root
-        mode: '0644'
+        mode: '0640'
       become: yes
 
     - name: Deploy logrotate configuration

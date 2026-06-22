@@ -101,17 +101,37 @@
     state: directory
     owner: "{{ user_ansible }}"
     group: "{{ user_ansible }}"
-    mode: '0755'
+    mode: '0750'
 
-- name: Add script to auto update
-  ansible.builtin.template:
-    src: templates/auto_update.j2
-    dest: "/home/{{ user_ansible }}/scr/auto_update.sh"
-    owner: "{{ user_ansible }}"
-    group: "{{ user_ansible }}"
-    mode: '0760'
-  become_user: "{{ user_ansible }}"
-  become: true
+- name: Add automatic general maintenance
+  block:
+    - name: Add script to auto update
+      ansible.builtin.template:
+        src: templates/auto_update.j2
+        dest: "/home/{{ user_ansible }}/scr/auto_update.sh"
+        owner: "{{ user_ansible }}"
+        group: "{{ user_ansible }}"
+        mode: '0750'
+      become_user: "{{ user_ansible }}"
+      become: true
+
+    - name: Create initial log file
+      ansible.builtin.file:
+        path: /var/log/auto-update.log
+        state: touch
+        owner: "{{ user_ansible }}"
+        group: "{{ user_ansible }}"
+        mode: '0640'
+      become: true
+
+    - name: Deploy logrotate configuration
+      template:
+        src: auto_update.logrotate.j2
+        dest: /etc/logrotate.d/auto-update
+        owner: root
+        group: root
+        mode: '0644'
+      become: true
   when: auto_update | default(false)
 
 - name: Install beautiful Central European fonts

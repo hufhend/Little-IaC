@@ -1,0 +1,14 @@
+# {{ ansible_managed_header }}
+# {{ ansible_managed_warning }}
+#
+# Logrotate configuration for auto update script
+
+/var/log/auto-update.log {
+    size 250k
+    rotate 5
+    compress
+    missingok
+    notifempty
+    create 0640 {{ user_ansible }} {{ user_ansible }}
+    nodateext
+}

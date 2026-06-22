@@ -4,14 +4,15 @@
 # Logrotate configuration for AD group synchronization script
 
 /var/log/ad-group-sync.log {
-    daily
-    rotate {{ logrotate_retention | default(30) }}
+    monthly
+    rotate {{ logrotate_retention | default(5) }}
     missingok
     notifempty
     compress
     delaycompress
-    create 0644 root root
+    create 0640 root root
     su root root
+    nodateext
     {% if ansible_facts['os_family'] == 'RedHat' %}
     postrotate
         /usr/bin/killall -HUP rsyslogd 2> /dev/null || true

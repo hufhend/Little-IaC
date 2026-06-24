@@ -5,7 +5,7 @@
 #   begin     : Wed 20 May 2026
 #   copyright : (c) 2026 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: auto_update.sh, v1.20 03/06/2026
+#   $Id: auto_update.sh, v1.22 23/06/2026
 #   ***************************************
 #
 #   --------------------------------------------------------------------
@@ -71,7 +71,7 @@ cd "$REPO_PATH"
 check_status "Changed to directory $REPO_PATH" || exit 1
 
 log "Fetching latest changes from git"
-git fetch origin
+git fetch origin --no-recurse-submodules
 check_status "Git fetch" || exit 1
 
 log "Hard resetting to origin/main"

@@ -4,7 +4,7 @@
   ansible.builtin.set_fact:
     app: "calicoctl"
     app_name: "Calicoctl"
-    version: "3.32.0"
+    version: "3.32.1"
     install_dir: "/home/{{ user_ansible }}/install/calicoctl"
 
 # Verify installed version

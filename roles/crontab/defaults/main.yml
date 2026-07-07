@@ -4,8 +4,8 @@
 mntd: "01"
 # Minute to download updates
 mntm: "47"
-# Setting the value to K8s to enable crontab 
-cron: choose
+# Setting the value to K8s to enable crontab
+cron: false
 # The device of the first disk
 first_disk: /dev/sda
 # The device of the second disk

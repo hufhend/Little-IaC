@@ -7,17 +7,41 @@
 
 - name: Install {{ app_name }} on Linux
   block:
-  - name: Add Microsoft GPG key
-    ansible.builtin.apt_key:
-      url: https://packages.microsoft.com/keys/microsoft.asc
-      keyring: /usr/share/keyrings/microsoft.gpg
-      state: present
+  - name: Remove old Azure CLI apt source (one-line format)
+    ansible.builtin.file:
+      path: /etc/apt/sources.list.d/azure-cli.list
+      state: absent
+    ignore_errors: true
 
-  - name: Add {{ app_name }} repository
-    ansible.builtin.apt_repository:
-      repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ {{ ansible_facts['distribution_release'] }} main"
+  - name: Ensure keyrings directory exists
+    ansible.builtin.file:
+      path: /usr/share/keyrings
+      state: directory
+      mode: '0755'
+
+  - name: Download Microsoft GPG key
+    ansible.builtin.get_url:
+      url: https://packages.microsoft.com/keys/microsoft.asc
+      dest: /usr/share/keyrings/microsoft.asc
+      mode: '0644'
+      force: true
+
+  - name: Add {{ app_name }} repository as DEB822 source
+    ansible.builtin.deb822_repository:
+      name: azure-cli
+      types: deb
+      uris: https://packages.microsoft.com/repos/azure-cli/
+      suites: "{{ ansible_facts['distribution_release'] }}"
+      components: main
+      architectures: amd64
+      signed_by: /usr/share/keyrings/microsoft.asc
       state: present
-      filename: azure-cli
+      enabled: true
+
+  - name: Update apt cache
+    ansible.builtin.apt:
+      update_cache: true
+      cache_valid_time: 3600
 
   - name: Install {{ app_name }}
     ansible.builtin.apt:
@@ -26,19 +50,21 @@
       allow_downgrade: true
 
   - name: Check {{ app_name }} version
-    command: "/usr/bin/az version -o json"
-    register: "install_result"
+    ansible.builtin.command: "/usr/bin/az version -o json"
+    register: install_result
     changed_when: false
     become_user: "{{ ansible_user }}"
     ignore_errors: true
 
   - name: Extract and clean {{ app_name }} version
-    set_fact:
+    ansible.builtin.set_fact:
       new_version: "{{ (install_result.stdout | from_json)['azure-cli'] }}"
+    when: install_result is success
 
   - name: Show {{ app_name }} version
-    debug:
+    ansible.builtin.debug:
       msg: "{{ app_name }} version is {{ new_version }}"
+    when: install_result is success
 
   - name: Hold {{ app_name }} to prevent upgrades
     ansible.builtin.command:
@@ -48,4 +74,3 @@
   when:
     - azcli == True
     - ansible_facts["distribution"] == "Ubuntu"
-

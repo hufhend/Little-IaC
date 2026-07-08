@@ -1,6 +1,6 @@
 # Microsoft Azure CLI on Linux
 ---
-- name: Package Variable Setting
+- name: Azure CLI Variable Setting
   ansible.builtin.set_fact:
     app: "azcli"
     app_name: "Azure CLI"
@@ -37,6 +37,20 @@
       signed_by: /usr/share/keyrings/microsoft.asc
       state: present
       enabled: true
+
+  - name: Add managed warning to {{ app }} sources file
+    ansible.builtin.lineinfile:
+      path: /etc/apt/sources.list.d/azure-cli.sources
+      line: "# {{ ansible_managed_warning }}"
+      insertbefore: BOF
+      state: present
+
+  - name: Add managed header to {{ app }} sources file
+    ansible.builtin.lineinfile:
+      path: /etc/apt/sources.list.d/azure-cli.sources
+      line: "# {{ ansible_managed_header }}"
+      insertbefore: BOF
+      state: present
 
   - name: Update apt cache
     ansible.builtin.apt:

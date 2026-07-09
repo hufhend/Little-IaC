@@ -1,28 +1,55 @@
 ---
 # Microsoft Intune - compliance for organisations
-- name: Package Variable Setting
+# Changes made solely for Ansible compatibility, but something has changed
+# on the Microsoft Intune side - so it's not working
+
+- name: Microsoft Intune Variable Setting
   ansible.builtin.set_fact:
     app: "intune"
     app_name: "Microsoft Intune"
 
 - name: Install {{ app_name }}
   block:
-  - name: Add Microsoft GPG key
-    ansible.builtin.apt_key:
-      url: https://packages.microsoft.com/keys/microsoft.asc
-      keyring: /usr/share/keyrings/microsoft.gpg
-      state: present
+  - name: Remove old Intune apt source (one-line format)
+    ansible.builtin.file:
+      path: "/etc/apt/sources.list.d/microsoft-ubuntu-{{ ansible_facts['distribution_release'] }}-prod.list"
+      state: absent
+    ignore_errors: true
 
-  - name: Add {{ app_name }} repository
-    ansible.builtin.apt_repository:
-      repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/ubuntu/{{ ansible_facts['distribution_release'] }}/prod {{ ansible_facts['distribution_release'] }} main"
+  - name: Ensure keyrings directory exists
+    ansible.builtin.file:
+      path: /usr/share/keyrings
+      state: directory
+      mode: '0755'
+
+  - name: Download Microsoft GPG key
+    ansible.builtin.get_url:
+      url: https://packages.microsoft.com/keys/microsoft.asc
+      dest: /usr/share/keyrings/microsoft.asc
+      mode: '0644'
+      force: true
+
+  - name: Add {{ app_name }} repository as DEB822 source
+    ansible.builtin.deb822_repository:
+      name: "microsoft-ubuntu-{{ ansible_facts['distribution_release'] }}-prod"
+      types: deb
+      uris: "https://packages.microsoft.com/ubuntu/{{ ansible_facts['distribution_release'] }}/prod"
+      suites: "{{ ansible_facts['distribution_release'] }}"
+      components: main
+      signed_by: /usr/share/keyrings/microsoft.asc
       state: present
-      filename: "microsoft-ubuntu-{{ ansible_facts['distribution_release'] }}-prod"
+      enabled: true
+
+  - name: Update apt cache
+    ansible.builtin.apt:
+      update_cache: true
+      cache_valid_time: 3600
 
   - name: Install {{ app_name }}
     ansible.builtin.apt:
       name: intune-portal
       state: present
+
   when: intune == True
 
 

@@ -1,24 +1,59 @@
 ---
 # MEGA Desktop App
-- name: Package Variable Setting
+- name: MEGA Desktop Variable Setting
   ansible.builtin.set_fact:
     app: "megasync"
     app_name: "Megasync"
 
 - name: Install {{ app_name }}
   block:
-  - name: Add {{ app_name }} GPG key
-    ansible.builtin.apt_key:
-      url: https://mega.nz/linux/repo/xUbuntu_{{ ansible_facts['distribution_version'] }}/Release.key
-      keyring: /usr/share/keyrings/meganz-archive-keyring.gpg
+  - name: Remove old MEGA apt source (one-line format)
+    ansible.builtin.file:
+      path: /etc/apt/sources.list.d/megaio.list
+      state: absent
+    ignore_errors: true
+
+  - name: Ensure keyrings directory exists
+    ansible.builtin.file:
+      path: /usr/share/keyrings
+      state: directory
+      mode: '0755'
+
+  - name: Download MEGA GPG key
+    ansible.builtin.get_url:
+      url: "https://mega.nz/linux/repo/xUbuntu_{{ ansible_facts['distribution_version'] }}/Release.key"
+      dest: /usr/share/keyrings/meganz-archive-keyring.asc
+      mode: '0644'
+      force: true
+
+  - name: Add MEGA repository as source
+    ansible.builtin.deb822_repository:
+      name: megaio
+      types: deb
+      uris: "https://mega.nz/linux/repo/xUbuntu_{{ ansible_facts['distribution_version'] }}/"
+      suites: ./
+      signed_by: /usr/share/keyrings/meganz-archive-keyring.asc
+      state: present
+      enabled: true
+
+  - name: Add managed warning to MEGA sources file
+    ansible.builtin.lineinfile:
+      path: /etc/apt/sources.list.d/megaio.sources
+      line: "# {{ ansible_managed_warning }}"
+      insertbefore: BOF
       state: present
 
-  - name: Add {{ app_name }} repository
-    ansible.builtin.apt_repository:
-      repo: "deb [signed-by=/usr/share/keyrings/meganz-archive-keyring.gpg] https://mega.nz/linux/repo/xUbuntu_{{ ansible_facts['distribution_version'] }}/ ./"
+  - name: Add managed header to MEGA sources file
+    ansible.builtin.lineinfile:
+      path: /etc/apt/sources.list.d/megaio.sources
+      line: "# {{ ansible_managed_header }}"
+      insertbefore: BOF
       state: present
-      filename: megaio
+
+  - name: Update apt cache
+    ansible.builtin.apt:
       update_cache: true
+      cache_valid_time: 3600
 
   - name: Install {{ app_name }}
     ansible.builtin.apt:
@@ -29,4 +64,11 @@
     ansible.builtin.apt:
       name: nautilus-megasync
       state: present
+
+  - name: Remove old MEGA GPG key
+    ansible.builtin.file:
+      path: /usr/share/keyrings/meganz-archive-keyring.gpg
+      state: absent
+    ignore_errors: true
+
   when: mega == True

@@ -88,6 +88,28 @@
       groups: docker
       append: yes
 
+  - name: Create Docker daemon configuration
+    block:
+    - name: Create daemon.json conf
+      ansible.builtin.template:
+        src: daemon.json.j2
+        dest: /etc/docker/daemon.json
+        owner: root
+        group: root
+        mode: '0644'
+      notify: restart docker
+
+    - name: Prune default Docker networks
+      ansible.builtin.command: docker network prune -f
+      when: docker_enable_cgnat | bool
+      ignore_errors: true
+      changed_when: true
+
+    - name: Show Docker network status
+      ansible.builtin.debug:
+        msg: "Docker CGNAT configuration is {{ 'ENABLED' if docker_enable_cgnat | bool else 'DISABLED (default)' }}"
+    when: docker_enable_cgnat
+
   # Restart only on first pass
   - name: Reboot the system
     ansible.builtin.reboot:

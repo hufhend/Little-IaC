@@ -90,32 +90,45 @@
 
   - name: Create Docker daemon configuration
     block:
-    - name: Create daemon.json conf
-      ansible.builtin.template:
-        src: daemon.json.j2
-        dest: /etc/docker/daemon.json
-        owner: root
-        group: root
-        mode: '0644'
-      notify: restart docker
+      - name: Read existing daemon.json
+        ansible.builtin.slurp:
+          src: /etc/docker/daemon.json
+        register: daemon_raw
+        ignore_errors: true
 
-    - name: Prune default Docker networks
-      ansible.builtin.command: docker network prune -f
-      when: docker_enable_cgnat | bool
-      ignore_errors: true
-      changed_when: true
+      - name: Parse existing config or create empty
+        ansible.builtin.set_fact:
+          daemon_config: "{{ (daemon_raw.content | b64decode | from_json) if daemon_raw is success else {} }}"
 
-    - name: Show Docker network status
-      ansible.builtin.debug:
-        msg: "Docker CGNAT configuration is {{ 'ENABLED' if docker_enable_cgnat | bool else 'DISABLED (default)' }}"
-    when: docker_enable_cgnat
+      - name: Define desired config
+        ansible.builtin.set_fact:
+          desired_config:
+            log-driver: "{{ docker_log_driver | default('json-file') }}"
+            log-opts:
+              max-size: "{{ docker_log_max_size | default('10m') }}"
+              max-file: "{{ docker_log_max_file | default('3') }}"
+            default-address-pools: "{{ [{'base': docker_cgnat_base, 'size': docker_cgnat_size}] if docker_config | bool else [] }}"
 
-  # Restart only on first pass
-  - name: Reboot the system
-    ansible.builtin.reboot:
-      msg: "Reboot initiated by Ansible for Docker installation"
-      reboot_timeout: 600
-    when: "'docker' not in user_groups.stdout.split()"
+      - name: Merge and write config
+        ansible.builtin.copy:
+          content: "{{ (daemon_config | combine(desired_config, recursive=true)) | to_nice_json }}"
+          dest: /etc/docker/daemon.json
+          owner: root
+          group: root
+          mode: '0644'
+        notify: restart docker
+
+      - name: Prune old Docker networks
+        ansible.builtin.command: docker network prune -f
+        ignore_errors: true
+        changed_when: true
+
+      - name: Show Docker network status
+        ansible.builtin.debug:
+          msg:
+            - "Docker CGNAT configuration is ENABLED"
+            - "Old unused networks pruned (active networks preserved)."
+    when: docker_config | bool
 
   # Show installed version
   - name: Get Docker version

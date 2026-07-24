@@ -12,17 +12,18 @@ docker_log_max_size: 10m
 docker_log_max_file: 3
 
 # ============================================
-# CGNAT NETWORK CONFIGURATION
+# DOCKER DAEMON CONFIGURATION MANAGEMENT
 # ============================================
-# Enable CGNAT (RFC 6598) address pool for Docker networks.
+# Enable Docker daemon configuration management.
+# When true, applies CGNAT address pool and logging configuration.
 # This resolves IP collisions when host network uses 172.x.x.x or 10.x.x.x.
 # Docker will then assign IPs from 100.64.0.0/10 range instead of 172.17.0.0/16.
 #
 # To enable, override this variable in group_vars or inventory:
-#   docker_enable_cgnat: true
+#   docker_config: true
 #
 # Default: false (safe, no changes applied)
-docker_enable_cgnat: false
+docker_config: false
 
 # CGNAT pool configuration (RFC 6598 - Shared Address Space)
 docker_cgnat_base: 100.64.0.0/10

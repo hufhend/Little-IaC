@@ -22,11 +22,25 @@
       name: dnf-plugins-core
       state: present
 
+  - name: Map architecture for RHEL
+    ansible.builtin.set_fact:
+      arch_map_rhel:
+        x86_64: x86_64
+        amd64: x86_64
+        aarch64: aarch64
+        arm64: aarch64
+        armv7l: armv7l
+        armv6l: armv6l
+
+  - name: Set Docker architecture for RHEL
+    ansible.builtin.set_fact:
+      docker_arch: "{{ arch_map_rhel.get(ansible_facts['architecture'], ansible_facts['architecture']) }}"
+
   - name: Add Docker CE repository
     ansible.builtin.yum_repository:
       name: docker-ce
       description: Docker CE Stable
-      baseurl: https://download.docker.com/linux/rhel/{{ ansible_facts['distribution_major_version'] }}/x86_64/stable
+      baseurl: "https://download.docker.com/linux/rhel/{{ ansible_facts['distribution_major_version'] }}/{{ docker_arch }}/stable"
       gpgcheck: yes
       gpgkey: https://download.docker.com/linux/rhel/gpg
       enabled: yes
@@ -43,7 +57,7 @@
       state: latest
       update_cache: true
 
-  - name: Enable Docker service
+  - name: Enable and start Docker service
     ansible.builtin.systemd:
       name: docker
       enabled: yes
@@ -60,38 +74,93 @@
       groups: docker
       append: yes
 
-  # Restart only on first pass
-  - name: Reboot the system
+  - name: Create Docker daemon configuration (RHEL)
+    block:
+      - name: Read existing daemon.json
+        ansible.builtin.slurp:
+          src: /etc/docker/daemon.json
+        register: daemon_raw
+        ignore_errors: true
+
+      - name: Parse existing config or create empty
+        ansible.builtin.set_fact:
+          daemon_config: "{{ (daemon_raw.content | b64decode | from_json) if daemon_raw is success else {} }}"
+
+      - name: Define desired config (CGNAT enabled for RHEL)
+        ansible.builtin.set_fact:
+          desired_config:
+            log-driver: "{{ docker_log_driver | default('json-file') }}"
+            log-opts:
+              max-size: "{{ docker_log_max_size | default('10m') | string }}"
+              max-file: "{{ docker_log_max_file | default('3') | string }}"
+            default-address-pools: "{{ [{'base': docker_cgnat_base, 'size': docker_cgnat_size}] if docker_config | bool else [] }}"
+
+      - name: Merge config
+        ansible.builtin.set_fact:
+          new_config: "{{ (daemon_config | combine(desired_config, recursive=true)) }}"
+          config_changed: "{{ (daemon_config | combine(desired_config, recursive=true)) != daemon_config }}"
+
+      - name: Write merged config
+        ansible.builtin.copy:
+          content: "{{ new_config | to_nice_json }}"
+          dest: /etc/docker/daemon.json
+          owner: root
+          group: root
+          mode: '0644'
+        notify: restart docker
+        when: config_changed | bool
+
+      - name: Prune old Docker networks
+        ansible.builtin.command: docker network prune -f
+        ignore_errors: true
+        changed_when: true
+        when: docker_config | bool
+
+      - name: Show Docker network status
+        ansible.builtin.debug:
+          msg:
+            - "Docker CGNAT configuration is ENABLED"
+            - "Old unused networks pruned (active networks preserved)."
+        when: docker_config | bool
+
+  - name: Reboot the system if needed (group membership requires new session)
     ansible.builtin.reboot:
-      msg: "Reboot initiated by Ansible for Docker installation"
+      msg: "Reboot initiated by Ansible for Docker group membership"
       reboot_timeout: 600
-    when: "'docker' not in user_groups.stdout.split()"
+    when: 
+      - "'docker' not in user_groups.stdout.split()"
+      - ansible_facts['distribution_major_version'] != "9"
 
   # Show installed version
   - name: Get Docker version
-    command: docker version
+    ansible.builtin.command: docker version
     register: docker_version_result
+    changed_when: false
+    ignore_errors: true
 
   - name: Get Docker Compose version
-    command: docker compose version
+    ansible.builtin.command: docker compose version
     register: docker_compose_version_result
+    changed_when: false
+    ignore_errors: true
 
   - name: Extract Docker versions
-    set_fact:
+    ansible.builtin.set_fact:
       docker_client_version: "{{ docker_version_result.stdout | regex_search('Client:.*\\n Version:\\s+([\\d.]+)', '\\1') | default(['unknown']) | first }}"
       docker_engine_version: "{{ docker_version_result.stdout | regex_search('Engine:\\s*\\n\\s+Version:\\s+([\\d.]+)', '\\1') | default(['unknown'], true) | first }}"
       containerd_version: "{{ docker_version_result.stdout | regex_search('containerd:\\s*\\n\\s+Version:\\s+([\\w.]+)', '\\1') | default(['unknown'], true) | first }}"
       runc_version: "{{ docker_version_result.stdout | regex_search('runc:\\s*\\n\\s+Version:\\s+([\\d.]+)', '\\1') | default(['unknown'], true) | first }}"
       docker_init_version: "{{ docker_version_result.stdout | regex_search('docker-init:\\s*\\n\\s+Version:\\s+([\\d.]+)', '\\1') | default(['unknown'], true) | first }}"
       docker_compose_version: "{{ docker_compose_version_result.stdout | regex_search('Docker Compose version v([\\d.]+)', '\\1') | default(['unknown'], true) | first }}"
+    when: docker_version_result is success and docker_compose_version_result is success
 
   - name: Show Docker versions
     ansible.builtin.debug:
       msg:
       - "Docker client: {{ docker_client_version }}"
       - "Docker engine: {{ docker_engine_version }}, containerd: {{ containerd_version }}, runc: {{ runc_version }}, docker-init: {{ docker_init_version }}, compose: {{ docker_compose_version }}"
+    when: docker_version_result is success and docker_compose_version_result is success
 
   when:
     - role not in ['combi', 'master', 'worker']
-    - ansible_facts["os_family"] | lower == "redhat"
-    - ansible_facts['distribution_major_version']== "9" 
+    - ansible_facts['os_family'] | lower == "redhat"

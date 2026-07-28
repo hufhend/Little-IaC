@@ -105,8 +105,8 @@
           desired_config:
             log-driver: "{{ docker_log_driver | default('json-file') }}"
             log-opts:
-              max-size: "{{ docker_log_max_size | default('10m') }}"
-              max-file: "{{ docker_log_max_file | default('3') }}"
+              max-size: "{{ docker_log_max_size | default('10m') | string }}"
+              max-file: "{{ docker_log_max_file | default('3') | string }}"
             default-address-pools: "{{ [{'base': docker_cgnat_base, 'size': docker_cgnat_size}] if docker_config | bool else [] }}"
 
       - name: Merge and write config

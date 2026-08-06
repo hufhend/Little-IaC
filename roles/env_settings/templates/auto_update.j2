@@ -5,7 +5,7 @@
 #   begin     : Wed 20 May 2026
 #   copyright : (c) 2026 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: auto_update.sh, v1.22 23/06/2026
+#   $Id: auto_update.sh, v1.24 07/08/2026
 #   ***************************************
 #
 #   --------------------------------------------------------------------
@@ -22,10 +22,17 @@
 #
 #   {{ ansible_managed_header }}
 #   {{ ansible_managed_warning }}
+#
+#   Usage:
+#     ./auto_update.sh               - Normal mode
+#     VERBOSE=true ./auto_update.sh  - Verbose mode (logs all Ansible output)
 
 # Logging setup
 LOG_FILE="/var/log/auto-update.log"
 touch "$LOG_FILE" 2>/dev/null || { echo "Cannot write to $LOG_FILE" >&2; exit 1; }
+
+# Verbose mode (default: false)
+VERBOSE="${VERBOSE:-false}"
 
 # Logging function
 log() {
@@ -48,48 +55,49 @@ create_links() {
     local source="$1"
     local dest="$2"
     local name="$3"
-    
+
     if [ ! -d "$source" ]; then
         log "  Warning: Source '$source' does not exist, skipping $name"
         return 1
     fi
-    
+
     log "  Creating hard links for $name"
     rm -rf "$dest"
     cp -al "$source" "$dest"
-    
+
     local count=$(find "$dest" -type f 2>/dev/null | wc -l)
     log "  Created $count hard links for $name"
 }
 
 # Start logging
 log "=== Starting automatic maintenance ==="
+[ "$VERBOSE" = "true" ] && log "  Verbose mode: ENABLED"
 
 # ===== 1. FRESH CLONE / RESET =====
 REPO_PATH="{{ repo_path }}"
 cd "$REPO_PATH"
 check_status "Changed to directory $REPO_PATH" || exit 1
 
-log "Fetching latest changes from git"
+log "  Fetching latest changes from git"
 git fetch origin --no-recurse-submodules
 check_status "Git fetch" || exit 1
 
-log "Hard resetting to origin/main"
+log "  Hard resetting to origin/main"
 git reset --hard origin/main
 check_status "Git hard reset" || exit 1
 
-log "Cleaning untracked files"
+log "  Cleaning untracked files"
 git clean -fdx
 check_status "Git clean" || exit 1
 # ===== END OF FRESH RESET =====
 
 # ===== 2. SUBMODULE + LINKS =====
-log "Reinitializing Little-IaC submodule"
+log "  Reinitializing Little-IaC submodule"
 rm -rf Little-IaC
 git submodule update --init --recursive
 check_status "Submodule init and update" || exit 1
 
-log "Creating hard links for host/group variables"
+log "  Creating hard links for host/group variables"
 create_links "host_vars" "Little-IaC/host_vars" "host_vars"
 create_links "group_vars" "Little-IaC/group_vars" "group_vars"
 # ===== END OF SUBMODULE + LINKS =====
@@ -98,22 +106,42 @@ create_links "group_vars" "Little-IaC/group_vars" "group_vars"
 cd Little-IaC
 check_status "Changed to directory Little-IaC" || exit 1
 
-log "Running Ansible playbook for host: {{ ansible_facts['hostname'] }}"
-log "--- Ansible output start ---"
-ansible-playbook -l {{ ansible_facts["hostname"] }} desktop.yaml
-ANSIBLE_EXIT=$?
-log "--- Ansible output end (exit code: $ANSIBLE_EXIT) ---"
+log "  Running Ansible playbook for host: {{ ansible_facts['hostname'] }}"
+
+if [ "$VERBOSE" = "true" ]; then
+    # Verbose mode: Always show Ansible output
+    log "  --- Ansible output (verbose mode) ---"
+    ansible-playbook -l {{ ansible_facts["hostname"] }} desktop.yaml 2>&1 | while IFS= read -r line; do
+        log "  $line"
+    done
+    ANSIBLE_EXIT=${PIPESTATUS[0]}
+    log "  --- End of Ansible output ---"
+else
+    # Normal mode: Show Ansible output only on error
+    ANSIBLE_OUTPUT=$(ansible-playbook -l {{ ansible_facts["hostname"] }} desktop.yaml 2>&1)
+    ANSIBLE_EXIT=$?
+fi
 
 if [ $ANSIBLE_EXIT -eq 0 ]; then
-    log "✓ Ansible playbook completed successfully"
+    log "  ✓ Ansible playbook completed successfully"
 else
-    log "✗ Ansible playbook FAILED with exit code $ANSIBLE_EXIT"
+    log "  ✗ Ansible playbook FAILED with exit code $ANSIBLE_EXIT"
+
+    # In normal mode, we need to show the error output now
+    if [ "$VERBOSE" != "true" ]; then
+        log "  --- Ansible error output ---"
+        echo "$ANSIBLE_OUTPUT" | while IFS= read -r line; do
+            log "  $line"
+        done
+        log "  --- End of Ansible output ---"
+    fi
+
     exit $ANSIBLE_EXIT
 fi
 # ===== END OF ANSIBLE =====
 
 # ===== 4. CLEANUP =====
-log "Cleaning up repository content (keeping .git)"
+log "  Cleaning up repository content (keeping .git)"
 cd "$REPO_PATH"
 find . -maxdepth 1 -not -name '.git' -not -name '.' -not -name '..' -exec rm -rf {} +
 check_status "Cleanup of repo/*"

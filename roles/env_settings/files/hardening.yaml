@@ -1,0 +1,18 @@
+---
+- name: Configure cryptographic policies
+  when: 
+    - ansible_facts["os_family"] == "RedHat"
+    - hardening | default(false)
+  block:
+    - name: Set the FUTURE crypto policy
+      ansible.builtin.include_role:
+        name: linux-system-roles.crypto_policies
+      vars:
+        crypto_policies_policy: FUTURE
+        crypto_policies_reboot_ok: true
+        
+    - name: Wait for system to reconnect after reboot
+      ansible.builtin.wait_for_connection:
+        delay: 10
+        timeout: 300
+      when: crypto_policies_reboot_ok | default(false)

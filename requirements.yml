@@ -1,5 +1,8 @@
 ---
-
 collections:
   - 'kubernetes.core'
   # - 'community.general'
+
+roles:
+  - name: linux-system-roles.crypto_policies
+    src: https://github.com/linux-system-roles/crypto_policies

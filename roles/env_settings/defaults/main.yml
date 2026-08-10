@@ -156,3 +156,6 @@ motd_news: "Welcome to our server! Stay tuned for updates and news."
 # motd_logo_color: BLUE  # Example for blue
 
 repo_path: "/home/{{ user_ansible }}/git/repo"
+
+hardening: false
+crypto_policy: "FUTURE"

@@ -5,7 +5,7 @@
 #   begin     : Tue 24 Feb 2026
 #   copyright : (c) 2026 Václav Dvorský
 #   email     : hufhendr@gmail.com
-#   $Id: ad-group-sync.sh, v1.00 25/02/2026
+#   $Id: ad-group-sync.sh, v1.02 18/08/2026
 #   ***************************************
 #
 #   --------------------------------------------------------------------
@@ -35,9 +35,9 @@ TEMP_DIR="/tmp/ad-sync-$$"
 PROTECTED_USERS=(
     "{{ user_ansible }}"
     "root"
-    {% for user in additional_protected_users | default([]) %}
+{% for user in additional_protected_users | default([]) %}
     "{{ user }}"
-    {% endfor %}
+{% endfor %}
 )
 
 # Check if config file exists

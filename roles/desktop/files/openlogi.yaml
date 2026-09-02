@@ -1,0 +1,134 @@
+# OpenLogi (Logitech device manager) Installation Task File
+- name: OpenLogi Variable Setting
+  ansible.builtin.set_fact:
+    app: "openlogi"
+    app_name: "OpenLogi"
+    install_dir: "/home/{{ user_ansible }}/install/openlogi"
+
+# Verify installed version
+- name: Check if {{ app_name }} is installed
+  stat:
+    path: "/usr/bin/{{ app }}"
+  register: app_installed
+
+- block:
+    - name: Verify OpenLogi version
+      ansible.builtin.command: "/usr/bin/{{ app }} -V"
+      register: install_result
+      changed_when: false
+
+    - name: Extract and clean version
+      set_fact:
+        installed_version: "{{ install_result.stdout | regex_replace('^openlogi\\s+', '') | trim }}"
+  when: app_installed.stat.exists
+
+# View the latest stable version
+- name: Get latest version from GitHub
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/AprilNEA/OpenLogi/releases/latest"
+    headers: '{{ ({"Authorization": "token " + github_token} if github_token is defined and github_token | length > 0 else {}) | to_json }}'
+    return_content: yes
+    timeout: 30
+  register: github_release
+  changed_when: false
+  run_once: yes
+
+- name: Set latest version
+  ansible.builtin.set_fact:
+    latest_version: "{{ github_release.json.tag_name | regex_replace('^v', '') }}"
+    release_assets: "{{ github_release.json.assets }}"
+
+- name: Show {{ app_name }} version
+  ansible.builtin.debug:
+    msg:
+    - "The installed version was detected: {{ installed_version }}"
+    - "The currently installed version is: {{ latest_version }}"
+  when: installed_version is defined
+
+- name: Compare versions
+  ansible.builtin.debug:
+    msg: "A new version {{ latest_version }} is available. Let's upgrade!"
+  when:
+    - installed_version is defined
+    - latest_version is version(installed_version, '>')
+
+- name: Install {{ app_name }}
+  block:
+    # Download and verification steps
+    - name: Detect platform
+      ansible.builtin.set_fact:
+        platform: "{{ ansible_facts['system'] | lower }}"
+
+    - name: Define architecture map
+      ansible.builtin.set_fact:
+        arch_map:
+          x86_64: amd64
+          amd64: amd64
+          aarch64: arm64
+          arm64: arm64
+
+    - name: Detect architecture
+      ansible.builtin.set_fact:
+        arch: "{{ arch_map.get(ansible_facts['architecture'], 'unknown') }}"
+
+    - name: Fail on unsupported architecture
+      ansible.builtin.fail:
+        msg: "Unsupported architecture: {{ ansible_facts['architecture'] }}"
+      when: arch == 'unknown'
+
+    - name: Fail on unsupported OS
+      ansible.builtin.fail:
+        msg: "Unsupported OS: {{ ansible_facts['system'] }}. Only Linux is supported."
+      when: ansible_facts['system'] != "Linux"
+
+    - name: Create install directory
+      ansible.builtin.file:
+        path: "{{ install_dir }}"
+        state: directory
+        owner: "{{ user_ansible }}"
+        mode: '0755'
+
+    - name: Find latest package
+      set_fact:
+        deb_asset: "{{ release_assets | selectattr('name', 'equalto', 'openlogi-v' + latest_version + '-linux-' + arch + '.deb') | first }}"
+
+    - name: Find SHA256 file
+      set_fact:
+        checksums_asset: "{{ release_assets | selectattr('name', 'equalto', 'SHA256SUMS') | first }}"
+
+    - name: Download {{ app_name }} .deb package
+      ansible.builtin.get_url:
+        url: "{{ deb_asset.browser_download_url }}"
+        dest: "{{ install_dir }}/{{ deb_asset.name }}"
+        mode: '0644'
+        force: yes
+
+    - name: Download SHA256 file
+      ansible.builtin.get_url:
+        url: "{{ checksums_asset.browser_download_url }}"
+        dest: "{{ install_dir }}/SHA256SUMS"
+        mode: '0644'
+        force: yes
+
+    - name: Verify SHA256 checksum of the package
+      ansible.builtin.shell:
+        cmd: sha256sum -c {{ install_dir }}/SHA256SUMS --ignore-missing
+        chdir: "{{ install_dir }}"
+      register: checksum_result
+
+    - name: Install {{ app_name }} package
+      ansible.builtin.apt:
+        deb: "{{ install_dir }}/{{ deb_asset.name }}"
+      become: true
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Clean up installation files
+      ansible.builtin.file:
+        path: "{{ install_dir }}"
+        state: absent
+
+  when:
+    - openlogi == True
+    - ansible_facts["system"] in ["Linux"]
+    - ansible_facts["architecture"] in ["x86_64", "amd64", "aarch64", "arm64"]
+    - installed_version is not defined or installed_version != latest_version

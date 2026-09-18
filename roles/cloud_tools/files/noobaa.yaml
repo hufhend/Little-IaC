@@ -69,8 +69,8 @@
 - name: Show {{ app_name }} version
   ansible.builtin.debug:
     msg:
-    - "The installed version was detected: {{ installed_version }}"
-    - "The currently installed version is: {{ version }}"
+      - "The installed version was detected: {{ installed_version }}"
+      - "The currently installed version is: {{ version }}"
   when: app_installed.stat.exists
 
 - name: Compare versions
@@ -86,20 +86,20 @@
         path: "{{ install_dir }}"
         state: directory
         owner: "{{ ansible_user }}"
-        mode: '0755'
+        mode: "0755"
 
     - name: Download {{ app_name }} checksum
       ansible.builtin.get_url:
         url: "{{ download_url }}/{{ app }}-operator-v{{ version }}-{{ platform }}-{{ arch }}.tar.gz.sha256"
         dest: "{{ install_dir }}"
-        mode: '0644'
+        mode: "0644"
         force: yes
 
     - name: Download {{ app_name }} archive
       ansible.builtin.get_url:
         url: "{{ download_url }}/{{ app }}-operator-v{{ version }}-{{ platform }}-{{ arch }}.tar.gz"
         dest: "{{ install_dir }}"
-        mode: '0755'
+        mode: "0755"
 
     - name: Verify checksum of {{ app_name }}
       ansible.builtin.command:
@@ -118,7 +118,7 @@
       ansible.builtin.copy:
         src: "{{ install_dir }}/{{ app }}-operator"
         dest: "{{ app_dir }}/{{ app }}"
-        mode: '0755'
+        mode: "0755"
         remote_src: yes
 
     # Completion script tasks
@@ -155,7 +155,7 @@
         state: absent
 
   when:
-    - noobaa == True
+    - noobaa == true
     - ansible_facts["system"] in ["Linux", "Darwin"]
     - ansible_facts["architecture"] in ["x86_64", "amd64"]
     - installed_version is not defined or installed_version != version

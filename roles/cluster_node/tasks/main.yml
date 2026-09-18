@@ -2,125 +2,125 @@
 - name: Install smart cluster packages
   ansible.builtin.apt:
     pkg:
-    - cryptsetup
+      - cryptsetup
 
 - name: Set up Ubuntu as a node in a Kubernetes cluster
   block:
-  # Human over cluster, Kubernetes can handle it
-  - name: Turn off all sleep sensors
-    block:
-      # block sleeping - especially for NTB
-    - name: Modify HandleLidSwitch setting
-      ansible.builtin.lineinfile:
-        path: /etc/systemd/logind.conf
-        regexp: '^#?HandleLidSwitch='
-        line: 'HandleLidSwitch=ignore'
+    # Human over cluster, Kubernetes can handle it
+    - name: Turn off all sleep sensors
+      block:
+        # block sleeping - especially for NTB
+        - name: Modify HandleLidSwitch setting
+          ansible.builtin.lineinfile:
+            path: /etc/systemd/logind.conf
+            regexp: "^#?HandleLidSwitch="
+            line: "HandleLidSwitch=ignore"
 
-    - name: Modify IdleAction setting
-      ansible.builtin.lineinfile:
-        path: /etc/systemd/logind.conf
-        regexp: '^#?IdleAction='
-        line: 'IdleAction=ignore'
+        - name: Modify IdleAction setting
+          ansible.builtin.lineinfile:
+            path: /etc/systemd/logind.conf
+            regexp: "^#?IdleAction="
+            line: "IdleAction=ignore"
 
-    - name: Check if UPower exists
-      ansible.builtin.stat:
-        path: /etc/UPower/UPower.conf
-      register: upower_conf
+        - name: Check if UPower exists
+          ansible.builtin.stat:
+            path: /etc/UPower/UPower.conf
+          register: upower_conf
 
-    - name: Modify IgnoreLid setting
-      ansible.builtin.lineinfile:
-        path: /etc/UPower/UPower.conf
-        regexp: '^IgnoreLid='
-        line: 'IgnoreLid=true'
-      when: upower_conf.stat.exists
-    when: desktop != True
+        - name: Modify IgnoreLid setting
+          ansible.builtin.lineinfile:
+            path: /etc/UPower/UPower.conf
+            regexp: "^IgnoreLid="
+            line: "IgnoreLid=true"
+          when: upower_conf.stat.exists
+      when: desktop != true
 
-  # block the start of GNOME Virtual File System
-  - name: Check if ubuntu-desktop is installed
-    command: apt list -a ubuntu-desktop
-    register: ubuntu_desktop_status
-    ignore_errors: true
+    # block the start of GNOME Virtual File System
+    - name: Check if ubuntu-desktop is installed
+      command: apt list -a ubuntu-desktop
+      register: ubuntu_desktop_status
+      ignore_errors: true
 
-  - name: Include tasks disable desktop services
-    include_tasks: "{{ role_path }}/tasks/desktop_services.yaml"
-    when:
-      - desktop != True
-      - ubuntu_desktop_status.stdout is search("instal")
+    - name: Include tasks disable desktop services
+      include_tasks: "{{ role_path }}/tasks/desktop_services.yaml"
+      when:
+        - desktop != true
+        - ubuntu_desktop_status.stdout is search("instal")
 
-  # set and enable Wake-on-LAN
-  - name: Add Wake-on-LAN service
-    ansible.builtin.template:
-      src: templates/wol-enable.service.j2
-      dest: "/etc/systemd/system/wol-enable.service"
-      owner: root
-      group: root
-      mode: '0644'
-    when: server != True
+    # set and enable Wake-on-LAN
+    - name: Add Wake-on-LAN service
+      ansible.builtin.template:
+        src: templates/wol-enable.service.j2
+        dest: "/etc/systemd/system/wol-enable.service"
+        owner: root
+        group: root
+        mode: "0644"
+      when: server != true
 
-  # servers have iLO, iDRAC or XClarity
-  - name: Wake-on-LAN activation at startup
-    ansible.builtin.systemd:
-      name: wol-enable
-      enabled: true
-    when: server != True
+    # servers have iLO, iDRAC or XClarity
+    - name: Wake-on-LAN activation at startup
+      ansible.builtin.systemd:
+        name: wol-enable
+        enabled: true
+      when: server != true
 
-  - block:
-      # high availability via keepalived
-      - name: Install keepalived service
-        ansible.builtin.apt:
-          name: keepalived
-          state: present
+    - block:
+        # high availability via keepalived
+        - name: Install keepalived service
+          ansible.builtin.apt:
+            name: keepalived
+            state: present
 
-      - name: Add keepalived config
-        ansible.builtin.template:
-          src: templates/keepalived.j2
-          dest: "/etc/keepalived/keepalived.conf"
-          owner: root
-          group: root
-          mode: '0644'
+        - name: Add keepalived config
+          ansible.builtin.template:
+            src: templates/keepalived.j2
+            dest: "/etc/keepalived/keepalived.conf"
+            owner: root
+            group: root
+            mode: "0644"
 
-      - name: Enable service keepalived
-        ansible.builtin.systemd:
-          name: keepalived
-          enabled: true
-          state: started
-        ignore_errors: true
+        - name: Enable service keepalived
+          ansible.builtin.systemd:
+            name: keepalived
+            enabled: true
+            state: started
+          ignore_errors: true
 
-      - name: Reload keepalived
-        ansible.builtin.systemd:
-          name: keepalived.service
-          state: reloaded
-    when: keepalived != false
+        - name: Reload keepalived
+          ansible.builtin.systemd:
+            name: keepalived.service
+            state: reloaded
+      when: keepalived != false
 
-  # OrangePi can also have enough memory, if they do, we will put it on zram
-  - block:
-      - name: Get total RAM in kB
-        ansible.builtin.shell: grep MemTotal /proc/meminfo | awk '{ print $2 }'
-        register: ram_kb
+    # OrangePi can also have enough memory, if they do, we will put it on zram
+    - block:
+        - name: Get total RAM in kB
+          ansible.builtin.shell: grep MemTotal /proc/meminfo | awk '{ print $2 }'
+          register: ram_kb
 
-      - name: Set fact for RAM size in MB
-        set_fact:
-          ram_mb: "{{ ram_kb.stdout | int // 1024 }}"
+        - name: Set fact for RAM size in MB
+          set_fact:
+            ram_mb: "{{ ram_kb.stdout | int // 1024 }}"
 
-      - name: Set ramlog size to 128M if RAM >= 3GB
-        ansible.builtin.lineinfile:
-          path: /etc/default/armbian-ramlog
-          regexp: '^SIZE='
-          line: 'SIZE=128M'
-          backup: yes
-        when: ram_mb | int >= 3072
+        - name: Set ramlog size to 128M if RAM >= 3GB
+          ansible.builtin.lineinfile:
+            path: /etc/default/armbian-ramlog
+            regexp: "^SIZE="
+            line: "SIZE=128M"
+            backup: yes
+          when: ram_mb | int >= 3072
 
-      - name: Inform about unchanged ramlog size
-        debug:
-          msg: "RAM is only {{ ram_mb }} MB, SIZE in /etc/default/armbian-ramlog remains unchanged."
-        when: ram_mb | int < 3072
-    when: orangepi is defined and orangepi == true
+        - name: Inform about unchanged ramlog size
+          debug:
+            msg: "RAM is only {{ ram_mb }} MB, SIZE in /etc/default/armbian-ramlog remains unchanged."
+          when: ram_mb | int < 3072
+      when: orangepi is defined and orangepi == true
 
-  # Include additional software tasks from YAML files
-  - name: Add other software
-    include_tasks:
-      file: "{{ item }}"
-    loop: "{{ query('fileglob', role_path ~ '/files/*.yaml') }}"
-    no_log: true
+    # Include additional software tasks from YAML files
+    - name: Add other software
+      include_tasks:
+        file: "{{ item }}"
+      loop: "{{ query('fileglob', role_path ~ '/files/*.yaml') }}"
+      no_log: true
 
   when: role in ['combi', 'master', 'worker']

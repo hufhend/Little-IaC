@@ -7,14 +7,14 @@
 
 - name: Install {{ app_name }}
   block:
-  - name: Accept Oracle license
-    ansible.builtin.debconf:
-      name: virtualbox-ext-pack
-      question: virtualbox-ext-pack/license
-      value: "true"
-      vtype: select
+    - name: Accept Oracle license
+      ansible.builtin.debconf:
+        name: virtualbox-ext-pack
+        question: virtualbox-ext-pack/license
+        value: "true"
+        vtype: select
 
-  - name: Install {{ app_name }} Extension Pack
-    ansible.builtin.apt:
-      pkg: virtualbox-ext-pack
-  when: virtualbox == True
+    - name: Install {{ app_name }} Extension Pack
+      ansible.builtin.apt:
+        pkg: virtualbox-ext-pack
+  when: virtualbox == true

@@ -31,7 +31,7 @@
 - name: Show {{ app_name }} version
   ansible.builtin.debug:
     msg:
-    - "The currently installed version is {{ version }}"
+      - "The currently installed version is {{ version }}"
   when: app_installed.stat.exists
 
 - name: Compare versions
@@ -47,7 +47,7 @@
         path: "{{ install_dir }}"
         state: directory
         owner: "{{ ansible_user }}"
-        mode: '0755'
+        mode: "0755"
 
     - name: Install {{ app_name }}
       set_fact:
@@ -74,7 +74,7 @@
       ansible.builtin.get_url:
         url: "{{ download_url }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
         dest: "{{ install_dir }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
-        mode: '0755'
+        mode: "0755"
 
     # Manual installation
     - name: Extract {{ app }} binary
@@ -87,7 +87,7 @@
       ansible.builtin.copy:
         src: "{{ install_dir }}/{{ app }}"
         dest: "{{ app_dir }}/{{ app }}"
-        mode: '0755'
+        mode: "0755"
         owner: root
         group: root
         remote_src: yes
@@ -110,7 +110,7 @@
         state: absent
 
   when:
-    - ksops == True
+    - ksops == true
     - ansible_facts["system"] in ["Linux", "Darwin"]
     - ansible_facts["architecture"] in ["x86_64", "amd64"]
-    - latest_version != version or app_installed.stat.exists == False
+    - latest_version != version or app_installed.stat.exists == false

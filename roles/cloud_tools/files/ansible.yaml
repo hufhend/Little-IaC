@@ -11,16 +11,16 @@
     repo: "ppa:ansible/ansible"
     state: present
     update_cache: yes
-  when: 
-  - ansible == True
-  - ansible_facts["distribution"] == "Ubuntu"
+  when:
+    - ansible == true
+    - ansible_facts["distribution"] == "Ubuntu"
 
 # Installation for Ubuntu and RedHat
 - name: Install {{ app_name }}
   ansible.builtin.package:
     name: "{{ app }}-core"
     state: latest
-  when: ansible == True
+  when: ansible == true
 
 # Show installed version
 - block:
@@ -37,7 +37,7 @@
 
     - name: Show {{ app_name }} version
       ansible.builtin.debug:
-        msg: 
-        - "{{ app_name }} version is {{ ansible_core_version }}"
-        - "Runtime dependencies - Python: {{ python_version }}, Jinja2: {{ jinja_version }}, PyYAML: {{ pyyaml_version }}"
-  when: ansible == True
+        msg:
+          - "{{ app_name }} version is {{ ansible_core_version }}"
+          - "Runtime dependencies - Python: {{ python_version }}, Jinja2: {{ jinja_version }}, PyYAML: {{ pyyaml_version }}"
+  when: ansible == true

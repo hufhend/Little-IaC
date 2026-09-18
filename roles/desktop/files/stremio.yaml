@@ -9,4 +9,4 @@
   community.general.flatpak:
     name: com.stremio.Stremio
     state: present
-  when: stremio == True
+  when: stremio == true

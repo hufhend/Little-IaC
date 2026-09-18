@@ -10,4 +10,4 @@
   ansible.builtin.package:
     name: "{{ app }}"
     state: present
-  when: s3cmd == True
+  when: s3cmd == true

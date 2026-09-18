@@ -21,7 +21,7 @@
 {# Merge base configuration with host-specific overrides #}
 {% set sssd_domains_base = sssd_domains | default({}) %}
 {% set sssd_domains_overrides = sssd_domains_overrides | default({}) %}
-{% set sssd_domains = sssd_domains_base | combine(sssd_domains_overrides, recursive=True) %}
+{% set sssd_domains = sssd_domains_base | combine(sssd_domains_overrides, recursive=true) %}
 [sssd]
 domains = {{ sssd_domains.keys() | join(', ') }}
 services = {{ sssd_services | default('nss, pam') }}
@@ -35,7 +35,7 @@ homedir_substring = /home
 {% for key, value in domain.items() %}
 {% if value is not none and value != '' %}
 {% if value is boolean %}
-{{ key }} = {{ 'True' if value else 'False' }}
+{{ key }} = {{ 'true' if value else 'false' }}
 {% else %}
 {{ key }} = {{ value }}
 {% endif %}

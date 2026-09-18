@@ -16,8 +16,8 @@
         name: "{{ app }}"
         state: present
         classic: true
-  when: 
-    - vivaldi == True
+  when:
+    - vivaldi == true
     - ansible_facts['os_family'] == "Debian"
 
 - name: Install Vivaldi on RedHat/Fedora via Flatpak
@@ -39,5 +39,5 @@
         state: present
         method: system
   when:
-    - vivaldi == True
+    - vivaldi == true
     - ansible_facts['os_family'] == "RedHat"

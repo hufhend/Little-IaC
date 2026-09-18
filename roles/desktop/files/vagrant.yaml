@@ -7,20 +7,20 @@
 
 - name: Install {{ app_name }}
   block:
-  - name: Add {{ app_name }} GPG key
-    ansible.builtin.apt_key:
-      url: https://apt.releases.hashicorp.com/gpg
-      keyring: /usr/share/keyrings/hashicorp-archive-keyring.gpg
-      state: present
+    - name: Add {{ app_name }} GPG key
+      ansible.builtin.apt_key:
+        url: https://apt.releases.hashicorp.com/gpg
+        keyring: /usr/share/keyrings/hashicorp-archive-keyring.gpg
+        state: present
 
-  - name: Add {{ app_name }} repository
-    ansible.builtin.apt_repository:
-      repo: deb [arch=amd64 signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_facts['distribution_release'] }} main
-      state: present
-      filename: hashicorp
+    - name: Add {{ app_name }} repository
+      ansible.builtin.apt_repository:
+        repo: deb [arch=amd64 signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_facts['distribution_release'] }} main
+        state: present
+        filename: hashicorp
 
-  - name: Install {{ app_name }}
-    ansible.builtin.apt:
-      name: vagrant
-      state: present
-  when: vagrant == True
+    - name: Install {{ app_name }}
+      ansible.builtin.apt:
+        name: vagrant
+        state: present
+  when: vagrant == true

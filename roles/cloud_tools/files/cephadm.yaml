@@ -9,26 +9,26 @@
 # Manual installation of a binary application
 - name: Install {{ app_name }}
   block:
-  - name: Download {{ app_name }} binary
-    ansible.builtin.get_url:
-      url: "https://download.ceph.com/rpm-{{ version }}/el9/noarch/cephadm"
-      dest: "{{ app_dir }}/{{ app }}"
-      mode: '0755'
+    - name: Download {{ app_name }} binary
+      ansible.builtin.get_url:
+        url: "https://download.ceph.com/rpm-{{ version }}/el9/noarch/cephadm"
+        dest: "{{ app_dir }}/{{ app }}"
+        mode: "0755"
 
-  # Show installed version
-  - name: Verify {{ app_name }} version
-    ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
-    register: install_result
-    changed_when: false
+    # Show installed version
+    - name: Verify {{ app_name }} version
+      ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+      register: install_result
+      changed_when: false
 
-  - name: Extract and clean version
-    set_fact:
-      new_version: "{{ (install_result.stdout | regex_search('cephadm version ([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1')) | first | default('UNKNOWN') }}"
+    - name: Extract and clean version
+      set_fact:
+        new_version: "{{ (install_result.stdout | regex_search('cephadm version ([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1')) | first | default('UNKNOWN') }}"
 
-  - name: Show {{ app_name }} version
-    ansible.builtin.debug:
-      msg: "{{ app_name }} version is {{ new_version }}"
+    - name: Show {{ app_name }} version
+      ansible.builtin.debug:
+        msg: "{{ app_name }} version is {{ new_version }}"
 
-  when: 
-    - cephadm == True
+  when:
+    - cephadm == true
     - ansible_facts["distribution"] == "RedHat"

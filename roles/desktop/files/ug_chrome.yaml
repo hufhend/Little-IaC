@@ -14,7 +14,7 @@
     #   ansible.builtin.apt:
     #     name: flatpak
     #     state: present
-    #   when: 
+    #   when:
     #     - ansible_facts["os_family"] == "Debian"
     #     - "'flatpak' not in ansible_facts.packages"
 
@@ -22,7 +22,7 @@
     #   ansible.builtin.dnf:
     #     name: flatpak
     #     state: present
-    #   when: 
+    #   when:
     #     - ansible_facts["os_family"] == "RedHat"
     #     - "'flatpak' not in ansible_facts.packages"
 
@@ -38,6 +38,6 @@
         state: present
         method: system
 
-  when: 
-    - ungoogled_chromium == True
+  when:
+    - ungoogled_chromium == true
     - ansible_facts["os_family"] in ["Debian", "RedHat"]

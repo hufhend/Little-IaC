@@ -1,6 +1,6 @@
 ---
-# Datovka je multiplatformní desktopová aplikace pro přístup k datovým schránkám 
-# a k trvalému uchovávání datových zpráv v lokální databázi. 
+# Datovka je multiplatformní desktopová aplikace pro přístup k datovým schránkám
+# a k trvalému uchovávání datových zpráv v lokální databázi.
 - name: Package Variable Setting
   ansible.builtin.set_fact:
     app: "datovka"
@@ -8,20 +8,20 @@
 
 - name: Install {{ app_name }}
   block:
-  - name: Add {{ app_name }} GPG key
-    ansible.builtin.apt_key:
-      url: https://download.opensuse.org/repositories/home:CZ-NIC:datovka-latest/xUbuntu_24.04/Release.key
-      keyring: /usr/share/keyrings/datovka.gpg
-      state: present
+    - name: Add {{ app_name }} GPG key
+      ansible.builtin.apt_key:
+        url: https://download.opensuse.org/repositories/home:CZ-NIC:datovka-latest/xUbuntu_24.04/Release.key
+        keyring: /usr/share/keyrings/datovka.gpg
+        state: present
 
-  - name: Add {{ app_name }} repository
-    ansible.builtin.apt_repository:
-      repo:  deb [signed-by=/usr/share/keyrings/datovka.gpg] http://download.opensuse.org/repositories/home:/CZ-NIC:/datovka-latest/xUbuntu_24.04/ /
-      state: present
-      filename: datovka
+    - name: Add {{ app_name }} repository
+      ansible.builtin.apt_repository:
+        repo: deb [signed-by=/usr/share/keyrings/datovka.gpg] http://download.opensuse.org/repositories/home:/CZ-NIC:/datovka-latest/xUbuntu_24.04/ /
+        state: present
+        filename: datovka
 
-  - name: Install {{ app_name }}
-    ansible.builtin.apt:
-      name: datovka
-      state: present
-  when: datovka == True
+    - name: Install {{ app_name }}
+      ansible.builtin.apt:
+        name: datovka
+        state: present
+  when: datovka == true

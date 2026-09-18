@@ -13,7 +13,7 @@
       ansible.builtin.get_url:
         url: "{{ horizon_client_url }}"
         dest: "{{ horizon_client_deb }}"
-        mode: '0644'
+        mode: "0644"
 
     - name: Install {{ app_name }}
       ansible.builtin.apt:
@@ -33,4 +33,4 @@
         deb: "{{ horizon_client_deb }}"
         state: present
       when: install_result is failed
-  when: horizon == True
+  when: horizon == true

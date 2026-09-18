@@ -8,4 +8,4 @@
 - name: Install {{ app_name }}
   community.general.snap:
     name: vlc
-  when: vlc == True
+  when: vlc == true

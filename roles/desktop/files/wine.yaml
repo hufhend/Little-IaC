@@ -7,20 +7,20 @@
 
 - name: Install {{ app_name }}
   block:
-  - name: Add {{ app_name }} GPG key
-    ansible.builtin.apt_key:
-      url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x76F1A20FF987672F
-      keyring: /usr/share/keyrings/wine.gpg
-      state: present
+    - name: Add {{ app_name }} GPG key
+      ansible.builtin.apt_key:
+        url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x76F1A20FF987672F
+        keyring: /usr/share/keyrings/wine.gpg
+        state: present
 
-  - name: Add {{ app_name }} repository
-    ansible.builtin.apt_repository:
-      repo: deb [signed-by=/usr/share/keyrings/wine.gpg] https://dl.winehq.org/wine-builds/ubuntu {{ ansible_facts['distribution_release'] }} main
-      state: present
-      filename: wine
+    - name: Add {{ app_name }} repository
+      ansible.builtin.apt_repository:
+        repo: deb [signed-by=/usr/share/keyrings/wine.gpg] https://dl.winehq.org/wine-builds/ubuntu {{ ansible_facts['distribution_release'] }} main
+        state: present
+        filename: wine
 
-  - name: Install {{ app_name }}
-    ansible.builtin.apt:
-      name: wine
-      state: present
-  when: wine == True
+    - name: Install {{ app_name }}
+      ansible.builtin.apt:
+        name: wine
+        state: present
+  when: wine == true

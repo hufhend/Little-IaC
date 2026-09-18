@@ -7,20 +7,20 @@
 
 - name: Install {{ app_name }} for Desktop
   block:
-  - name: Add {{ app_name }} GPG key
-    ansible.builtin.apt_key:
-      url: https://updates.signal.org/desktop/apt/keys.asc
-      keyring: /usr/share/keyrings/signal-desktop-keyring.gpg
-      state: present
+    - name: Add {{ app_name }} GPG key
+      ansible.builtin.apt_key:
+        url: https://updates.signal.org/desktop/apt/keys.asc
+        keyring: /usr/share/keyrings/signal-desktop-keyring.gpg
+        state: present
 
-  - name: Add {{ app_name }} repository
-    ansible.builtin.apt_repository:
-      repo: deb [arch=amd64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main
-      state: present
-      filename: signal
+    - name: Add {{ app_name }} repository
+      ansible.builtin.apt_repository:
+        repo: deb [arch=amd64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main
+        state: present
+        filename: signal
 
-  - name: Install {{ app_name }} for Desktop
-    ansible.builtin.apt:
-      name: signal-desktop
-      state: present
-  when: signal == True
+    - name: Install {{ app_name }} for Desktop
+      ansible.builtin.apt:
+        name: signal-desktop
+        state: present
+  when: signal == true

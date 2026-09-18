@@ -1,7 +1,7 @@
 ---
 - name: Set LDAP/AD integration variables
   ansible.builtin.set_fact:
-    ldap_id_use_start_tls: "{{ 'True' if (ldap_uri is defined and ldap_uri.startswith('ldap://')) else 'False' }}"
+    ldap_id_use_start_tls: "{{ 'true' if (ldap_uri is defined and ldap_uri.startswith('ldap://')) else 'false' }}"
 
 - name: Install and configure LDAP/AD authentication
   block:
@@ -49,8 +49,8 @@
           ansible.builtin.lineinfile:
             path: "/etc/pam.d/{{ item }}"
             regexp: '^session\s+required\s+pam_mkhomedir.so'
-            line: 'session required pam_mkhomedir.so skel=/etc/skel umask=0022'
-            insertafter: '^session.*pam_unix.so'
+            line: "session required pam_mkhomedir.so skel=/etc/skel umask=0022"
+            insertafter: "^session.*pam_unix.so"
           loop:
             - common-session
             - common-session-noninteractive

@@ -8,4 +8,4 @@
 - name: Install {{ app_name }}
   community.general.snap:
     name: slack
-  when: slack == True
+  when: slack == true

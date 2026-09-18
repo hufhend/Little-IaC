@@ -14,13 +14,13 @@
             name: chromium
             state: present
             classic: yes
-        
+
         - name: Install chromium-ffmpeg
           community.general.snap:
             name: chromium-ffmpeg
             state: present
             channel: stable
-      
+
       when: ansible_facts["os_family"] == "Debian"
 
     # RedHat/Fedora installation via DNF
@@ -39,7 +39,7 @@
         name: chromium
         state: present
         update_cache: yes
-      
+
       when: ansible_facts["os_family"] == "Archlinux"
 
-  when: chromium == True
+  when: chromium == true

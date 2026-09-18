@@ -8,4 +8,4 @@
 - name: Install {{ app_name }}
   community.general.snap:
     name: rocketchat-desktop
-  when: rocketchat == True
+  when: rocketchat == true

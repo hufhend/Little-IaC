@@ -10,49 +10,47 @@
 
 - name: Install {{ app_name }}
   block:
-  - name: Remove old Intune apt source (one-line format)
-    ansible.builtin.file:
-      path: "/etc/apt/sources.list.d/microsoft-ubuntu-{{ ansible_facts['distribution_release'] }}-prod.list"
-      state: absent
-    ignore_errors: true
+    - name: Remove old Intune apt source (one-line format)
+      ansible.builtin.file:
+        path: "/etc/apt/sources.list.d/microsoft-ubuntu-{{ ansible_facts['distribution_release'] }}-prod.list"
+        state: absent
+      ignore_errors: true
 
-  - name: Ensure keyrings directory exists
-    ansible.builtin.file:
-      path: /usr/share/keyrings
-      state: directory
-      mode: '0755'
+    - name: Ensure keyrings directory exists
+      ansible.builtin.file:
+        path: /usr/share/keyrings
+        state: directory
+        mode: "0755"
 
-  - name: Download Microsoft GPG key
-    ansible.builtin.get_url:
-      url: https://packages.microsoft.com/keys/microsoft.asc
-      dest: /usr/share/keyrings/microsoft.asc
-      mode: '0644'
-      force: true
+    - name: Download Microsoft GPG key
+      ansible.builtin.get_url:
+        url: https://packages.microsoft.com/keys/microsoft.asc
+        dest: /usr/share/keyrings/microsoft.asc
+        mode: "0644"
+        force: true
 
-  - name: Add {{ app_name }} repository as DEB822 source
-    ansible.builtin.deb822_repository:
-      name: "microsoft-ubuntu-{{ ansible_facts['distribution_release'] }}-prod"
-      types: deb
-      uris: "https://packages.microsoft.com/ubuntu/{{ ansible_facts['distribution_release'] }}/prod"
-      suites: "{{ ansible_facts['distribution_release'] }}"
-      components: main
-      signed_by: /usr/share/keyrings/microsoft.asc
-      state: present
-      enabled: true
+    - name: Add {{ app_name }} repository as DEB822 source
+      ansible.builtin.deb822_repository:
+        name: "microsoft-ubuntu-{{ ansible_facts['distribution_release'] }}-prod"
+        types: deb
+        uris: "https://packages.microsoft.com/ubuntu/{{ ansible_facts['distribution_release'] }}/prod"
+        suites: "{{ ansible_facts['distribution_release'] }}"
+        components: main
+        signed_by: /usr/share/keyrings/microsoft.asc
+        state: present
+        enabled: true
 
-  - name: Update apt cache
-    ansible.builtin.apt:
-      update_cache: true
-      cache_valid_time: 3600
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
 
-  - name: Install {{ app_name }}
-    ansible.builtin.apt:
-      name: intune-portal
-      state: present
+    - name: Install {{ app_name }}
+      ansible.builtin.apt:
+        name: intune-portal
+        state: present
 
-  when: intune == True
-
-
+  when: intune == true
 # Microsoft Intune on Linux - What Can an Employer/Organization See and Do?
 #
 # 1. **Enforce Security Policies** - The organization can apply security settings such as disk encryption, firewall rules, and OS updates.

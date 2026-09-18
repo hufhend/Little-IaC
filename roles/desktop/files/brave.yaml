@@ -25,7 +25,7 @@
         state: present
         update_cache: yes
   when:
-    - brave == True
+    - brave == true
     - ansible_facts["os_family"] == "Debian"
 
 - name: Install {{ app_name }} browser (RedHat)
@@ -51,5 +51,5 @@
         state: present
         disable_gpg_check: no
   when:
-    - brave == True
+    - brave == true
     - ansible_facts["os_family"] == "RedHat"

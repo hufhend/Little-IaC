@@ -24,4 +24,4 @@
         state: present
         method: system
   when:
-    - librewolf == True
+    - librewolf == true

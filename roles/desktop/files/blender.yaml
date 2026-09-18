@@ -9,4 +9,4 @@
   ansible.builtin.package:
     name: "{{ app }}"
     state: present
-  when: blender == True
+  when: blender == true

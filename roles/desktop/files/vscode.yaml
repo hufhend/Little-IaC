@@ -20,13 +20,13 @@
           ansible.builtin.file:
             path: /usr/share/keyrings
             state: directory
-            mode: '0755'
+            mode: "0755"
 
         - name: Download Microsoft GPG key
           ansible.builtin.get_url:
             url: https://packages.microsoft.com/keys/microsoft.asc
             dest: /usr/share/keyrings/microsoft.asc
-            mode: '0644'
+            mode: "0644"
             force: true
 
         - name: Add {{ app_name }} repository as DEB822 source
@@ -162,4 +162,4 @@
 
       when: vscode_snap | default(false)
 
-  when: vscode == True
+  when: vscode == true

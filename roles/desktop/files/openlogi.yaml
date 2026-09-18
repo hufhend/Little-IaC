@@ -41,8 +41,8 @@
 - name: Show {{ app_name }} version
   ansible.builtin.debug:
     msg:
-    - "The installed version was detected: {{ installed_version }}"
-    - "The currently installed version is: {{ latest_version }}"
+      - "The installed version was detected: {{ installed_version }}"
+      - "The currently installed version is: {{ latest_version }}"
   when: installed_version is defined
 
 - name: Compare versions
@@ -86,7 +86,7 @@
         path: "{{ install_dir }}"
         state: directory
         owner: "{{ user_ansible }}"
-        mode: '0755'
+        mode: "0755"
 
     - name: Find latest package
       set_fact:
@@ -100,14 +100,14 @@
       ansible.builtin.get_url:
         url: "{{ deb_asset.browser_download_url }}"
         dest: "{{ install_dir }}/{{ deb_asset.name }}"
-        mode: '0644'
+        mode: "0644"
         force: yes
 
     - name: Download SHA256 file
       ansible.builtin.get_url:
         url: "{{ checksums_asset.browser_download_url }}"
         dest: "{{ install_dir }}/SHA256SUMS"
-        mode: '0644'
+        mode: "0644"
         force: yes
 
     - name: Verify SHA256 checksum of the package
@@ -128,7 +128,7 @@
         state: absent
 
   when:
-    - openlogi == True
+    - openlogi == true
     - ansible_facts["system"] in ["Linux"]
     - ansible_facts["architecture"] in ["x86_64", "amd64", "aarch64", "arm64"]
     - installed_version is not defined or installed_version != latest_version

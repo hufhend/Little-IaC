@@ -9,4 +9,4 @@
   ansible.builtin.apt:
     pkg: kodi
     state: present
-  when: kodi == True
+  when: kodi == true

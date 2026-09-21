@@ -111,3 +111,10 @@
   ansible.builtin.systemd:
     name: prometheus-node-exporter.service
     state: restarted
+
+# The deb822_repository module (and newer apt_repository implementations)
+# requires the Python 'debian' library on the target host.
+- name: Ensure python3-debian is installed
+  ansible.builtin.apt:
+    name: python3-debian
+    state: present

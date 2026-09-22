@@ -1,7 +1,8 @@
 ---
 # Zoom video conferencing
-# This isn't nice at all, but they don't provide a repository
-- name: Package Variable Setting
+# They don't provide a repository, so we check the version manually
+# via the redirect header of the "latest" URL and only reinstall if needed.
+- name: Zoom variable Setting
   ansible.builtin.set_fact:
     app: "zoom"
     app_name: "Zoom Meetings"
@@ -9,39 +10,72 @@
     zoom_deb_path: "/tmp/zoom_amd64.deb"
 
 - name: Install {{ app_name }}
+  when:
+    - zoom | default(false)
+    - ansible_facts["distribution"] == "Ubuntu"
   block:
-    - name: Unistall {{ app_name }} snap
+    - name: Get latest {{ app_name }} version
+      ansible.builtin.shell:
+        cmd: "curl -sI {{ zoom_deb_url }} | awk -F/ '/location/{ print $5 }'"
+      register: zoom_latest_version
+      changed_when: false
+      check_mode: false
+
+    - name: Set latest {{ app_name }} version
+      ansible.builtin.set_fact:
+        zoom_latest: "{{ zoom_latest_version.stdout | trim }}"
+
+    - name: Gather package facts
+      ansible.builtin.package_facts:
+        manager: auto
+
+    - name: Set installed {{ app_name }} version
+      ansible.builtin.set_fact:
+        zoom_installed: >-
+          {{ ansible_facts.packages['zoom'][0].version
+             if 'zoom' in ansible_facts.packages
+             else '' }}
+
+    - name: Show {{ app_name }} version comparison
+      ansible.builtin.debug:
+        msg: >-
+          {{ app_name }} — latest: {{ zoom_latest }},
+          installed: {{ zoom_installed | default('not installed', true) }}
+
+    - name: Uninstall {{ app_name }} snap (if present)
       community.general.snap:
         name: zoom-client
         state: absent
 
-    - name: Download {{ app_name }}
-      ansible.builtin.get_url:
-        url: "{{ zoom_deb_url }}"
-        dest: "{{ zoom_deb_path }}"
-        mode: '0644'
+    - name: Zoom is up to date
+      ansible.builtin.debug:
+        msg: "{{ app_name }} {{ zoom_installed }} is already the latest version, skipping."
+      when: zoom_installed == zoom_latest
 
-    - name: Install {{ app_name }}
-      ansible.builtin.apt:
-        deb: "{{ zoom_deb_path }}"
-        state: present
-      register: install_result
-      ignore_errors: yes
+    - name: Download and install {{ app_name }}
+      when: zoom_installed != zoom_latest
+      block:
+        - name: Download {{ app_name }}
+          ansible.builtin.get_url:
+            url: "{{ zoom_deb_url }}"
+            dest: "{{ zoom_deb_path }}"
+            mode: '0644'
 
-    - name: Fix dependencies if needed
-      ansible.builtin.apt:
-        update_cache: yes
-        upgrade: dist
-      when: install_result is failed
+        - name: Install {{ app_name }}
+          ansible.builtin.apt:
+            deb: "{{ zoom_deb_path }}"
+            state: present
+          register: install_result
+          ignore_errors: yes
 
-    - name: Retry install if initial install failed
-      ansible.builtin.apt:
-        deb: "{{ zoom_deb_path }}"
-        state: present
-      when: install_result is failed
-  when: 
-    - zoom
-    - ansible_facts["distribution"] == "Ubuntu"
+        - name: Fix dependencies if needed
+          ansible.builtin.apt:
+            update_cache: yes
+            upgrade: dist
+          when: install_result is failed
 
-# The change from snap installation was necessary because Zoom snap did not work 
-# properly during automatic installation.
+        - name: Retry install if initial install failed
+          ansible.builtin.apt:
+            deb: "{{ zoom_deb_path }}"
+            state: present
+          when: install_result is failed

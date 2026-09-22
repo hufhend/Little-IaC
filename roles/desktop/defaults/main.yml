@@ -26,6 +26,7 @@ lutris: false
 mega: false
 onlyoffice: false
 openconnect: false
+openlogi: false
 rocketchat: false
 signal: false
 slack: false

@@ -1,53 +1,55 @@
 # Terraform is an IaC tool
 ---
-- name: Package Variable Setting
+- name: Terraform Variable Setting
   ansible.builtin.set_fact:
     app: "terraform"
     app_name: "Terraform"
 
 - name: Install {{ app_name }}
   block:
-    - name: Add {{ app_name }} GPG key
-      ansible.builtin.apt_key:
-        url: https://apt.releases.hashicorp.com/gpg
-        keyring: /usr/share/keyrings/hashicorp-archive-keyring.gpg
-        state: present
-
     - name: Add {{ app_name }} repository
-      ansible.builtin.apt_repository:
-        repo: deb [arch=amd64 signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_facts['distribution_release'] }} main
+      ansible.builtin.deb822_repository:
+        name: hashicorp
+        types: deb
+        uris: https://apt.releases.hashicorp.com
+        suites: "{{ ansible_facts['distribution_release'] }}"
+        components: main
+        architectures: amd64
+        signed_by: https://apt.releases.hashicorp.com/gpg
         state: present
-        filename: hashicorp
+        enabled: true
 
     - name: Install {{ app_name }}
       ansible.builtin.apt:
         name: terraform
         state: present
+        update_cache: true
 
-    - name: Add {{ app_name}} autocomplete
+    - name: Add {{ app_name }} autocomplete
       ansible.builtin.lineinfile:
         path: "/home/{{ ansible_user }}/.bashrc"
         line: "complete -C /usr/bin/terraform terraform"
         state: present
-        create: yes
+        create: true
         mode: "0644"
       become_user: "{{ ansible_user }}"
 
     - name: Check {{ app_name }} version
-      command: "/usr/bin/{{ app }} version"
-      register: "install_result"
+      ansible.builtin.command:
+        cmd: "/usr/bin/{{ app }} version"
+      register: install_result
       changed_when: false
       become_user: "{{ ansible_user }}"
       ignore_errors: true
 
     - name: Extract and clean {{ app_name }} version
-      set_fact:
+      ansible.builtin.set_fact:
         new_version: "{{ (install_result.stdout | regex_search('Terraform v?([0-9]+\\.[0-9]+\\.[0-9]+)', '\\1')) | first }}"
 
     - name: Show {{ app_name }} version
-      debug:
+      ansible.builtin.debug:
         msg: "{{ app_name }} version is {{ new_version }}"
 
   when:
-    - terraform == true
+    - terraform | default(false) | bool
     - ansible_facts["distribution"] == "Ubuntu"

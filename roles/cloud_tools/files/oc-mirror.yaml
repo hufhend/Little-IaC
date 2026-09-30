@@ -3,11 +3,11 @@
 # to a local registry, enabling OpenShift installations and updates in disconnected environments
 # with limited or no internet access.
 
-- name: Package Variable Setting
+- name: OpenShift mirror Variable Setting
   ansible.builtin.set_fact:
     app: "oc-mirror"
     app_name: "OpenShift mirror"
-    version: "4.22.13"
+    version: "4.22.15"
     install_dir: "/home/{{ user_ansible }}/install/oc"
 
 # Verify installed version

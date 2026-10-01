@@ -1,11 +1,10 @@
----
 # Ansible for control node
-- name: Package Variable Setting
+- name: Ansible Variable Setting
   ansible.builtin.set_fact:
     app: "ansible"
     app_name: "Ansible"
 
-# Additional repository for Ubuntu
+# Additional repository for Ubuntu (only 22.04 / 24.04)
 - name: Add Ansible PPA (simple format)
   apt_repository:
     repo: "ppa:ansible/ansible"
@@ -14,6 +13,7 @@
   when:
     - ansible == true
     - ansible_facts["distribution"] == "Ubuntu"
+    - ansible_facts["distribution_release"] in ["jammy", "noble"]
 
 # Installation for Ubuntu and RedHat
 - name: Install {{ app_name }}

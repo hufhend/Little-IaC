@@ -1,5 +1,5 @@
 ---
-- name: Package Variable Setting
+- name: Kubeadm Variable Setting
   ansible.builtin.set_fact:
     app: "kubeadm"
     app_name: "Kubeadm"
@@ -12,17 +12,15 @@
 
   - name: Install {{ app_name }} for Kubernetes
     block:
-    - name: Add Kubernetes GPG key
-      ansible.builtin.apt_key:
-        url: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/Release.key"
-        keyring: /usr/share/keyrings/kubernetes.gpg
+    - name: Add Kubeadm repository
+      ansible.builtin.deb822_repository:
+        name: kubernetes
+        types: deb
+        uris: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/"
+        suites: /
+        signed_by: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/Release.key"
         state: present
-
-    - name: Add {{ app_name }} repository
-      ansible.builtin.apt_repository:
-        repo: 'deb [signed-by=/usr/share/keyrings/kubernetes.gpg] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/ /'
-        state: present
-        filename: kubernetes
+        enabled: true
 
     - name: Install {{ app_name }}
       ansible.builtin.apt:
@@ -63,6 +61,6 @@
     debug:
       msg: "{{ app_name }} version is {{ new_version }}"
 
-  when: 
+  when:
     - kubeadm and (role not in ['combi', 'master', 'worker'])
     - ansible_facts["distribution"] == "Ubuntu"

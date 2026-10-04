@@ -39,8 +39,9 @@
     - name: Show {{ app_name }} version comparison
       ansible.builtin.debug:
         msg: >-
-          {{ app_name }} — latest: {{ zoom_latest }},
-          installed: {{ zoom_installed | default('not installed', true) }}
+          {{ app_name }} — installed:
+          {{ zoom_installed if zoom_installed else 'not installed' }},
+          latest: {{ zoom_latest }}
 
     - name: Uninstall {{ app_name }} snap (if present)
       community.general.snap:
@@ -66,12 +67,12 @@
             deb: "{{ zoom_deb_path }}"
             state: present
           register: install_result
-          ignore_errors: yes
+          ignore_errors: true
 
         - name: Fix dependencies if needed
           ansible.builtin.apt:
-            update_cache: yes
-            upgrade: dist
+            update_cache: true
+            upgrade: safe
           when: install_result is failed
 
         - name: Retry install if initial install failed
@@ -79,3 +80,9 @@
             deb: "{{ zoom_deb_path }}"
             state: present
           when: install_result is failed
+
+      always:
+        - name: Clean up {{ app_name }} installer
+          ansible.builtin.file:
+            path: "{{ zoom_deb_path }}"
+            state: absent

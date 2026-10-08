@@ -1,10 +1,10 @@
 # Longhorn CLI is a headless way for preflighting, operating and troubleshooting Longhorn cluster
 ---
-- name: Package Variable Setting
+- name: Longhorn CLI Variable Setting
   ansible.builtin.set_fact:
     app: "longhornctl"
     app_name: "Longhorn CLI"
-    version: "1.12.1"
+    version: "1.13.0"
     install_dir: "/home/{{ user_ansible }}/install/longhornctl"
 
 # Verify installed version

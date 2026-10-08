@@ -5,6 +5,8 @@ Václav Dvorský <hufhendr@gmail.com>
 :icons: font
 :url-quickref: https://github.com/hufhend/Little-IaC
 
+image:https://img.shields.io/badge/ansible-EE0000?logo=ansible&logoColor=white[Ansible,format=svg] image:https://img.shields.io/github/v/release/hufhend/Little-IaC[Latest release,format=svg] image:https://img.shields.io/github/repo-size/hufhend/Little-IaC[Repository size,format=svg] image:https://img.shields.io/github/commits-since/hufhend/Little-IaC/latest[Commits since latest release,format=svg]
+
 Recently, I was intrigued by the idea that it is possible to use Ansible to manage real computers similar
 to the services in Kubernetes. That is, to achieve such a degree of automation that we can replace a burnt
 computer with another one and give it the same settings relatively quickly via Ansible.

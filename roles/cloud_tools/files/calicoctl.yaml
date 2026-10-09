@@ -4,7 +4,7 @@
   ansible.builtin.set_fact:
     app: "calicoctl"
     app_name: "Calicoctl"
-    version: "3.32.2"
+    version: "3.33.0"
     install_dir: "/home/{{ user_ansible }}/install/calicoctl"
 
 # Verify installed version
@@ -39,19 +39,22 @@
   ansible.builtin.set_fact:
     latest_version: "{{ github_release.json.name | regex_replace('^v', '') }}"
 
-- name: Show {{ app_name }} version
-  ansible.builtin.debug:
-    msg:
-      - "The installed version was detected: {{ installed_version }}"
-      - "The currently installed version is: {{ version }}"
-  when:
-    - installed_version is defined
-    - app_installed.stat.exists
+- name: Version comparison message
+  block:
+    - name: Show {{ app_name }} version
+      ansible.builtin.debug:
+        msg:
+          - "The installed version was detected: {{ installed_version }}"
+          - "The currently installed version is: {{ version }}"
 
-- name: Compare versions
-  ansible.builtin.debug:
-    msg: "A new version {{ latest_version }} is available! Consider updating."
-  when: latest_version is version(version, '>')
+    - name: Compare versions
+      ansible.builtin.debug:
+        msg: "A new version {{ latest_version }} is available! Consider updating."
+      when:
+        - latest_version is version(installed_version, '>')
+  when:
+        - installed_version is defined
+        - app_installed.stat.exists
 
 - name: Install {{ app_name }}
   block:

@@ -1,5 +1,5 @@
 # Chrome browser
-- name: Package Variable Setting
+- name: Chrome Variable Setting
   ansible.builtin.set_fact:
     app: "chrome"
     app_name: "Google Chrome"
@@ -10,16 +10,21 @@
     - name: Install {{ app_name }} on Ubuntu/Debian
       block:
         - name: Add {{ app_name }} GPG key
-          ansible.builtin.apt_key:
+          ansible.builtin.get_url:
             url: https://dl.google.com/linux/linux_signing_key.pub
-            keyring: /usr/share/keyrings/google-chrome.gpg
-            state: present
+            dest: /usr/share/keyrings/google-chrome.asc
+            mode: "0644"
 
         - name: Add {{ app_name }} repository
-          ansible.builtin.apt_repository:
-            repo: deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main
+          ansible.builtin.deb822_repository:
+            name: google-chrome
+            types: deb
+            uris: http://dl.google.com/linux/chrome/deb/
+            suites: stable
+            components: main
+            architectures: amd64
+            signed_by: /usr/share/keyrings/google-chrome.asc
             state: present
-            filename: google-chrome
 
         - name: Install {{ app_name }}
           ansible.builtin.apt:

@@ -1,5 +1,12 @@
 ---
 # ABRA Flexi Accounting Software
+- name: Flexibee is only supported on Ubuntu 22.04 and 24.04
+  ansible.builtin.assert:
+    that:
+      - ansible_facts["distribution_version"] in ["22.04", "24.04"]
+    fail_msg: "Flexibee nepodporuje {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}. Podporováno: Ubuntu 22.04, 24.04."
+  when: flexibee | default(false)
+
 - name: Check if Flexibee is already installed
   ansible.builtin.stat:
     path: /usr/share/flexibee
@@ -18,11 +25,12 @@
         repo: deb [signed-by=/usr/share/keyrings/flexibee.gpg] http://download.flexibee.eu/download/deb-repository/ flexibee non-free
         state: present
         filename: flexibee
+      register: flexibee_repo
 
     - name: Update apt cache
       ansible.builtin.apt:
         update_cache: yes
-        cache_valid_time: 3600
+      when: flexibee_repo.changed
 
     - name: Set debconf preferences
       ansible.builtin.debconf:
@@ -56,3 +64,5 @@
     - flexibee | default(false)
     - ansible_facts["os_family"] == "Debian"
     - not flexibee_installed.stat.exists
+    - ansible_facts["distribution"] == "Ubuntu"
+    - ansible_facts["distribution_version"] in ["22.04", "24.04"]

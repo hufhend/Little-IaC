@@ -1,24 +1,37 @@
 ---
 # Datovka je multiplatformní desktopová aplikace pro přístup k datovým schránkám
 # a k trvalému uchovávání datových zpráv v lokální databázi.
-- name: Package Variable Setting
+- name: Datovka Variable Setting
   ansible.builtin.set_fact:
     app: "datovka"
     app_name: "Datovka"
 
 - name: Install {{ app_name }}
+  vars:
+    datovka_obs_suite: "xUbuntu_{{ ansible_facts['distribution_version'] }}"
   block:
     - name: Add {{ app_name }} GPG key
-      ansible.builtin.apt_key:
-        url: https://download.opensuse.org/repositories/home:CZ-NIC:datovka-latest/xUbuntu_24.04/Release.key
-        keyring: /usr/share/keyrings/datovka.gpg
-        state: present
+      ansible.builtin.get_url:
+        url: "https://download.opensuse.org/repositories/home:CZ-NIC:datovka-latest/{{ datovka_obs_suite }}/Release.key"
+        dest: /usr/share/keyrings/datovka.asc
+        mode: "0644"
 
     - name: Add {{ app_name }} repository
-      ansible.builtin.apt_repository:
-        repo: deb [signed-by=/usr/share/keyrings/datovka.gpg] http://download.opensuse.org/repositories/home:/CZ-NIC:/datovka-latest/xUbuntu_24.04/ /
-        state: present
-        filename: datovka
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/datovka.sources
+        mode: "0644"
+        content: |
+          Types: deb
+          URIs: http://download.opensuse.org/repositories/home:CZ-NIC:datovka-latest/{{ datovka_obs_suite }}/
+          Suites: ./
+          Architectures: amd64
+          Signed-By: /usr/share/keyrings/datovka.asc
+      register: datovka_repo
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+      when: datovka_repo.changed
 
     - name: Install {{ app_name }}
       ansible.builtin.apt:

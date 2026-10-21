@@ -1,6 +1,5 @@
----
 # Signal for Desktop
-- name: Package Variable Setting
+- name: Signal Variable Setting
   ansible.builtin.set_fact:
     app: "signal"
     app_name: "Signal"
@@ -8,16 +7,21 @@
 - name: Install {{ app_name }} for Desktop
   block:
     - name: Add {{ app_name }} GPG key
-      ansible.builtin.apt_key:
+      ansible.builtin.get_url:
         url: https://updates.signal.org/desktop/apt/keys.asc
-        keyring: /usr/share/keyrings/signal-desktop-keyring.gpg
-        state: present
+        dest: /usr/share/keyrings/signal-desktop-keyring.asc
+        mode: "0644"
 
     - name: Add {{ app_name }} repository
-      ansible.builtin.apt_repository:
-        repo: deb [arch=amd64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main
+      ansible.builtin.deb822_repository:
+        name: signal
+        types: deb
+        uris: https://updates.signal.org/desktop/apt
+        suites: xenial
+        components: main
+        architectures: amd64
+        signed_by: /usr/share/keyrings/signal-desktop-keyring.asc
         state: present
-        filename: signal
 
     - name: Install {{ app_name }} for Desktop
       ansible.builtin.apt:

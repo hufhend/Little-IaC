@@ -4,7 +4,9 @@
   ansible.builtin.set_fact:
     app: "oc"
     app_name: "OpenShift CLI"
-    version: "4.22.16"
+    # latest version or pinned version
+    # version: "4.22.18"
+    version: ""
     install_dir: "/home/{{ user_ansible }}/install/oc"
 
 # Verify installed version
@@ -56,6 +58,11 @@
   set_fact:
     latest_version: "{{ (openshift_text | regex_findall('Version:\\s*(\\d+\\.\\d+\\.\\d+)') | first) | default('unknown') }}"
 
+- name: Use latest version if version is empty
+  ansible.builtin.set_fact:
+    version: "{{ latest_version }}"
+  when: version | default('') | length == 0
+
 - name: Show {{ app_name }} version
   ansible.builtin.debug:
     msg:
@@ -67,6 +74,13 @@
   ansible.builtin.debug:
     msg: "A new version {{ latest_version }} is available! Consider updating."
   when: latest_version is version(version, '>')
+
+- name: Let's upgrade!
+  ansible.builtin.debug:
+    msg: "A new version {{ version }} is available. Let's upgrade!"
+  when:
+      - latest_version == version
+      - installed_version is not defined or installed_version != version
 
 - name: Install {{ app_name }}
   block:

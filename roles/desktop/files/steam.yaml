@@ -1,4 +1,3 @@
----
 # Steam Game platform
 - name: Package Variable Setting
   ansible.builtin.set_fact:
@@ -7,23 +6,41 @@
 
 - name: Install {{ app_name }}
   block:
-    - name: Add {{ app_name }} GPG key from a public server
-      ansible.builtin.apt_key:
+    - name: Check if i386 architecture is added
+      ansible.builtin.command:
+        cmd: dpkg --print-foreign-architectures
+      register: dpkg_arch
+      changed_when: false
+
+    - name: Add i386 architecture
+      ansible.builtin.command:
+        cmd: dpkg --add-architecture i386
+      when: "'i386' not in dpkg_arch.stdout_lines"
+
+    - name: Add {{ app_name }} GPG key
+      ansible.builtin.get_url:
         url: https://repo.steampowered.com/steam/archive/stable/steam.gpg
-        keyring: /usr/share/keyrings/steam.gpg
-        state: present
+        dest: /usr/share/keyrings/steam.gpg
+        mode: "0644"
 
     - name: Add {{ app_name }} repository
-      ansible.builtin.apt_repository:
-        repo: deb [arch=amd64,i386 signed-by=/usr/share/keyrings/steam.gpg] https://repo.steampowered.com/steam/ stable steam
+      ansible.builtin.deb822_repository:
+        name: steam
+        types:
+          - deb
+          - deb-src
+        uris: https://repo.steampowered.com/steam/
+        suites: stable
+        components: steam
+        architectures:
+          - amd64
+          - i386
+        signed_by: /usr/share/keyrings/steam.gpg
         state: present
-        filename: steam
 
-    - name: Add {{ app_name }} src repository
-      ansible.builtin.apt_repository:
-        repo: deb-src [arch=amd64,i386 signed-by=/usr/share/keyrings/steam.gpg] https://repo.steampowered.com/steam/ stable steam
-        state: present
-        filename: steam
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
 
     - name: Install {{ app_name }}
       ansible.builtin.apt:

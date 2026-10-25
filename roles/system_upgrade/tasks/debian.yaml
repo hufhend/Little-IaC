@@ -1,4 +1,24 @@
 ---
+# We delete files created in earlier versions and now obsolete
+- name: Remove specific files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/apt/sources.list.d/hashicorp.list
+    - /etc/apt/sources.list.d/google-chrome.sources
+    - /etc/apt/sources.list.d/google.list
+    - /etc/apt/sources.list.d/kubernetes.list
+    - /etc/apt/sources.list.d/signal-xenial.list
+    - /etc/apt/sources.list.d/vscode-signed.list
+    - /etc/apt/sources.list.d/ansible-ubuntu-ansible-jammy.sources
+    - /etc/apt/sources.list.d/chrome.list
+    - /etc/apt/sources.list.d/wine.list
+    - /etc/apt/sources.list.d/signal.list
+    - /etc/apt/sources.list.d/onlyoffice.list
+    - /etc/apt/sources.list.d/steam.list
+    - /etc/apt/sources.list.d/brave-browser.list
+
 - name: Fix broken dependencies
   ansible.builtin.command: apt --fix-broken install --yes
 
@@ -35,24 +55,6 @@
     - ufw
     - bash-completion
     - bind9-dnsutils
-
-# We delete files created in earlier versions and now obsolete
-- name: Remove specific files
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-  loop:
-    - /etc/apt/sources.list.d/hashicorp.list
-    - /etc/apt/sources.list.d/google-chrome.sources
-    # - /etc/apt/sources.list.d/megasync.list
-    # - /etc/apt/sources.list.d/vscode.sources
-    # - /etc/apt/sources.list.d/docker.list
-    - /etc/apt/sources.list.d/google.list
-    - /etc/apt/sources.list.d/kubernetes.list
-    - /etc/apt/sources.list.d/signal-xenial.list
-    - /etc/apt/sources.list.d/vscode-signed.list
-    - /etc/apt/sources.list.d/ansible-ubuntu-ansible-jammy.sources
-    - /etc/apt/sources.list.d/chrome.list
 
 - name: Find all distUpgrade files
   ansible.builtin.find:

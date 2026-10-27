@@ -7,3 +7,4 @@ inventory.yaml
 .terraform*
 terraform.tfstate*
 aks*
+.ansible

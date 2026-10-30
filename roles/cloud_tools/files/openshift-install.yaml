@@ -131,8 +131,7 @@
 
         - name: Download GPG public key
           ansible.builtin.command:
-            cmd: gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys 199E2F91FD431D51
-          changed_when: false
+            cmd: gpg --keyserver hkps://keys.openpgp.org --recv-keys 199E2F91FD431D51
 
         - name: Verify GPG signature
           ansible.builtin.command:
@@ -204,4 +203,4 @@
         - ansible_facts["architecture"] in ["x86_64", "aarch64"]
         - installed_version is not defined or installed_version != version
   when:
-    - ocpinstall == true
+    - ocpinstall | bool

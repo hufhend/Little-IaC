@@ -41,6 +41,14 @@ yajsv: false
 
 # only if you're sure what you're doing
 k8s_version: "1.33"
+# latest version or pinned version
+# calicoctl_version: "3.33.0"
+# longhornctl_version: "1.13.0"
+# oc_version: "4.22.18"
+ocmirror_version: "4.22.18"
+# ocpinstall_version: "4.22.18"
+# oras_version: "1.3.5"
+# slu_version: "0.103.0"
 
 # common variables
 app_dir: "/usr/local/bin"

@@ -43,6 +43,7 @@ yajsv: false
 k8s_version: "1.33"
 # latest version or pinned version
 # calicoctl_version: "3.33.0"
+# clairctl_version: "1.2.8"
 # longhornctl_version: "1.13.0"
 # oc_version: "4.22.18"
 ocmirror_version: "4.22.18"

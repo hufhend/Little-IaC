@@ -168,4 +168,13 @@
         - ansible_facts["system"] in ["Linux", "Darwin"]
         - ansible_facts["architecture"] in ["x86_64", "amd64"]
         - installed_version is not defined or installed_version != version
-  when: calicoctl | bool
+  when: calicoctl | default(false) | bool
+
+# Unless requested, it will be uninstalled
+- name: Remove {{ app_name }} by default
+  ansible.builtin.file:
+    path: "{{ app_dir }}/{{ app }}"
+    state: absent
+  when:
+    - calicoctl is defined
+    - not (calicoctl | bool)

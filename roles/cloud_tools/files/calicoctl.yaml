@@ -35,6 +35,8 @@
       register: github_release
       changed_when: false
       run_once: true
+      delegate_to: localhost
+      become: false
 
     - name: Set latest version
       ansible.builtin.set_fact:

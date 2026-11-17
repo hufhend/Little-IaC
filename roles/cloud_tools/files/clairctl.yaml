@@ -8,6 +8,19 @@
     version: "{{ clairctl_version | default('', true) }}"
     installed_version: ""
 
+# Discover the latest stable version
+- name: Get latest version from GitHub
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/jgsqware/clairctl/releases/latest"
+    headers: '{{ ({"Authorization": "token " + github_token} if github_token is defined and github_token | length > 0 else {}) | to_json }}'
+    return_content: true
+    timeout: 30
+  register: github_release
+  changed_when: false
+  run_once: true
+  delegate_to: localhost
+  become: false
+
 - block:
     # Verify installed version
     - name: Check if {{ app_name }} is installed
@@ -26,17 +39,6 @@
           ansible.builtin.set_fact:
             installed_version: "{{ (install_result.stdout | regex_search('version ([0-9.]+)', '\\1') | default([], true)) | first | default('', true) }}"
       when: app_installed.stat.exists
-
-    # Discover the latest stable version
-    - name: Get latest version from GitHub
-      ansible.builtin.uri:
-        url: "https://api.github.com/repos/jgsqware/clairctl/releases/latest"
-        headers: '{{ ({"Authorization": "token " + github_token} if github_token is defined and github_token | length > 0 else {}) | to_json }}'
-        return_content: true
-        timeout: 30
-      register: github_release
-      changed_when: false
-      run_once: true
 
     - name: Set latest version
       ansible.builtin.set_fact:

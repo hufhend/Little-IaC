@@ -1,33 +1,35 @@
 # A simple, modern and secure encryption tool
 ---
-- name: Package Variable Setting
+- name: Age file encryption tool variable setting
   ansible.builtin.set_fact:
     app: "age"
-    app_name: "Age"
+    app_name: "Age encryption"
 
 - name: Install {{ app_name }}
   block:
-  - name: Install {{ app_name }}
-    command: "{{ app_dir }}/binenv install {{ app }}"
-    args:
-      creates: "{{ app_dir }}/{{ app }}"  
+    - name: Install {{ app_name }}
+      ansible.builtin.command: "{{ app_dir }}/binenv install {{ app }}"
+      args:
+        creates: "{{ app_dir }}/{{ app }}"
 
-  - name: Install {{ app }}-keygen
-    command: "{{ app_dir }}/binenv install {{ app }}-keygen"
-    args:
-      creates: "{{ app_dir }}/{{ app }}-keygen"  
+    - name: Install {{ app }}-keygen
+      ansible.builtin.command: "{{ app_dir }}/binenv install {{ app }}-keygen"
+      args:
+        creates: "{{ app_dir }}/{{ app }}-keygen"
 
-  - name: Check {{ app_name }} version
-    command: "{{ app_dir }}/{{ app }} --version"
-    register: "install_result"
-    changed_when: false
+    - name: Check {{ app_name }} version
+      ansible.builtin.command: "{{ app_dir }}/{{ app }} --version"
+      register: "install_result"
+      changed_when: false
 
-  - name: Extract and clean version
-    set_fact:
-      new_version: "{{ install_result.stdout | replace('v', '') | trim }}"
+    - name: Extract and clean version
+      ansible.builtin.set_fact:
+        new_version: "{{ install_result.stdout | regex_replace('^v', '') | trim }}"
 
-  - name: Show {{ app_name }} version
-    ansible.builtin.debug:
-      msg: "{{ app_name }} version is {{ new_version }}"
+    - name: Show {{ app_name }} version
+      ansible.builtin.debug:
+        msg: "{{ app_name }} v{{ new_version }} is installed."
 
-  when: age and (binenv | default(false))
+  when:
+    - age | default(false) | bool
+    - binenv | default(false) | bool

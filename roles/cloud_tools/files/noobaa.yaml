@@ -8,7 +8,7 @@
     install_dir: "/home/{{ user_ansible }}/install/noobaa"
     installed_version: ""
 
-# View the latest stable version
+# Discover the latest stable version
 - name: Get latest version from GitHub
   ansible.builtin.uri:
     url: "https://api.github.com/repos/{{ app }}/{{ app }}-operator/releases/latest"
@@ -39,7 +39,6 @@
             installed_version: "{{ install_result.stderr | regex_search('CLI version: (\\S+)', '\\1') | first | regex_replace('[\"\\\\n]', '') }}"
       when: app_installed.stat.exists
 
-    # Discover the latest stable version
     - name: Detect platform
       ansible.builtin.set_fact:
         platform: "{{ ansible_facts['system'] | lower }}"

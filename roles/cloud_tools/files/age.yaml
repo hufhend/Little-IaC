@@ -1,6 +1,6 @@
 # A simple, modern and secure encryption tool
 ---
-- name: Age file encryption tool variable setting
+- name: Age file encryption tool Variable Setting
   ansible.builtin.set_fact:
     app: "age"
     app_name: "Age encryption"

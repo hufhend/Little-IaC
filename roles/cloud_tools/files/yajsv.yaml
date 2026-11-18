@@ -1,123 +1,171 @@
 ---
 # Yet Another JSON-Schema Validator
 # Command line tool for validating JSON and/or YAML documents against provided schemas
-- name: Package Variable Setting
+- name: JSON-Schema Validator Variable Setting
   ansible.builtin.set_fact:
     app: "yajsv"
     app_name: "JSON-Schema Validator"
-    version: "1.4.1"
+    version: "{{ yajsv_version | default('', true) }}"
     install_dir: "/home/{{ user_ansible }}/install/yajsv"
+    installed_version: ""
 
-# Verify installed version
-- name: Check if {{ app_name }} is installed
-  stat:
-    path: "{{ app_dir }}/{{ app }}"
-  register: app_installed
-
-- block:
-    - name: Verify {{ app_name }} version
-      ansible.builtin.command: "{{ app_dir }}/{{ app }} -v"
-      register: install_result
-      changed_when: false
-
-    - name: Extract and clean version
-      ansible.builtin.set_fact:
-        installed_version: "{{ install_result.stdout | regex_search('(\\d+\\.\\d+\\.\\d+)') | default('unknown') }}"
-  when: app_installed.stat.exists
-
-# View the latest stable version
+# Discover the latest stable version
 - name: Get latest version from GitHub
   ansible.builtin.uri:
     url: "https://api.github.com/repos/neilpa/yajsv/releases/latest"
     headers: '{{ ({"Authorization": "token " + github_token} if github_token is defined and github_token | length > 0 else {}) | to_json }}'
-    return_content: yes
+    return_content: true
     timeout: 30
   register: github_release
   changed_when: false
-  run_once: yes
+  run_once: true
+  delegate_to: localhost
+  become: false
 
-- name: Set latest version
-  ansible.builtin.set_fact:
-    latest_version: "{{ github_release.json.tag_name | regex_replace('^v', '') }}"
+- block:
+    # Verify installed version
+    - name: Check if {{ app_name }} is installed
+      stat:
+        path: "{{ app_dir }}/{{ app }}"
+      register: app_installed
 
-- name: Show {{ app_name }} version
-  ansible.builtin.debug:
-    msg:
-      - "The installed version was detected: {{ installed_version }}"
-      - "The currently installed version is: {{ version }}"
-  when: app_installed.stat.exists
+    - block:
+        - name: Verify {{ app_name }} version
+          ansible.builtin.command: "{{ app_dir }}/{{ app }} -v"
+          register: install_result
+          changed_when: false
 
-- name: Compare versions
-  ansible.builtin.debug:
-    msg: "A new version {{ latest_version }} is available! Consider updating."
-  when: latest_version is version(version, '>')
+        - name: Extract and clean version
+          ansible.builtin.set_fact:
+            installed_version: "{{ install_result.stdout | regex_search('(\\d+\\.\\d+\\.\\d+)') | default('unknown') }}"
+      when: app_installed.stat.exists
 
-- name: Install {{ app_name }}
-  block:
-    # Download and integrity verification
-    - name: Create a install directory
-      ansible.builtin.file:
-        path: "{{ install_dir }}"
-        state: directory
-        owner: "{{ ansible_user }}"
-        mode: "0755"
-
-    - name: Detect platform
+    - name: Set latest version
       ansible.builtin.set_fact:
-        platform: "{{ ansible_facts['system'] | lower }}"
+        latest_version: "{{ github_release.json.tag_name | regex_replace('^v', '') }}"
 
-    - name: Define architecture map
+    # If a pinned version is not defined, it will be set to the latest version
+    - name: Use latest version if version is empty
       ansible.builtin.set_fact:
-        arch_map:
-          x86_64: amd64
-          amd64: amd64
-          aarch64: arm64
-          arm64: arm64
+        version: "{{ latest_version }}"
+      when: version | default('') | length == 0
 
-    - name: Detect architecture
-      ansible.builtin.set_fact:
-        arch: "{{ arch_map.get(ansible_facts['architecture'], 'unknown') }}"
-
-    - name: Define download URL
-      ansible.builtin.set_fact:
-        download_url: "https://github.com/neilpa/yajsv/releases/download/v{{ version }}"
-
-    - name: Download {{ app_name}} binary
-      ansible.builtin.get_url:
-        url: "{{ download_url }}/{{ app }}.{{ platform }}.{{ arch }}"
-        dest: "{{ install_dir }}/{{ app }}.{{ platform }}.{{ arch }}"
-        mode: "0644"
-
-    # Manual installation
-    - name: Move {{ app }} to local bin
-      ansible.builtin.copy:
-        src: "{{ install_dir }}/{{ app }}.{{ platform }}.{{ arch }}"
-        dest: "{{ app_dir }}/{{ app }}"
-        mode: "0755"
-        remote_src: yes
-
-    # Show installed version
-    - name: Verify {{ app_name }} version
-      ansible.builtin.command: "{{ app_dir }}/{{ app }} -v"
-      register: install_result
-      changed_when: false
-
-    - name: Extract and clean version
-      ansible.builtin.set_fact:
-        yajsv_version: "{{ install_result.stdout | regex_search('(\\d+\\.\\d+\\.\\d+)') | default('unknown') }}"
-
+    # Version control reports the most significant changes in status
     - name: Show {{ app_name }} version
       ansible.builtin.debug:
-        msg: "{{ app_name }} version is {{ yajsv_version }}"
+        msg:
+          - "Installed version: {{ installed_version }}"
+          - "Requested version: {{ version }}"
+      when: app_installed.stat.exists
 
-    # Finally, let's clean up.
-    - name: Clean up installation files
-      ansible.builtin.file:
-        path: "{{ install_dir }}"
-        state: absent
+    - name: Update available
+      ansible.builtin.debug:
+        msg: "{{ app_name }} v{{ latest_version }} is available! Consider updating."
+      when:
+        - installed_version is defined
+        - installed_version | length > 0
+        - latest_version is version(installed_version, '>')
+        - version != latest_version
+        - version is version(installed_version, '>=')
 
+    - name: Upgrade to latest
+      ansible.builtin.debug:
+        msg: "{{ app_name }} v{{ version }} is available! Let's upgrade."
+      when:
+        - installed_version is defined
+        - installed_version | length > 0
+        - version is version(installed_version, '>')
+        - version == latest_version
+
+    - name: Downgrade detected
+      ansible.builtin.debug:
+        msg: "⚠️  Downgrade: {{ app_name }} v{{ installed_version }} -> v{{ version }}. So be it..."
+      when:
+        - installed_version is defined
+        - installed_version | length > 0
+        - version is version(installed_version, '<')
+
+    - name: Install detected
+      ansible.builtin.debug:
+        msg: "{{ app_name }} v{{ version }} is not installed. Let's install it."
+      when:
+        - installed_version is not defined or installed_version | length == 0
+
+    - name: Install
+      block:
+        # Download and integrity verification
+        - name: Create a install directory
+          ansible.builtin.file:
+            path: "{{ install_dir }}"
+            state: directory
+            owner: "{{ ansible_user }}"
+            mode: "0755"
+
+        - name: Detect platform
+          ansible.builtin.set_fact:
+            platform: "{{ ansible_facts['system'] | lower }}"
+
+        - name: Define architecture map
+          ansible.builtin.set_fact:
+            arch_map:
+              x86_64: amd64
+              amd64: amd64
+              aarch64: arm64
+              arm64: arm64
+
+        - name: Detect architecture
+          ansible.builtin.set_fact:
+            arch: "{{ arch_map.get(ansible_facts['architecture'], 'unknown') }}"
+
+        - name: Define download URL
+          ansible.builtin.set_fact:
+            download_url: "https://github.com/neilpa/yajsv/releases/download/v{{ version }}"
+
+        - name: Download {{ app_name}} binary
+          ansible.builtin.get_url:
+            url: "{{ download_url }}/{{ app }}.{{ platform }}.{{ arch }}"
+            dest: "{{ install_dir }}/{{ app }}.{{ platform }}.{{ arch }}"
+            mode: "0644"
+
+        # Manual installation
+        - name: Move {{ app }} to local bin
+          ansible.builtin.copy:
+            src: "{{ install_dir }}/{{ app }}.{{ platform }}.{{ arch }}"
+            dest: "{{ app_dir }}/{{ app }}"
+            mode: "0755"
+            remote_src: true
+
+        # Show installed version
+        - name: Verify {{ app_name }} version
+          ansible.builtin.command: "{{ app_dir }}/{{ app }} -v"
+          register: install_result
+          changed_when: false
+
+        - name: Extract and clean version
+          ansible.builtin.set_fact:
+            yajsv_version: "{{ install_result.stdout | regex_search('(\\d+\\.\\d+\\.\\d+)') | default('unknown') }}"
+
+        - name: Show {{ app_name }} version
+          ansible.builtin.debug:
+            msg: "{{ app_name }} version is {{ yajsv_version }}"
+
+        # Finally, let's clean up.
+        - name: Clean up installation files
+          ansible.builtin.file:
+            path: "{{ install_dir }}"
+            state: absent
+
+      when:
+        - ansible_facts["system"] in ["Linux", "Darwin"]
+        - ansible_facts["architecture"] in ["x86_64", "amd64"]
+        - installed_version is not defined or installed_version != version
+  when: yajsv | default(false) | bool
+
+# Unless requested, it will be uninstalled
+- name: Remove {{ app_name }} by default
+  ansible.builtin.file:
+    path: "{{ app_dir }}/{{ app }}"
+    state: absent
   when:
-    - yajsv == true
-    - ansible_facts["system"] in ["Linux", "Darwin"]
-    - ansible_facts["architecture"] in ["x86_64", "arm64"]
-    - installed_version is not defined or installed_version != version
+    - yajsv is defined
+    - not (yajsv | bool)

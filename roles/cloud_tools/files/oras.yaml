@@ -1,9 +1,9 @@
 # OCI Registry as Storage
 ---
-- name: ORAS Variable Setting
+- name: OCI registry client Variable Setting
   ansible.builtin.set_fact:
     app: "oras"
-    app_name: "OCI registry client"
+    app_name: "ORAS"
     version: "{{ oras_version | default('', true) }}"
     install_dir: "/home/{{ user_ansible }}/install/oras"
     installed_version: ""

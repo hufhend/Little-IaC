@@ -147,7 +147,7 @@
 
         - name: Show {{ app_name }} version
           ansible.builtin.debug:
-            msg: "{{ app_name }} version is {{ yajsv_version }}"
+            msg: "{{ app_name }} v{{ yajsv_version }} is installed."
 
         # Finally, let's clean up.
         - name: Clean up installation files

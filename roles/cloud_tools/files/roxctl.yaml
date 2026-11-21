@@ -1,136 +1,204 @@
 # roxctl is a command-line interface (CLI) for running commands on Red Hat
 # Advanced Cluster Security for Kubernetes.
 ---
-- name: Package Variable Setting
+- name: Roxctl CLI Variable Setting
   ansible.builtin.set_fact:
     app: "roxctl"
-    app_name: "roxctl CLI"
-    version: "4.8.4"
+    app_name: "Roxctl"
+    version: "{{ roxctl_version | default('', true) }}"
     install_dir: "/home/{{ user_ansible }}/install/roxctl"
+    installed_version: ""
 
-# Verify installed version
-- name: Check if {{ app_name }} is installed
-  stat:
-    path: "{{ app_dir }}/{{ app }}"
-  register: app_installed
+# Discover the latest stable version
+- name: Get latest version from GitHub
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/stackrox/stackrox/releases/latest"
+    headers: '{{ ({"Authorization": "token " + github_token} if github_token is defined and github_token | length > 0 else {}) | to_json }}'
+    return_content: true
+    timeout: 30
+  register: github_release
+  changed_when: false
+  run_once: true
+  delegate_to: localhost
+  become: false
 
 - block:
-    - name: Verify {{ app_name }} version
-      ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
-      register: install_result
-      changed_when: false
+    # Verify installed version
+    - name: Check if {{ app_name }} is installed
+      ansible.builtin.stat:
+        path: "{{ app_dir }}/{{ app }}"
+      register: app_installed
 
-    - name: Extract and clean version
-      set_fact:
-        installed_version: "{{ install_result.stdout | regex_replace('^.*(\\d+\\.\\d+\\.\\d+).*$', '\\1') }}"
-  when: app_installed.stat.exists
+    - block:
+        - name: Verify {{ app_name }} version
+          ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+          register: install_result
+          changed_when: false
 
-# View the latest stable version
-- name: Show {{ app_name }} version
-  ansible.builtin.debug:
-    msg:
-      - "The installed version was detected: {{ installed_version }}"
-      - "The currently installed version is: {{ version }}"
-  when: app_installed.stat.exists
+        - name: Extract and clean version
+          ansible.builtin.set_fact:
+            installed_version: "{{ install_result.stdout | regex_replace('^.*(\\d+\\.\\d+\\.\\d+).*$', '\\1') }}"
+      when: app_installed.stat.exists
 
-- name: Install {{ app_name }}
-  block:
-    # Download and integrity verification
-    - name: Create a install directory
-      ansible.builtin.file:
-        path: "{{ install_dir }}"
-        state: directory
-        owner: "{{ ansible_user }}"
-        mode: "0755"
-
-    - name: Detect platform
+    - name: Set latest version
       ansible.builtin.set_fact:
-        platform: "{{ ansible_facts['system'] }}"
+        latest_version: "{{ github_release.json.tag_name | regex_replace('^v', '') }}"
 
-    - name: Define architecture map
+    # If a pinned version is not defined, it will be set to the latest version
+    - name: Use latest version if version is empty
       ansible.builtin.set_fact:
-        arch_map:
-          x86_64:
-          arm64: -arm64
-          aarch64: -arm64
-          ppc64le: -ppc64le
-          s390x: -s390x
+        version: "{{ latest_version }}"
+      when: version | default('') | length == 0
 
-    - name: Detect architecture
-      ansible.builtin.set_fact:
-        arch: "{{ arch_map.get(ansible_facts['architecture'], 'unknown') }}"
-
-    - name: Define download URL
-      ansible.builtin.set_fact:
-        download_url: "https://mirror.openshift.com/pub/rhacs/assets/{{ version }}/bin/{{ platform }}"
-
-    - name: Download {{ app_name }} checksum
-      ansible.builtin.get_url:
-        url: "{{ download_url }}/sha256sum.txt"
-        dest: "{{ install_dir }}/sha256sum.txt"
-        mode: "0644"
-        force: yes
-
-    - name: Download {{ app_name}} binary
-      ansible.builtin.get_url:
-        url: "{{ download_url }}/{{ app }}{{ arch }}"
-        dest: "{{ install_dir }}/{{ app }}{{ arch }}"
-        mode: "0644"
-
-    - name: Verify checksum of {{ app_name }}
-      ansible.builtin.command:
-        cmd: sha256sum -c {{ install_dir }}/sha256sum.txt --ignore-missing
-        chdir: "{{ install_dir }}"
-      register: checksum_result
-      failed_when: false
-      changed_when: false
-
-    - name: Fail and cleanup if checksum failed
-      ansible.builtin.fail:
-        msg: "Checksum verification failed! Please clean up {{ install_dir }} and try again."
-      when: "'FAILED' in checksum_result.stdout"
-
-    # Manual installation of a binary application
-    - name: Move {{ app }} to local bin
-      ansible.builtin.copy:
-        src: "{{ install_dir }}/{{ app }}{{ arch }}"
-        dest: "{{ app_dir }}/{{ app }}"
-        mode: "0755"
-        remote_src: yes
-
-    # Completion script tasks
-    - name: Generate completion script
-      command: "{{ app_dir }}/{{ app }} completion bash"
-      register: completion_script
-      changed_when: false
-
-    - name: Save completion script
-      copy:
-        content: "{{ completion_script.stdout }}"
-        dest: "/etc/bash_completion.d/{{ app }}"
-        mode: "0644"
-
-    # Show installed version
-    - name: Verify {{ app_name }} version
-      ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
-      register: install_result
-      changed_when: false
-
-    - name: Extract and clean version
-      set_fact:
-        new_version: "{{ install_result.stdout | regex_replace('^.*(\\d+\\.\\d+\\.\\d+).*$', '\\1') }}"
-
+    # Version control reports the most significant changes in status
     - name: Show {{ app_name }} version
       ansible.builtin.debug:
-        msg: "{{ app_name }} version is {{ new_version }}"
+        msg:
+          - "Installed version: {{ installed_version }}"
+          - "Requested version: {{ version }}"
+      when: app_installed.stat.exists
 
-    # Finally, let's clean up.
-    - name: Clean up installation files
-      ansible.builtin.file:
-        path: "{{ install_dir }}"
-        state: absent
+    - name: Update available
+      ansible.builtin.debug:
+        msg: "{{ app_name }} v{{ latest_version }} is available! Consider updating."
+      when:
+        - installed_version is defined
+        - installed_version | length > 0
+        - latest_version is version(installed_version, '>')
+        - version != latest_version
+        - version is version(installed_version, '>=')
 
+    - name: Upgrade to latest
+      ansible.builtin.debug:
+        msg: "{{ app_name }} v{{ version }} is available! Let's upgrade."
+      when:
+        - installed_version is defined
+        - installed_version | length > 0
+        - version is version(installed_version, '>')
+        - version == latest_version
+
+    - name: Downgrade detected
+      ansible.builtin.debug:
+        msg: "⚠️  Downgrade: {{ app_name }} v{{ installed_version }} -> v{{ version }}. So be it..."
+      when:
+        - installed_version is defined
+        - installed_version | length > 0
+        - version is version(installed_version, '<')
+
+    - name: Install detected
+      ansible.builtin.debug:
+        msg: "{{ app_name }} v{{ version }} is not installed. Let's install it."
+      when:
+        - installed_version is not defined or installed_version | length == 0
+
+    - name: Install
+      block:
+        # Download and integrity verification
+        - name: Create a install directory
+          ansible.builtin.file:
+            path: "{{ install_dir }}"
+            state: directory
+            owner: "{{ ansible_user }}"
+            mode: "0755"
+
+        - name: Detect platform
+          ansible.builtin.set_fact:
+            platform: "{{ ansible_facts['system'] }}"
+
+        - name: Define architecture map
+          ansible.builtin.set_fact:
+            arch_map:
+              x86_64:
+              arm64: -arm64
+              aarch64: -arm64
+              ppc64le: -ppc64le
+              s390x: -s390x
+
+        - name: Detect architecture
+          ansible.builtin.set_fact:
+            arch: "{{ arch_map.get(ansible_facts['architecture'], 'unknown') }}"
+
+        - name: Define download URL
+          ansible.builtin.set_fact:
+            download_url: "https://mirror.openshift.com/pub/rhacs/assets/{{ version }}/bin/{{ platform }}"
+
+        - name: Download {{ app_name }} checksum
+          ansible.builtin.get_url:
+            url: "{{ download_url }}/sha256sum.txt"
+            dest: "{{ install_dir }}/sha256sum.txt"
+            mode: "0644"
+            force: true
+
+        - name: Download {{ app_name}} binary
+          ansible.builtin.get_url:
+            url: "{{ download_url }}/{{ app }}{{ arch }}"
+            dest: "{{ install_dir }}/{{ app }}{{ arch }}"
+            mode: "0644"
+
+        - name: Verify checksum of {{ app_name }}
+          ansible.builtin.command:
+            cmd: sha256sum -c {{ install_dir }}/sha256sum.txt --ignore-missing
+            chdir: "{{ install_dir }}"
+          register: checksum_result
+          failed_when: false
+          changed_when: false
+
+        - name: Fail and cleanup if checksum failed
+          ansible.builtin.fail:
+            msg: "Checksum verification failed! Please clean up {{ install_dir }} and try again."
+          when: "'FAILED' in checksum_result.stdout"
+
+        # Manual installation of a binary application
+        - name: Move {{ app }} to local bin
+          ansible.builtin.copy:
+            src: "{{ install_dir }}/{{ app }}{{ arch }}"
+            dest: "{{ app_dir }}/{{ app }}"
+            mode: "0755"
+            remote_src: true
+
+        # Completion script tasks
+        - name: Generate completion script
+          ansible.builtin.command: "{{ app_dir }}/{{ app }} completion bash"
+          register: completion_script
+          changed_when: false
+
+        - name: Save completion script
+          ansible.builtin.copy:
+            content: "{{ completion_script.stdout }}"
+            dest: "/etc/bash_completion.d/{{ app }}"
+            mode: "0644"
+
+        # Show installed version
+        - name: Verify {{ app_name }} version
+          ansible.builtin.command: "{{ app_dir }}/{{ app }} version"
+          register: install_result
+          changed_when: false
+
+        - name: Extract and clean version
+          ansible.builtin.set_fact:
+            new_version: "{{ install_result.stdout | regex_replace('^.*(\\d+\\.\\d+\\.\\d+).*$', '\\1') }}"
+
+        - name: Show {{ app_name }} version
+          ansible.builtin.debug:
+            msg: "{{ app_name }} v{{ new_version }} is installed."
+
+        # Finally, let's clean up.
+        - name: Clean up installation files
+          ansible.builtin.file:
+            path: "{{ install_dir }}"
+            state: absent
+
+      when:
+        - ansible_facts["architecture"] == "x86_64"
+        - installed_version is not defined or installed_version != version
   when:
-    - roxctl == true
-    - ansible_facts["architecture"] == "x86_64"
-    - installed_version is not defined or installed_version != version
+    - roxctl | default(false) | bool
+
+# Unless requested, it will be uninstalled
+- name: Remove {{ app_name }} by default
+  ansible.builtin.file:
+    path: "{{ app_dir }}/{{ app }}"
+    state: absent
+  when:
+    - roxctl is defined
+    - not (roxctl | bool)

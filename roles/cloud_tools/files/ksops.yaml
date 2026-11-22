@@ -1,116 +1,189 @@
 # KSOPS is a flexible kustomize plugin for SOPS encrypted resources
 ---
-- name: Package Variable Setting
+- name: Kustomize Plugin for SOPS Variable Setting
   ansible.builtin.set_fact:
     app: "ksops"
-    app_name: "Ksops"
-    version: "4.5.1"
+    app_name: "Kustomize-SOPS"
+    version: "{{ ksops_version | default('', true) }}"
     install_dir: "/home/{{ user_ansible }}/install/ksops"
+    installed_version: ""
 
-# Verify installed version
-- name: Check if {{ app_name }} is installed
-  stat:
-    path: "{{ app_dir }}/{{ app }}"
-  register: app_installed
-
-# View the latest stable version
+# Discover the latest stable version
 - name: Get latest version from GitHub
   ansible.builtin.uri:
     url: "https://api.github.com/repos/viaduct-ai/kustomize-sops/releases/latest"
     headers: '{{ ({"Authorization": "token " + github_token} if github_token is defined and github_token | length > 0 else {}) | to_json }}'
-    return_content: yes
+    return_content: true
     timeout: 30
   register: github_release
   changed_when: false
-  run_once: yes
+  run_once: true
+  delegate_to: localhost
+  become: false
 
-- name: Set latest version
-  ansible.builtin.set_fact:
-    latest_version: "{{ github_release.json.tag_name | regex_replace('^v', '') }}"
+- block:
+    # Verify installed version
+    - name: Check if {{ app_name }} is installed
+      ansible.builtin.stat:
+        path: "{{ app_dir }}/{{ app }}"
+      register: app_installed
 
-- name: Show {{ app_name }} version
-  ansible.builtin.debug:
-    msg:
-      - "The currently installed version is {{ version }}"
-  when: app_installed.stat.exists
+    - block:
+        # FIX: ksops does not support -v; the version is embedded in .go.buildinfo as main.version=X.Y.Z
+        - name: Verify {{ app_name }} version
+          ansible.builtin.shell: |
+            set -o pipefail
+            readelf -p .go.buildinfo "{{ app_dir }}/{{ app }}" 2>/dev/null \
+              | grep -oE 'main\.version=[0-9]+\.[0-9]+\.[0-9]+' \
+              | head -1 \
+              | cut -d= -f2
+          args:
+            executable: /bin/bash
+          register: install_result
+          changed_when: false
+          failed_when: false
 
-- name: Compare versions
-  ansible.builtin.debug:
-    msg: "A new version {{ latest_version }} is available! Consider updating."
-  when: latest_version is version(version, '>')
+        - name: Extract and clean version
+          ansible.builtin.set_fact:
+            installed_version: >-
+              {{
+                (install_result.stdout | trim)
+                if (install_result.stdout is defined and install_result.stdout | trim | length > 0)
+                else ''
+              }}
+      when: app_installed.stat.exists
 
-- name: Install {{ app_name }}
-  block:
-    # Download and verification steps
-    - name: Create a install directory
-      ansible.builtin.file:
-        path: "{{ install_dir }}"
-        state: directory
-        owner: "{{ ansible_user }}"
-        mode: "0755"
-
-    - name: Install {{ app_name }}
-      set_fact:
-        arch_map:
-          i386: i386
-          i686: i386
-          x86_64: x86_64
-          aarch64: arm64
-          arm64: arm64
-
-    - name: Detect architecture
-      set_fact:
-        arch: "{{ arch_map.get(ansible_facts['architecture'], 'unknown') }}"
-
-    - name: Detect platform
+    - name: Set latest version
       ansible.builtin.set_fact:
-        platform: "{{ ansible_facts['system'] }}"
+        latest_version: "{{ github_release.json.tag_name | regex_replace('^v', '') }}"
 
-    - name: Define download URL
+    # If a pinned version is not defined, it will be set to the latest version
+    - name: Use latest version if version is empty
       ansible.builtin.set_fact:
-        download_url: "https://github.com/viaduct-ai/kustomize-sops/releases/download/v{{ version }}"
+        version: "{{ latest_version }}"
+      when: version | default('') | length == 0
 
-    - name: Download {{ app_name }} archive
-      ansible.builtin.get_url:
-        url: "{{ download_url }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
-        dest: "{{ install_dir }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
-        mode: "0755"
-
-    # Manual installation
-    - name: Extract {{ app }} binary
-      ansible.builtin.unarchive:
-        src: "{{ install_dir }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
-        dest: "{{ install_dir }}"
-        remote_src: yes
-
-    - name: Move {{ app }} to local bin
-      ansible.builtin.copy:
-        src: "{{ install_dir }}/{{ app }}"
-        dest: "{{ app_dir }}/{{ app }}"
-        mode: "0755"
-        owner: root
-        group: root
-        remote_src: yes
-      register: mv_result
-
-    - name: Fail if moving ksops fails
-      fail:
-        msg: "Failed to move ksops to {{ app_dir }}. Maybe you should run this playbook as root."
-      when: mv_result.failed
-
+    # Version control reports the most significant changes in status
     - name: Show {{ app_name }} version
       ansible.builtin.debug:
-        msg: "{{ app_name }} version is {{ version }}"
-      when: not mv_result.failed
+        msg:
+          - "Installed version: {{ installed_version }}"
+          - "Requested version: {{ version }}"
+      when: app_installed.stat.exists
 
-    # Finally, let's clean up.
-    - name: Clean up installation files
-      ansible.builtin.file:
-        path: "{{ install_dir }}"
-        state: absent
+    - name: Update available
+      ansible.builtin.debug:
+        msg: "{{ app_name }} v{{ latest_version }} is available! Consider updating."
+      when:
+        - installed_version is defined
+        - installed_version | length > 0
+        - latest_version is version(installed_version, '>')
+        - version != latest_version
+        - version is version(installed_version, '>=')
 
+    - name: Upgrade to latest
+      ansible.builtin.debug:
+        msg: "{{ app_name }} v{{ version }} is available! Let's upgrade."
+      when:
+        - installed_version is defined
+        - installed_version | length > 0
+        - version is version(installed_version, '>')
+        - version == latest_version
+
+    - name: Downgrade detected
+      ansible.builtin.debug:
+        msg: "⚠️  Downgrade: {{ app_name }} v{{ installed_version }} -> v{{ version }}. So be it..."
+      when:
+        - installed_version is defined
+        - installed_version | length > 0
+        - version is version(installed_version, '<')
+
+    - name: Install detected
+      ansible.builtin.debug:
+        msg: "{{ app_name }} v{{ version }} is not installed. Let's install it."
+      when:
+        - installed_version is not defined or installed_version | length == 0
+
+    - name: Install
+      block:
+        # Download and verification steps
+        - name: Create a install directory
+          ansible.builtin.file:
+            path: "{{ install_dir }}"
+            state: directory
+            owner: "{{ ansible_user }}"
+            mode: "0755"
+
+        - name: Define architecture map
+          ansible.builtin.set_fact:
+            arch_map:
+              i386: i386
+              i686: i386
+              x86_64: x86_64
+              aarch64: arm64
+              arm64: arm64
+
+        - name: Detect architecture
+          ansible.builtin.set_fact:
+            arch: "{{ arch_map.get(ansible_facts['architecture'], 'unknown') }}"
+
+        - name: Detect platform
+          ansible.builtin.set_fact:
+            platform: "{{ ansible_facts['system'] }}"
+
+        - name: Define download URL
+          ansible.builtin.set_fact:
+            download_url: "https://github.com/viaduct-ai/kustomize-sops/releases/download/v{{ version }}"
+
+        - name: Download {{ app_name }} archive
+          ansible.builtin.get_url:
+            url: "{{ download_url }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
+            dest: "{{ install_dir }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
+            mode: "0755"
+
+        # Manual installation
+        - name: Extract {{ app }} binary
+          ansible.builtin.unarchive:
+            src: "{{ install_dir }}/ksops_{{ version }}_{{ platform }}_{{ arch }}.tar.gz"
+            dest: "{{ install_dir }}"
+            remote_src: true
+
+        - name: Move {{ app }} to local bin
+          ansible.builtin.copy:
+            src: "{{ install_dir }}/{{ app }}"
+            dest: "{{ app_dir }}/{{ app }}"
+            mode: "0755"
+            owner: root
+            group: root
+            remote_src: true
+          register: mv_result
+
+        - name: Fail if moving ksops fails
+          ansible.builtin.fail:
+            msg: "Failed to move ksops to {{ app_dir }}. Maybe you should run this playbook as root."
+          when: mv_result.failed
+
+        # Show installed version (simple)
+        - name: Show {{ app_name }} version
+          ansible.builtin.debug:
+            msg: "{{ app_name }} v{{ version }} is installed."
+
+        - name: Clean up installation files
+          ansible.builtin.file:
+            path: "{{ install_dir }}"
+            state: absent
+
+      when:
+        - ansible_facts["system"] in ["Linux", "Darwin"]
+        - ansible_facts["architecture"] in ["x86_64", "amd64"]
+        - installed_version != version
+  when: ksops | default(false) | bool
+
+# Unless requested, it will be uninstalled
+- name: Remove {{ app_name }} by default
+  ansible.builtin.file:
+    path: "{{ app_dir }}/{{ app }}"
+    state: absent
   when:
-    - ksops == true
-    - ansible_facts["system"] in ["Linux", "Darwin"]
-    - ansible_facts["architecture"] in ["x86_64", "amd64"]
-    - latest_version != version or app_installed.stat.exists == false
+    - ksops is defined
+    - not (ksops | bool)

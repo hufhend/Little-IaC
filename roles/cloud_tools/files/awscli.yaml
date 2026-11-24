@@ -1,82 +1,165 @@
-# from https://community.aws/content/2rGOv0VY5bSbxI4HEXTjQisRU8L/automate-aws-cli-deployment-using-ansible-step-by-step
 ---
-- name: Package Variable Setting
+- name: AWS CLI Variable Setting
   ansible.builtin.set_fact:
-    app: "awscli"
+    app: "aws"
     app_name: "AWS CLI"
-    version: "latest"
     install_dir: "/home/{{ user_ansible }}/install/awscli"
+    awscli_needs_install: false
 
-- name: Install {{ app_name }} on Ubuntu
-  block:
-    # Download and verification steps
-    - name: Create a install directory
-      ansible.builtin.file:
-        path: "{{ install_dir }}"
-        state: directory
-        owner: "{{ ansible_user }}"
-        mode: "0755"
+# Discover the latest stable version
+- name: Get latest AWS CLI version from GitHub
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/aws/aws-cli/tags"
+    method: GET
+    return_content: true
+    status_code: 200
+  register: github_tags
+  delegate_to: localhost
+  run_once: true
+  changed_when: false
+  become: false
 
-    - name: Download signature file
-      ansible.builtin.get_url:
-        url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip.sig"
-        dest: "{{ install_dir }}/awscliv2.sig"
-        mode: "0644"
-        force: yes
+- name: Set latest version fact
+  ansible.builtin.set_fact:
+    latest_awscli_version: "{{ github_tags.json[0].name }}"
+  delegate_to: localhost
+  become: false
 
-    - name: Download GPG public key
+- block:
+    # Verify installed version
+    - name: Get currently installed AWS CLI version
       ansible.builtin.command:
-        cmd: gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys A6310ACC4672475C
+        cmd: "{{ app_dir }}/{{ app }} --version"
+      register: aws_cli_current
+      changed_when: false
+      failed_when: false
 
-    - name: Download {{ app_name }} installer
-      get_url:
-        url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
-        dest: "{{ install_dir }}/awscliv2.zip"
+    - name: Set installed version fact (empty string if not installed)
+      ansible.builtin.set_fact:
+        installed_awscli_version: "{{ (aws_cli_current.stdout | regex_search('aws-cli/([\\d.]+)', '\\1') or ['']) | first }}"
 
-    - name: Verify GPG signature
-      ansible.builtin.command:
-        cmd: gpg --verify {{ install_dir }}//awscliv2.sig {{ install_dir }}/awscliv2.zip
-      register: gpg_verify_result
-      failed_when: gpg_verify_result.rc != 0
-
-    - name: Unzip {{ app_name }} installer
-      unarchive:
-        src: "{{ install_dir }}/awscliv2.zip"
-        dest: "{{ install_dir }}"
-        remote_src: yes
-
-    # Manual installation of a binary application
-    - name: Run {{ app_name }} installer
-      command: "{{ install_dir }}/aws/install --update"
-
-    # Configure autocomplete
-    - name: Add {{ app_name }} autocomplete
-      ansible.builtin.lineinfile:
-        path: "/home/{{ ansible_user }}/.bashrc"
-        line: "complete -C '/usr/local/bin/aws_completer' aws"
-        state: present
-        create: yes
-        mode: "0644"
-
-    # Show installed version
-    - name: Verify {{ app_name }} version
-      command: "aws --version"
-      register: aws_cli_version
-
-    - name: Extract and clean version
-      set_fact:
-        new_version: "{{ aws_cli_version.stdout | regex_search('aws-cli/([\\d.]+)', '\\1') | first }}"
+    - name: Determine if installation is needed
+      ansible.builtin.set_fact:
+        awscli_needs_install: "{{ installed_awscli_version != latest_awscli_version }}"
 
     - name: Show {{ app_name }} version
       ansible.builtin.debug:
-        msg: "{{ app_name }} version is {{ new_version }}"
+        msg:
+          - "Installed version: {{ installed_awscli_version | default('not installed', true) }}"
+          - "Requested version: {{ latest_awscli_version | default('n/a') }}"
 
-    # Finally, let's clean up.
-    - name: Clean up installation files
+    - name: Install
+      block:
+        # Download and integrity verification
+        - name: Create installation directory
+          ansible.builtin.file:
+            path: "{{ install_dir }}"
+            state: directory
+            owner: "{{ ansible_user }}"
+            mode: "0755"
+
+        - name: Download GPG signature file
+          ansible.builtin.get_url:
+            url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip.sig"
+            dest: "{{ install_dir }}/awscliv2.sig"
+            mode: "0644"
+            force: true
+
+        - name: Import GPG public key
+          ansible.builtin.command:
+            cmd: gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys A6310ACC4672475C
+          changed_when: false
+
+        - name: Download {{ app_name }} installer
+          ansible.builtin.get_url:
+            url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+            dest: "{{ install_dir }}/awscliv2.zip"
+            mode: "0644"
+            force: true
+
+        - name: Verify GPG signature
+          ansible.builtin.command:
+            cmd: gpg --verify {{ install_dir }}/awscliv2.sig {{ install_dir }}/awscliv2.zip
+          register: gpg_verify_result
+          changed_when: false
+          failed_when: gpg_verify_result.rc != 0
+
+        - name: Unzip {{ app_name }} installer
+          ansible.builtin.unarchive:
+            src: "{{ install_dir }}/awscliv2.zip"
+            dest: "{{ install_dir }}"
+            remote_src: true
+
+        - name: Run {{ app_name }} installer
+          ansible.builtin.command:
+            cmd: "{{ install_dir }}/aws/install --update"
+
+        # Completion script tasks
+        - name: Add {{ app_name }} autocomplete to .bashrc
+          ansible.builtin.lineinfile:
+            path: "/home/{{ user_ansible }}/.bashrc"
+            line: "complete -C '/usr/local/bin/aws_completer' aws"
+            state: present
+            create: true
+            mode: "0644"
+
+        # Show installed version
+        - name: Verify {{ app_name }} version after install
+          ansible.builtin.command:
+            cmd: "{{ app_dir }}/{{ app }} --version"
+          register: aws_cli_version_after
+          changed_when: false
+
+        - name: Extract and store new version
+          ansible.builtin.set_fact:
+            new_version: "{{ aws_cli_version_after.stdout | regex_search('aws-cli/([\\d.]+)', '\\1') | first }}"
+
+        - name: Confirm installed version
+          ansible.builtin.debug:
+            msg: "{{ app_name }} v{{ new_version }} installed successfully."
+
+        # Finally, let's clean up.
+        - name: Clean up installation files
+          ansible.builtin.file:
+            path: "{{ install_dir }}"
+            state: absent
+
+      when:
+        - ansible_facts["distribution"] == "Ubuntu"
+        - awscli_needs_install | bool
+
+    - name: Skip installation (already up to date)
+      ansible.builtin.debug:
+        msg: "{{ app_name }} v{{ installed_awscli_version }} is installed."
+      when:
+        - ansible_facts["distribution"] == "Ubuntu"
+        - not (awscli_needs_install | bool)
+  when:
+    - awscli | default(false) | bool
+
+# Unless requested, it will be uninstalled
+- name: Remove {{ app_name }} by default
+  block:
+    - name: Remove {{ app_name }} binaries and completer symlinks
       ansible.builtin.file:
-        path: "{{ install_dir }}"
+        path: "{{ awscli_item }}"
+        state: absent
+      loop:
+        - "{{ app_dir }}/{{ app }}"
+        - "{{ app_dir }}/{{ app }}_completer"
+      loop_control:
+        loop_var: awscli_item
+
+    - name: Remove {{ app_name }} installation directory
+      ansible.builtin.file:
+        path: "/usr/local/aws-cli"
         state: absent
 
+    - name: Remove {{ app_name }} autocomplete
+      ansible.builtin.lineinfile:
+        path: "/home/{{ user_ansible }}/.bashrc"
+        line: "complete -C '/usr/local/bin/aws_completer' aws"
+        state: absent
   when:
-    - awscli == true
-    - ansible_facts["distribution"] == "Ubuntu"
+    - awscli is defined
+    - not (awscli | bool)

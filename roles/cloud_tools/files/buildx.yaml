@@ -43,23 +43,16 @@
           - "{{ version }}"
 
     # Completion script tasks
-    - name: Check if completion script exists
-      stat:
-        path: "/etc/bash_completion.d/{{ app }}"
-      register: completion_script_stat
+    - name: Generate completion script
+      ansible.builtin.command: "{{ app_dir }}/{{ app }} completion bash"
+      register: completion_script
+      changed_when: false
 
-    - block:
-        - name: Generate completion script
-          command: "{{ app_dir }}/{{ app }} completion bash"
-          register: completion_script
-          changed_when: false
-
-        - name: Save completion script
-          copy:
-            content: "{{ completion_script.stdout }}"
-            dest: "/etc/bash_completion.d/{{ app }}"
-            mode: "0644"
-      when: not completion_script_stat.stat.exists
+    - name: Save completion script
+      ansible.builtin.copy:
+        content: "{{ completion_script.stdout }}"
+        dest: "/etc/bash_completion.d/{{ app }}"
+        mode: "0644"
 
     - name: Show {{ app_name }} version
       ansible.builtin.debug:

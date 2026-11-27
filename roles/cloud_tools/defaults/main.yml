@@ -14,6 +14,7 @@ ksops: false
 kubeadm: false
 kubectl: false
 kubectx: false
+kubelogin: false
 kubens: false
 kubeseal: false
 kustomize: false
@@ -46,6 +47,7 @@ k8s_version: "1.33"
 # calicoctl_version: "3.33.0"
 # clairctl_version: "1.2.8"
 # ksops_version: "4.5.1"
+# kubelogin_version: "v1.36.4"
 # longhornctl_version: "1.13.0"
 # oc_version: "4.22.18"
 ocmirror_version: "5.0.1"
